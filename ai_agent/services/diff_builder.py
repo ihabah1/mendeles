@@ -288,7 +288,19 @@ def generate_diff_via_structured_edits(
     if not all_files:
         raise DiffValidationError('לא נמצאו קבצים לעיבוד')
 
-    files = select_files_for_prompt(prompt, base_dir, all_files)
+    from .site_index import resolve_request, select_files_with_index, try_direct_edit
+
+    resolved = resolve_request(prompt, base_dir)
+    log(f'פרשנות (גיבוי): {resolved.to_log_line()}')
+    direct = try_direct_edit(prompt, base_dir, resolved)
+    if direct:
+        log('שינוי ישיר מהאינדוקס')
+        return direct
+
+    files, resolved = select_files_with_index(
+        prompt, base_dir, all_files, resolved=resolved,
+    )
+    prompt_for_model = resolved.enriched_prompt or prompt
     if files:
         log(f'קבצים לגיבוי JSON: {", ".join(p for p, _ in files[:4])}')
 
@@ -299,7 +311,7 @@ def generate_diff_via_structured_edits(
                 log('גיבוי JSON: ניסיון שני על קובץ ממוקד…')
             else:
                 log('גיבוי: מבקש שינויים בפורמט JSON…')
-            raw = _call_json_model(prompt, files, focused=focused)
+            raw = _call_json_model(prompt_for_model, files, focused=focused)
             if not raw:
                 raise DiffValidationError('תשובת JSON ריקה')
             data = _extract_json(raw)

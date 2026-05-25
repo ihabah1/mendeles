@@ -32,7 +32,7 @@ class AIChangeRequest(models.Model):
         max_length=20,
         blank=True,
         choices=[
-            ('live', 'אתר ראשי (React)'),
+            ('live', 'אתר ראשי (Django)'),
             ('manage', 'דשבורד ניהול בלבד'),
             ('mixed', 'אתר + ניהול'),
             ('unknown', 'לא ידוע'),

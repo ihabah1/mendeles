@@ -9,8 +9,12 @@ from django.conf import settings
 
 from .diff_builder import generate_diff_via_structured_edits, repair_diff_from_partial_output
 from .diff_validator import DiffValidationError, extract_unified_diff, validate_diff_syntax
-from .diff_builder import select_files_for_prompt
 from .path_guard import list_allowed_files
+from .site_index import (
+    resolve_request,
+    select_files_with_index,
+    try_direct_edit,
+)
 
 REPAIR_PROMPT = """
 Your previous response was invalid. Output ONLY a unified git diff.
@@ -41,8 +45,17 @@ def _load_system_prompt() -> str:
     return path.read_text(encoding='utf-8')
 
 
-def _build_user_prompt(request_prompt: str, files: list[tuple[str, str]]) -> str:
-    parts = [f'USER REQUEST:\n{request_prompt.strip()}\n']
+def _build_user_prompt(
+    request_prompt: str,
+    files: list[tuple[str, str]],
+    *,
+    index_context: str = '',
+) -> str:
+    parts = []
+    if index_context.strip():
+        parts.append(index_context.strip())
+        parts.append('')
+    parts.append(f'USER REQUEST:\n{request_prompt.strip()}\n')
     parts.append('ALLOWED PROJECT FILES (read-only context):\n')
     for rel, content in files[:10]:
         parts.append(f'--- FILE: {rel} ---\n{content}\n')
@@ -116,7 +129,21 @@ def generate_diff(
     if not all_files:
         raise GeminiServiceError('לא נמצאו קבצים מותרים בפרויקט')
 
-    files = select_files_for_prompt(prompt, root, all_files, max_files=10)
+    resolved = resolve_request(prompt, root)
+    log(f'פרשנות: {resolved.to_log_line()}')
+    if resolved.search_terms:
+        log(f'מונחי חיפוש: {", ".join(resolved.search_terms[:5])}')
+    if resolved.target_files:
+        log(f'קבצים מומלצים: {", ".join(resolved.target_files[:4])}')
+
+    direct = try_direct_edit(prompt, root, resolved)
+    if direct:
+        log('שינוי ישיר מהאינדוקס (ללא Gemini)')
+        return direct
+
+    files, resolved = select_files_with_index(
+        prompt, root, all_files, max_files=10, resolved=resolved,
+    )
     log(f'נקראו {len(all_files)} קבצים, {len(files)} רלוונטיים לבקשה')
     model_name = getattr(settings, 'GEMINI_MODEL', 'gemini-2.5-flash')
     log(f'שולח בקשה ל-Gemini ({model_name})…')
@@ -126,7 +153,9 @@ def generate_diff(
         system_instruction=_load_system_prompt(),
     )
 
-    user_prompt = _build_user_prompt(prompt, files)
+    user_prompt = _build_user_prompt(
+        prompt, files, index_context=resolved.enriched_prompt,
+    )
     raw = _call_gemini(model, user_prompt)
     log('תשובה התקבלה מ-Gemini – מעבד diff…')
 
@@ -152,8 +181,9 @@ def generate_diff(
     except (DiffValidationError, json.JSONDecodeError, ValueError) as exc:
         detail = str(exc).strip()
         hint = (
-            'לא הצלחנו לייצר diff. נסח עם נתיב קובץ מלא מתוך static/ או templates/, '
-            'למשל: ב-static/css/portal.css שנה את .page-title ל-font-size: 1.4rem'
+            'לא הצלחנו לייצר diff. נסח בשפה פשוטה, למשל: '
+            '«תוריד את המילה version מהדף הראשי» או «הגדל כותרת בדשבורד ניהול». '
+            'אפשר גם לציין נתיב: templates/web/base_public.html'
         )
         if detail and detail not in hint:
             hint = f'{hint} ({detail})'

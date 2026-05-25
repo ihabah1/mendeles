@@ -84,7 +84,18 @@ def ai_request_create(request):
         )
         messages.success(request, 'הבקשה נשמרה – לחץ "ייצר diff" ליצירת השינוי')
         return redirect('portal:ai_request_detail', pk=obj.pk)
-    return render(request, 'portal/ai_request_form.html', {'form': form})
+    preview = ''
+    try:
+        from ai_agent.services.site_index import format_index_summary
+
+        preview = format_index_summary(settings.BASE_DIR)
+    except Exception:
+        preview = ''
+    return render(
+        request,
+        'portal/ai_request_form.html',
+        {'form': form, 'site_index_preview': preview},
+    )
 
 
 @admin_required

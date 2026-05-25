@@ -5,7 +5,7 @@
 <div class="page-header">
   <div>
     <div class="page-title">בקשת שינוי AI</div>
-    <div class="page-sub">תאר בשפה חופשית מה לשנות בעיצוב / תבניות האתר</div>
+    <div class="page-sub">כתוב בשפה פשוטה — המערכת תמצא לבד איפה לשנות</div>
   </div>
   <a href="{% url 'portal:ai_requests' %}" class="btn btn-outline">← חזרה לרשימה</a>
 </div>
@@ -17,13 +17,23 @@
       {{ form.prompt }}
       {% if form.prompt.errors %}<div class="alert alert-error" style="margin-top:8px">{{ form.prompt.errors.0 }}</div>{% endif %}
     </div>
-    <p style="font-size:.75rem;color:var(--muted);margin-bottom:16px;line-height:1.5">
-      <strong>אתר ראשי (/):</strong> ציין שינוי ב־<code>static/frontend/</code> (React).
-      <strong>דשבורד (/manage/):</strong> <code>templates/portal/</code> או <code>static/css/portal.css</code>.
-      אל תבקש שינוי ב־<code>home.html</code> – לא בשימוש.
-      כל שינוי שמוזג נשמר ב<strong>היסטוריית שינויים</strong> וב<strong>היסטוריית פעולות</strong>.
-    </p>
+    <div style="background:var(--navy-c);border:1px solid var(--navy-b);border-radius:10px;padding:14px;margin-bottom:16px;font-size:.78rem;color:var(--muted);line-height:1.65">
+      <strong style="color:var(--gold)">דוגמאות (פשוט — בלי שמות קבצים):</strong>
+      <ul style="margin:8px 0 0;padding-right:18px">
+        <li>תוריד את המילה version מהדף הראשי</li>
+        <li>הסר את «מצב הדגמה» מהסרגל העליון</li>
+        <li>שנה את «רכוש גישה מלאה» ל«קבל גישה מלאה»</li>
+        <li>הגדל את הכותרת בדשבורד ניהול</li>
+      </ul>
+      <p style="margin-top:10px">המערכת ממפה: <em>דף ראשי</em>, <em>סרגל</em>, <em>לוטו</em>, <em>טוטו</em>, <em>ניהול</em> → הקבצים הנכונים.</p>
+    </div>
     <button type="submit" class="btn btn-gold">שמור והמשך</button>
   </form>
 </div>
+{% if site_index_preview %}
+<details class="card-panel" style="max-width:720px;margin-top:16px">
+  <summary style="cursor:pointer;font-weight:700;color:var(--cream)">מפת תוכן האתר (אינדוקס)</summary>
+  <pre style="margin-top:12px;font-size:.7rem;color:var(--muted);white-space:pre-wrap;max-height:280px;overflow:auto">{{ site_index_preview }}</pre>
+</details>
+{% endif %}
 {% endblock %}
