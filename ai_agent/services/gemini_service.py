@@ -9,6 +9,7 @@ from django.conf import settings
 
 from .diff_builder import generate_diff_via_structured_edits, repair_diff_from_partial_output
 from .diff_validator import DiffValidationError, extract_unified_diff, validate_diff_syntax
+from .diff_builder import select_files_for_prompt
 from .path_guard import list_allowed_files
 
 REPAIR_PROMPT = """
@@ -111,11 +112,12 @@ def generate_diff(
             log('קורא קבצים מ-GitHub (origin/main) ליצירת diff מדויק…')
         except Exception as exc:
             log(f'GitHub clone לקונטקסט: {exc} – משתמש בקבצי השרת')
-    files = list_allowed_files(root)
-    if not files:
+    all_files = list_allowed_files(root)
+    if not all_files:
         raise GeminiServiceError('לא נמצאו קבצים מותרים בפרויקט')
 
-    log(f'נקראו {len(files)} קבצים לקונטקסט')
+    files = select_files_for_prompt(prompt, root, all_files, max_files=10)
+    log(f'נקראו {len(all_files)} קבצים, {len(files)} רלוונטיים לבקשה')
     model_name = getattr(settings, 'GEMINI_MODEL', 'gemini-2.5-flash')
     log(f'שולח בקשה ל-Gemini ({model_name})…')
     genai.configure(api_key=api_key)
@@ -150,8 +152,8 @@ def generate_diff(
     except (DiffValidationError, json.JSONDecodeError, ValueError) as exc:
         detail = str(exc).strip()
         hint = (
-            'לא הצלחנו לייצר diff. נסח בקשה עם קובץ מדויק, למשל: '
-            'ב-static/css/portal.css שנה את .page-title ל-font-size: 1.4rem'
+            'לא הצלחנו לייצר diff. נסח עם נתיב קובץ מלא מתוך static/ או templates/, '
+            'למשל: ב-static/css/portal.css שנה את .page-title ל-font-size: 1.4rem'
         )
         if detail and detail not in hint:
             hint = f'{hint} ({detail})'
