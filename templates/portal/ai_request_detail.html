@@ -14,6 +14,16 @@
   <a href="{% url 'portal:ai_requests' %}" class="btn btn-outline">← רשימה</a>
 </div>
 
+<div class="ai-countdown-overlay" id="ai-countdown-overlay" style="display:none" aria-live="polite">
+  <div class="ai-countdown-card">
+    <div class="ai-countdown-clock">⏱️</div>
+    <div class="ai-countdown-label">השינויים יבוצעו בעוד</div>
+    <div class="ai-countdown-seconds" id="ai-countdown-seconds">90</div>
+    <div class="ai-countdown-sub">שניות · PR נוצר ב-GitHub · Railway ימשוך את העדכון</div>
+    <div class="ai-countdown-pr" id="ai-countdown-pr"></div>
+  </div>
+</div>
+
 {% if req.error_message %}
 <div class="alert alert-error" id="ai-error-banner">{{ req.error_message }}</div>
 {% endif %}
@@ -23,10 +33,10 @@
   <p style="white-space:pre-wrap;line-height:1.6">{{ req.prompt }}</p>
 </div>
 
-<div class="card-panel ai-log-panel" id="ai-log-panel" style="{% if not req.processing_log and not is_generating %}display:none{% endif %}">
+<div class="card-panel ai-log-panel" id="ai-log-panel" style="{% if not req.processing_log and not is_generating and not is_pr_creating %}display:none{% endif %}">
   <div class="form-label" style="margin-bottom:8px;display:flex;align-items:center;gap:8px">
     <span>לוג עיבוד</span>
-    <span class="ai-log-spinner" id="ai-log-spinner" style="{% if not is_generating %}display:none{% endif %}">⏳</span>
+    <span class="ai-log-spinner" id="ai-log-spinner" style="{% if not is_generating and not is_pr_creating %}display:none{% endif %}">⏳</span>
   </div>
   <ul class="ai-log-list" id="ai-log-list">
     {% for line in req.processing_log %}
@@ -51,10 +61,14 @@
   </button>
   {% endif %}
   {% if can_approve %}
-  <form method="post" action="{% url 'portal:ai_request_approve' req.pk %}" onsubmit="return confirm('לאשר את ה-diff וליצור Pull Request?');">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-green ai-action-btn">אשר ויצור PR</button>
-  </form>
+  <button type="button" class="btn btn-green ai-action-btn" id="btn-approve-pr"
+    data-url="{{ approve_url }}"
+    data-status-url="{{ status_url }}">
+    אשר ויצור PR
+  </button>
+  {% endif %}
+  {% if is_pr_creating %}
+  <button type="button" class="btn btn-green" disabled>יוצר PR ב-Git…</button>
   {% endif %}
   {% if can_reject %}
   <form method="post" action="{% url 'portal:ai_request_reject' req.pk %}">
@@ -65,7 +79,7 @@
 </div>
 
 {% if req.pr_url %}
-<div class="alert alert-success">
+<div class="alert alert-success" id="ai-pr-banner">
   <a href="{{ req.pr_url }}" target="_blank" rel="noopener" style="color:var(--green);font-weight:700">פתח Pull Request #{{ req.pr_number }}</a>
   {% if req.branch_name %} · ענף: <code>{{ req.branch_name }}</code>{% endif %}
 </div>
@@ -86,30 +100,30 @@
 
 <script>
 (function () {
-  const btn = document.getElementById('btn-generate-diff');
   const logPanel = document.getElementById('ai-log-panel');
   const logList = document.getElementById('ai-log-list');
   const spinner = document.getElementById('ai-log-spinner');
   const statusLabel = document.getElementById('ai-status-label');
   const hint = document.getElementById('ai-hint');
-  if (!btn || !logList) return;
+  const overlay = document.getElementById('ai-countdown-overlay');
+  const countdownEl = document.getElementById('ai-countdown-seconds');
+  const countdownPr = document.getElementById('ai-countdown-pr');
 
   function getCookie(name) {
     const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
     return m ? decodeURIComponent(m[2]) : '';
   }
 
-  function setBusy(busy) {
-    btn.disabled = busy;
-    btn.textContent = busy ? 'מייצר diff… (נא להמתין)' : 'ייצר diff (Gemini)';
-    btn.style.opacity = busy ? '0.7' : '1';
-    btn.style.cursor = busy ? 'wait' : 'pointer';
+  function setActionsBusy(busy, label) {
+    document.querySelectorAll('#ai-actions button, #ai-actions .ai-action-btn').forEach(function (b) {
+      b.disabled = busy;
+    });
     if (spinner) spinner.style.display = busy ? 'inline' : 'none';
-    if (logPanel) logPanel.style.display = 'block';
-    document.querySelectorAll('.ai-action-btn').forEach(function (b) { b.disabled = busy; });
+    if (logPanel && busy) logPanel.style.display = 'block';
   }
 
   function renderLogs(logs) {
+    if (!logList) return;
     logList.innerHTML = '';
     (logs || []).forEach(function (line) {
       const li = document.createElement('li');
@@ -124,10 +138,38 @@
       .then(function (r) { return r.json(); });
   }
 
-  function runGenerate() {
-    const generateUrl = btn.dataset.url;
-    const statusUrl = btn.dataset.statusUrl;
-    setBusy(true);
+  function startDeployCountdown(seconds, prUrl, prNumber) {
+    if (!overlay || !countdownEl) return;
+    let left = seconds;
+    countdownEl.textContent = String(left);
+    if (countdownPr && prUrl) {
+      countdownPr.innerHTML = '<a href="' + prUrl + '" target="_blank" rel="noopener">PR #' + (prNumber || '') + '</a>';
+    }
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    const tick = setInterval(function () {
+      left -= 1;
+      countdownEl.textContent = String(Math.max(0, left));
+      if (left <= 0) {
+        clearInterval(tick);
+        overlay.style.display = 'none';
+        document.body.style.overflow = '';
+        var done = document.createElement('div');
+        done.className = 'alert alert-success';
+        done.style.marginBottom = '16px';
+        done.textContent = 'הזמן עבר – אם מיזגת את ה-PR, השינויים אמורים להופיע באתר לאחר deploy.';
+        var actions = document.getElementById('ai-actions');
+        if (actions && actions.parentNode) {
+          actions.parentNode.insertBefore(done, actions);
+        }
+        window.location.reload();
+      }
+    }, 1000);
+  }
+
+  function postAction(url, statusUrl, busyLabel) {
+    setActionsBusy(true, busyLabel);
     if (hint) hint.style.display = 'none';
 
     const pollId = setInterval(function () {
@@ -137,7 +179,7 @@
       }).catch(function () {});
     }, 800);
 
-    fetch(generateUrl, {
+    return fetch(url, {
       method: 'POST',
       credentials: 'same-origin',
       headers: {
@@ -147,42 +189,101 @@
       },
     })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
-      .then(function (res) {
-        clearInterval(pollId);
-        renderLogs(res.data.logs);
-        if (statusLabel) statusLabel.textContent = res.data.status_label || '';
-        if (res.data.ok && res.data.redirect) {
-          window.location.href = res.data.redirect;
-          return;
-        }
-        setBusy(false);
-        if (!res.ok && res.data.error) {
-          alert(res.data.error);
-        } else if (res.data.redirect) {
-          window.location.href = res.data.redirect;
-        }
-      })
-      .catch(function (err) {
-        clearInterval(pollId);
-        setBusy(false);
-        alert('שגיאת רשת: ' + err);
-      });
+      .finally(function () { clearInterval(pollId); });
   }
 
-  btn.addEventListener('click', runGenerate);
+  const btnGen = document.getElementById('btn-generate-diff');
+  if (btnGen && logList) {
+    btnGen.addEventListener('click', function () {
+      btnGen.textContent = 'מייצר diff… (נא להמתין)';
+      postAction(btnGen.dataset.url, btnGen.dataset.statusUrl)
+        .then(function (res) {
+          renderLogs(res.data.logs);
+          if (statusLabel) statusLabel.textContent = res.data.status_label || '';
+          if (res.data.ok && res.data.redirect) {
+            window.location.href = res.data.redirect;
+            return;
+          }
+          setActionsBusy(false);
+          btnGen.textContent = 'ייצר diff (Gemini)';
+          if (!res.ok && res.data.error) alert(res.data.error);
+        })
+        .catch(function (err) {
+          setActionsBusy(false);
+          btnGen.textContent = 'ייצר diff (Gemini)';
+          alert('שגיאת רשת: ' + err);
+        });
+    });
 
-  {% if is_generating %}
-  setBusy(true);
-  const recoverPoll = setInterval(function () {
-    pollStatus(btn.dataset.statusUrl).then(function (data) {
+    {% if is_generating %}
+    btnGen.textContent = 'מייצר diff… (נא להמתין)';
+    setActionsBusy(true);
+    const recoverPoll = setInterval(function () {
+      pollStatus(btnGen.dataset.statusUrl).then(function (data) {
+        renderLogs(data.logs);
+        if (statusLabel) statusLabel.textContent = data.status_label || '';
+        if (data.done) {
+          clearInterval(recoverPoll);
+          window.location.reload();
+        }
+      });
+    }, 1000);
+    {% endif %}
+  }
+
+  const btnApprove = document.getElementById('btn-approve-pr');
+  if (btnApprove) {
+    btnApprove.addEventListener('click', function () {
+      if (!confirm('לאשר את ה-diff וליצור Pull Request?')) return;
+      btnApprove.textContent = 'יוצר PR ב-Git…';
+      postAction(btnApprove.dataset.url, btnApprove.dataset.statusUrl)
+        .then(function (res) {
+          renderLogs(res.data.logs);
+          if (statusLabel) statusLabel.textContent = res.data.status_label || '';
+          setActionsBusy(false);
+          if (!res.ok) {
+            btnApprove.textContent = 'אשר ויצור PR';
+            if (res.data.error) alert(res.data.error);
+            return;
+          }
+          btnApprove.style.display = 'none';
+          if (res.data.start_countdown) {
+            startDeployCountdown(
+              res.data.countdown_seconds || 90,
+              res.data.pr_url,
+              res.data.pr_number
+            );
+          } else {
+            window.location.reload();
+          }
+        })
+        .catch(function (err) {
+          setActionsBusy(false);
+          btnApprove.textContent = 'אשר ויצור PR';
+          alert('שגיאת רשת: ' + err);
+        });
+    });
+  }
+
+  {% if is_pr_creating %}
+  setActionsBusy(true);
+  const prPoll = setInterval(function () {
+    pollStatus('{{ status_url }}').then(function (data) {
       renderLogs(data.logs);
       if (statusLabel) statusLabel.textContent = data.status_label || '';
-      if (data.done) {
-        clearInterval(recoverPoll);
+      if (data.status === 'pr_created') {
+        clearInterval(prPoll);
+        startDeployCountdown(90, data.pr_url, data.pr_number);
+      } else if (data.done && data.status === 'failed') {
+        clearInterval(prPoll);
         window.location.reload();
       }
     });
   }, 1000);
+  {% endif %}
+
+  {% if show_deploy_countdown %}
+  startDeployCountdown({{ deploy_countdown_seconds }}, '{{ req.pr_url|escapejs }}', {{ req.pr_number|default:"0" }});
   {% endif %}
 })();
 </script>

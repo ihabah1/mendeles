@@ -123,6 +123,14 @@ tr:hover td{background:rgba(201,168,76,.03)}
 .ai-log-spinner{font-size:.85rem;animation:ai-pulse 1s ease-in-out infinite}
 @keyframes ai-pulse{50%{opacity:.4}}
 button.btn:disabled{opacity:.65;cursor:not-allowed!important}
+.ai-countdown-overlay{position:fixed;inset:0;background:rgba(4,10,16,.82);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px}
+.ai-countdown-card{background:var(--card);border:2px solid var(--gold);border-radius:16px;padding:32px 40px;text-align:center;max-width:420px;width:100%;box-shadow:0 12px 48px rgba(0,0,0,.5)}
+.ai-countdown-clock{font-size:3.5rem;line-height:1;margin:16px 0 8px}
+.ai-countdown-seconds{font-family:var(--mono);font-size:4rem;font-weight:700;color:var(--gold);line-height:1}
+.ai-countdown-label{font-size:1rem;color:var(--text);margin-bottom:8px}
+.ai-countdown-sub{font-size:.78rem;color:var(--muted);margin-top:12px}
+.ai-countdown-pr{margin-top:16px;font-size:.8rem}
+.ai-countdown-pr a{color:var(--green);font-weight:700}
 .menu-toggle{display:none;background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer}
 @media(max-width:768px){
   .sidebar{transform:translateX(100%)}
