@@ -16,10 +16,10 @@
 
 <div class="ai-countdown-overlay" id="ai-countdown-overlay" style="display:none" aria-live="polite">
   <div class="ai-countdown-card">
-    <div class="ai-countdown-clock">⏱️</div>
-    <div class="ai-countdown-label">השינויים יבוצעו בעוד</div>
-    <div class="ai-countdown-seconds" id="ai-countdown-seconds">90</div>
-    <div class="ai-countdown-sub">שניות · PR נוצר ב-GitHub · Railway ימשוך את העדכון</div>
+    <div class="ai-countdown-clock ai-hourglass" id="ai-hourglass">⏳</div>
+    <div class="ai-countdown-label">Git מתעדכן · המתן</div>
+    <div class="ai-countdown-seconds" id="ai-countdown-seconds">02:00</div>
+    <div class="ai-countdown-sub">שעון חול 2 דקות · PR ב-GitHub · Railway ימשוך deploy</div>
     <div class="ai-countdown-pr" id="ai-countdown-pr"></div>
   </div>
 </div>
@@ -114,12 +114,32 @@
     return m ? decodeURIComponent(m[2]) : '';
   }
 
-  function setActionsBusy(busy, label) {
-    document.querySelectorAll('#ai-actions button, #ai-actions .ai-action-btn').forEach(function (b) {
+  var approveLockActive = false;
+
+  function setActionsBusy(busy) {
+    document.querySelectorAll('#ai-actions button, #ai-actions form button').forEach(function (b) {
       b.disabled = busy;
     });
     if (spinner) spinner.style.display = busy ? 'inline' : 'none';
     if (logPanel && busy) logPanel.style.display = 'block';
+  }
+
+  function lockApproveFlow() {
+    approveLockActive = true;
+    setActionsBusy(true);
+    if (logPanel) logPanel.style.display = 'block';
+  }
+
+  function unlockApproveFlow() {
+    approveLockActive = false;
+    setActionsBusy(false);
+    if (spinner) spinner.style.display = 'none';
+  }
+
+  function formatCountdown(secs) {
+    var m = Math.floor(secs / 60);
+    var s = secs % 60;
+    return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
   }
 
   function renderLogs(logs) {
@@ -138,47 +158,49 @@
       .then(function (r) { return r.json(); });
   }
 
-  function startDeployCountdown(seconds, prUrl, prNumber) {
-    if (!overlay || !countdownEl) return;
-    let left = seconds;
-    countdownEl.textContent = String(left);
+  function startDeployCountdown(seconds, prUrl, prNumber, onDone) {
+    if (!overlay || !countdownEl) {
+      if (onDone) onDone();
+      return;
+    }
+    var left = seconds;
+    countdownEl.textContent = formatCountdown(left);
     if (countdownPr && prUrl) {
       countdownPr.innerHTML = '<a href="' + prUrl + '" target="_blank" rel="noopener">PR #' + (prNumber || '') + '</a>';
     }
     overlay.style.display = 'flex';
     document.body.style.overflow = 'hidden';
+    lockApproveFlow();
 
-    const tick = setInterval(function () {
+    var tick = setInterval(function () {
       left -= 1;
-      countdownEl.textContent = String(Math.max(0, left));
+      countdownEl.textContent = formatCountdown(Math.max(0, left));
       if (left <= 0) {
         clearInterval(tick);
         overlay.style.display = 'none';
         document.body.style.overflow = '';
-        var done = document.createElement('div');
-        done.className = 'alert alert-success';
-        done.style.marginBottom = '16px';
-        done.textContent = 'הזמן עבר – אם מיזגת את ה-PR, השינויים אמורים להופיע באתר לאחר deploy.';
-        var actions = document.getElementById('ai-actions');
-        if (actions && actions.parentNode) {
-          actions.parentNode.insertBefore(done, actions);
+        unlockApproveFlow();
+        if (onDone) {
+          onDone();
+        } else {
+          window.location.reload();
         }
-        window.location.href = '{% url "portal:ai_requests" %}';
       }
     }, 1000);
   }
 
-  function postAction(url, statusUrl, busyLabel) {
-    setActionsBusy(true, busyLabel);
-    if (hint) hint.style.display = 'none';
-
-    const pollId = setInterval(function () {
+  function startStatusPolling(statusUrl, onUpdate) {
+    return setInterval(function () {
       pollStatus(statusUrl).then(function (data) {
         renderLogs(data.logs);
         if (statusLabel) statusLabel.textContent = data.status_label || data.status;
+        if (onUpdate) onUpdate(data);
       }).catch(function () {});
-    }, 800);
+    }, 600);
+  }
 
+  function postAction(url) {
+    if (hint) hint.style.display = 'none';
     return fetch(url, {
       method: 'POST',
       credentials: 'same-origin',
@@ -187,17 +209,18 @@
         'X-Requested-With': 'XMLHttpRequest',
         Accept: 'application/json',
       },
-    })
-      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
-      .finally(function () { clearInterval(pollId); });
+    }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); });
   }
 
   const btnGen = document.getElementById('btn-generate-diff');
   if (btnGen && logList) {
     btnGen.addEventListener('click', function () {
+      setActionsBusy(true);
       btnGen.textContent = 'מייצר diff… (נא להמתין)';
-      postAction(btnGen.dataset.url, btnGen.dataset.statusUrl)
+      var pollId = startStatusPolling(btnGen.dataset.statusUrl);
+      postAction(btnGen.dataset.url)
         .then(function (res) {
+          clearInterval(pollId);
           renderLogs(res.data.logs);
           if (statusLabel) statusLabel.textContent = res.data.status_label || '';
           if (res.data.ok && res.data.redirect) {
@@ -209,6 +232,7 @@
           if (!res.ok && res.data.error) alert(res.data.error);
         })
         .catch(function (err) {
+          clearInterval(pollId);
           setActionsBusy(false);
           btnGen.textContent = 'ייצר diff (Gemini)';
           alert('שגיאת רשת: ' + err);
@@ -234,31 +258,61 @@
   const btnApprove = document.getElementById('btn-approve-pr');
   if (btnApprove) {
     btnApprove.addEventListener('click', function () {
+      if (approveLockActive) return;
       if (!confirm('לאשר את ה-diff וליצור Pull Request?')) return;
-      btnApprove.textContent = 'יוצר PR ב-Git…';
-      postAction(btnApprove.dataset.url, btnApprove.dataset.statusUrl)
+      lockApproveFlow();
+      btnApprove.disabled = true;
+      btnApprove.textContent = 'נעול · יוצר PR ב-Git…';
+      var livePoll = startStatusPolling(btnApprove.dataset.statusUrl);
+
+      postAction(btnApprove.dataset.url)
         .then(function (res) {
+          clearInterval(livePoll);
           renderLogs(res.data.logs);
           if (statusLabel) statusLabel.textContent = res.data.status_label || '';
-          setActionsBusy(false);
           if (!res.ok) {
+            unlockApproveFlow();
+            btnApprove.disabled = false;
             btnApprove.textContent = 'אשר ויצור PR';
             if (res.data.error) alert(res.data.error);
             return;
           }
           btnApprove.style.display = 'none';
+          if (res.data.pr_url) {
+            var banner = document.getElementById('ai-pr-banner');
+            if (!banner) {
+              banner = document.createElement('div');
+              banner.className = 'alert alert-success';
+              banner.id = 'ai-pr-banner';
+              banner.style.marginBottom = '16px';
+              banner.innerHTML = '<a href="' + res.data.pr_url + '" target="_blank" rel="noopener" style="color:var(--green);font-weight:700">פתח Pull Request #' + (res.data.pr_number || '') + '</a>';
+              var actions = document.getElementById('ai-actions');
+              if (actions && actions.parentNode) actions.parentNode.insertBefore(banner, actions);
+            }
+          }
           if (res.data.start_countdown) {
             startDeployCountdown(
-              res.data.countdown_seconds || 90,
+              res.data.countdown_seconds || 120,
               res.data.pr_url,
-              res.data.pr_number
+              res.data.pr_number,
+              function () {
+                var done = document.createElement('div');
+                done.className = 'alert alert-success';
+                done.style.marginBottom = '16px';
+                done.textContent = 'הנעילה שוחררה – אם מיזגת את ה-PR, השינויים יופיעו באתר לאחר deploy ב-Railway.';
+                var actions = document.getElementById('ai-actions');
+                if (actions && actions.parentNode) actions.parentNode.insertBefore(done, actions);
+              }
             );
           } else {
+            unlockApproveFlow();
             window.location.reload();
           }
         })
         .catch(function (err) {
-          setActionsBusy(false);
+          clearInterval(livePoll);
+          unlockApproveFlow();
+          btnApprove.disabled = false;
           btnApprove.textContent = 'אשר ויצור PR';
           alert('שגיאת רשת: ' + err);
         });
@@ -266,20 +320,20 @@
   }
 
   {% if is_pr_creating %}
-  setActionsBusy(true);
-  const prPoll = setInterval(function () {
-    pollStatus('{{ status_url }}').then(function (data) {
-      renderLogs(data.logs);
-      if (statusLabel) statusLabel.textContent = data.status_label || '';
-      if (data.status === 'pr_created') {
-        clearInterval(prPoll);
-        startDeployCountdown(90, data.pr_url, data.pr_number);
-      } else if (data.done && data.status === 'failed') {
-        clearInterval(prPoll);
-        window.location.href = '{% url "portal:ai_requests" %}';
-      }
-    });
-  }, 1000);
+  lockApproveFlow();
+  var prBtn = document.querySelector('#ai-actions .btn-green');
+  if (prBtn) prBtn.textContent = 'נעול · יוצר PR ב-Git…';
+  var prPoll = startStatusPolling('{{ status_url }}', function (data) {
+    if (data.status === 'pr_created') {
+      clearInterval(prPoll);
+      if (prBtn) prBtn.style.display = 'none';
+      startDeployCountdown(120, data.pr_url, data.pr_number);
+    } else if (data.status === 'failed') {
+      clearInterval(prPoll);
+      unlockApproveFlow();
+      window.location.reload();
+    }
+  });
   {% endif %}
 
   {% if show_deploy_countdown %}

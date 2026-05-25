@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import re
 
-from django.db import transaction
 from django.utils import timezone
 
 from ai_agent.git_tools.github_pr import GitHubPRError, create_pull_request
@@ -62,8 +61,8 @@ def generate_diff_for_request(request: AIChangeRequest) -> AIChangeRequest:
     return request
 
 
-@transaction.atomic
 def approve_and_create_pr(request: AIChangeRequest) -> AIChangeRequest:
+    """ללא transaction.atomic – לוג נשמר ב-DB בזמן אמת ל-polling."""
     if request.status != AIChangeRequest.Status.DIFF_READY:
         raise ValueError('יש לאשר רק בקשה עם diff מוכן לבדיקה')
     if not request.result.strip():
@@ -80,12 +79,15 @@ def approve_and_create_pr(request: AIChangeRequest) -> AIChangeRequest:
 
     branch = request.branch_name or _branch_name(request)
     request.branch_name = branch
+    request.save(update_fields=['branch_name', 'updated_at'])
 
     try:
-        request.append_log(f'מיישם diff על ענף {branch}…')
+        request.append_log(f'מוריד/מעדכן clone מ-GitHub (ענף {branch})…')
+        request.append_log('מיישם patch על הקבצים…')
         touched = apply_diff_and_push(request.pk, request.result, branch)
         request.files_touched = touched
-        request.append_log('דוחף ל-GitHub…')
+        request.append_log(f'commit + push ל-origin/{branch} הושלם')
+        request.append_log('יוצר Pull Request ב-GitHub…')
 
         pr_number, pr_url = create_pull_request(
             branch_name=branch,

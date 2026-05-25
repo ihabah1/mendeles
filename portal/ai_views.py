@@ -41,6 +41,7 @@ def _status_payload(obj: AIChangeRequest) -> dict:
         'logs': obj.processing_log or [],
         'error': obj.error_message or '',
         'generating': obj.status == AIChangeRequest.Status.GENERATING,
+        'pr_creating': obj.status == AIChangeRequest.Status.PR_CREATING,
         'done': obj.status in (
             AIChangeRequest.Status.DIFF_READY,
             AIChangeRequest.Status.FAILED,
@@ -104,7 +105,7 @@ def ai_request_detail(request, pk):
         'is_generating': is_generating,
         'is_pr_creating': is_pr_creating,
         'show_deploy_countdown': show_deploy_countdown,
-        'deploy_countdown_seconds': 90,
+        'deploy_countdown_seconds': 120,
         'status_url': reverse('portal:ai_request_status', kwargs={'pk': pk}),
         'generate_url': reverse('portal:ai_request_generate', kwargs={'pk': pk}),
         'approve_url': reverse('portal:ai_request_approve', kwargs={'pk': pk}),
@@ -169,7 +170,7 @@ def ai_request_approve(request, pk):
             return JsonResponse({
                 **_status_payload(obj),
                 'start_countdown': True,
-                'countdown_seconds': 90,
+                'countdown_seconds': 120,
             })
         messages.success(request, f'PR נוצר: {obj.pr_url}')
         url = reverse('portal:ai_request_detail', kwargs={'pk': pk})
