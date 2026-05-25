@@ -16,8 +16,19 @@
 
 <div class="ai-git-toast" id="ai-git-toast" role="status" aria-live="polite" style="display:none"></div>
 
+{% if scope_warning %}
+<div class="alert alert-error" id="ai-scope-warning" style="margin-bottom:16px">{{ scope_warning }}</div>
+{% endif %}
+
 {% if req.error_message %}
 <div class="alert alert-error" id="ai-error-banner">{{ req.error_message }}</div>
+{% endif %}
+
+{% if req.publish_scope %}
+<p style="font-size:.78rem;color:var(--muted);margin-bottom:12px">
+  טווח שינוי: <strong>{{ publish_scope_label }}</strong>
+  {% if req.merged_at %} · מוזג {{ req.merged_at|date:"Y-m-d H:i" }}{% endif %}
+</p>
 {% endif %}
 
 <div class="card-panel" style="margin-bottom:16px">
@@ -360,6 +371,18 @@
             btn.textContent = 'מזג ל-main (Merge PR)';
             if (res.data.error) alert(res.data.error);
             return;
+          }
+          if (res.data.scope_warning) {
+            var act = document.getElementById('ai-actions');
+            var w = document.getElementById('ai-scope-warning');
+            if (!w && act && act.parentNode) {
+              w = document.createElement('div');
+              w.className = 'alert alert-error';
+              w.id = 'ai-scope-warning';
+              w.style.marginBottom = '16px';
+              act.parentNode.insertBefore(w, act);
+            }
+            if (w) w.textContent = res.data.scope_warning;
           }
           showGitMergedSuccess(res.data.message);
         })

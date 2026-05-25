@@ -17,6 +17,9 @@ RULES:
 - No markdown code fences (no ```).
 - Modify ONLY files under templates/ or static/.
 - NEVER touch settings.py, .env, migrations, Python, accounts/, portal/, web/auth_api.py.
+- NEVER edit templates/portal/home.html (archived, not served).
+- Public site at / is React: use static/frontend/ (built assets) for visible homepage changes.
+- /manage/ dashboard: templates/portal/ (except home.html) and static/css/portal.css.
 - Minimal focused changes only.
 - Paths relative to repo root (e.g. static/css/portal.css).
 

@@ -10,6 +10,7 @@ from portal.decorators import admin_required
 from portal.forms import AIChangeRequestForm
 
 from ai_agent.models import AIChangeRequest
+from ai_agent.services.publish_scope import scope_label, scope_warning
 from ai_agent.services.workflow import (
     approve_and_create_pr,
     generate_diff_for_request,
@@ -58,6 +59,9 @@ def _status_payload(obj: AIChangeRequest) -> dict:
         'merge_url': reverse('portal:ai_request_merge', kwargs={'pk': obj.pk})
         if obj.pr_number
         else '',
+        'publish_scope': obj.publish_scope or '',
+        'publish_scope_label': scope_label(obj.publish_scope or ''),
+        'scope_warning': scope_warning(obj.publish_scope or '', obj.files_touched or []) or '',
     }
 
 
@@ -116,6 +120,8 @@ def ai_request_detail(request, pk):
             obj.status == AIChangeRequest.Status.PR_CREATED and bool(obj.pr_number)
         ),
         'is_merged': obj.status == AIChangeRequest.Status.PR_MERGED,
+        'scope_warning': scope_warning(obj.publish_scope or '', obj.files_touched or []),
+        'publish_scope_label': scope_label(obj.publish_scope or ''),
     })
 
 
@@ -210,15 +216,19 @@ def ai_request_merge(request, pk):
         return redirect('portal:ai_request_detail', pk=pk)
 
     try:
-        merge_pr_for_request(obj)
+        merge_pr_for_request(obj, performed_by=request.user)
         obj.refresh_from_db()
+        msg = 'Git עודכן בהצלחה – main מוזג, Railway יתחיל deploy'
+        warn = scope_warning(obj.publish_scope or '', obj.files_touched or [])
+        if warn:
+            msg = f'{msg}. {warn}'
         if ajax:
             return JsonResponse({
                 **_status_payload(obj),
                 'git_updated': True,
-                'message': 'Git עודכן בהצלחה – main מוזג, Railway יתחיל deploy',
+                'message': msg,
             })
-        messages.success(request, 'Git עודכן – PR מוזג ל-main')
+        messages.success(request, msg)
     except Exception as exc:
         obj.refresh_from_db()
         if ajax:

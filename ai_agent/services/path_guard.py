@@ -6,6 +6,11 @@ from pathlib import PurePosixPath
 
 ALLOWED_PREFIXES = ('templates/', 'static/')
 
+# לא מחובר ל-URL – שינוי כאן לא יופיע באתר
+BLOCKED_TEMPLATE_PATHS = frozenset({
+    'templates/portal/home.html',
+})
+
 FORBIDDEN_EXACT = frozenset({
     '.env',
     'env',
@@ -64,6 +69,11 @@ def is_path_allowed(path: str) -> tuple[bool, str]:
     for prefix in FORBIDDEN_PREFIXES:
         if lower.startswith(prefix):
             return False, f'תיקייה אסורה: {rel}'
+    if rel in BLOCKED_TEMPLATE_PATHS:
+        return False, (
+            f'{rel} אינו בשימוש באתר (ארכיון). '
+            'לשינוי באתר הראשי: static/frontend/. לדשבורד: templates/portal/ או static/css/portal.css'
+        )
     if not any(lower.startswith(prefix) for prefix in ALLOWED_PREFIXES):
         return False, f'מותר לערוך רק תחת templates/ או static/: {rel}'
     if '..' in rel.split('/'):

@@ -9,7 +9,9 @@ from ai_agent.git_tools.github_pr import GitHubPRError, create_pull_request, mer
 from ai_agent.git_tools.repo import GitToolError, apply_diff_and_push
 from ai_agent.models import AIChangeRequest
 
+from .change_history import record_site_change
 from .gemini_service import GeminiServiceError, generate_diff
+from .publish_scope import classify_publish_scope, scope_warning
 
 
 def _branch_name(request: AIChangeRequest) -> str:
@@ -47,9 +49,13 @@ def generate_diff_for_request(request: AIChangeRequest) -> AIChangeRequest:
 
         request.result = diff
         request.files_touched = paths
+        request.publish_scope = classify_publish_scope(paths)
         request.status = AIChangeRequest.Status.DIFF_READY
         request.error_message = ''
         request.append_log('הושלם – diff מוכן לבדיקה')
+        warn = scope_warning(request.publish_scope, paths)
+        if warn:
+            request.append_log(f'שים לב: {warn}')
     except (GeminiServiceError, ValueError) as exc:
         request.status = AIChangeRequest.Status.FAILED
         request.error_message = str(exc)
@@ -57,7 +63,9 @@ def generate_diff_for_request(request: AIChangeRequest) -> AIChangeRequest:
         request.save(update_fields=['status', 'error_message', 'updated_at'])
         raise
 
-    request.save(update_fields=['result', 'files_touched', 'status', 'error_message', 'updated_at'])
+    request.save(
+        update_fields=['result', 'files_touched', 'publish_scope', 'status', 'error_message', 'updated_at'],
+    )
     return request
 
 
@@ -95,6 +103,7 @@ def approve_and_create_pr(request: AIChangeRequest) -> AIChangeRequest:
                 ) from exc
             raise
         request.files_touched = touched
+        request.publish_scope = classify_publish_scope(touched)
         request.append_log(f'commit + push ל-origin/{branch} הושלם')
         request.append_log('יוצר Pull Request ב-GitHub…')
 
@@ -122,14 +131,14 @@ def approve_and_create_pr(request: AIChangeRequest) -> AIChangeRequest:
 
     request.save(
         update_fields=[
-            'status', 'branch_name', 'pr_number', 'pr_url',
+            'status', 'branch_name', 'pr_number', 'pr_url', 'publish_scope',
             'files_touched', 'error_message', 'updated_at',
         ],
     )
     return request
 
 
-def merge_pr_for_request(request: AIChangeRequest) -> AIChangeRequest:
+def merge_pr_for_request(request: AIChangeRequest, performed_by=None) -> AIChangeRequest:
     if request.status not in (
         AIChangeRequest.Status.PR_CREATED,
         AIChangeRequest.Status.PR_MERGED,
@@ -142,16 +151,25 @@ def merge_pr_for_request(request: AIChangeRequest) -> AIChangeRequest:
     try:
         sha = merge_pull_request(request.pr_number)
         request.status = AIChangeRequest.Status.PR_MERGED
+        request.merged_at = timezone.now()
+        request.publish_scope = classify_publish_scope(request.files_touched or [])
         request.error_message = ''
         request.append_log(f'מוזג בהצלחה ל-main (commit: {sha[:7] if sha and len(sha) > 7 else sha})')
         request.append_log('Git עודכן – Railway אמור להתחיל deploy')
+        warn = scope_warning(request.publish_scope, request.files_touched or [])
+        if warn:
+            request.append_log(f'שים לב: {warn}')
+        if performed_by:
+            record_site_change(request, performed_by)
     except (GitHubPRError, ValueError) as exc:
         request.error_message = str(exc)
         request.append_log(f'שגיאה במיזוג: {exc}')
         request.save(update_fields=['error_message', 'updated_at'])
         raise
 
-    request.save(update_fields=['status', 'error_message', 'updated_at'])
+    request.save(
+        update_fields=['status', 'merged_at', 'publish_scope', 'error_message', 'updated_at'],
+    )
     return request
 
 

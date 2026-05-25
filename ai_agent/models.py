@@ -26,6 +26,18 @@ class AIChangeRequest(models.Model):
     branch_name = models.CharField('שם ענף', max_length=120, blank=True)
     pr_url = models.URLField('קישור PR', blank=True)
     pr_number = models.PositiveIntegerField(null=True, blank=True)
+    merged_at = models.DateTimeField('מוזג ל-main', null=True, blank=True)
+    publish_scope = models.CharField(
+        'היכן השינוי נראה',
+        max_length=20,
+        blank=True,
+        choices=[
+            ('live', 'אתר ראשי (React)'),
+            ('manage', 'דשבורד ניהול בלבד'),
+            ('mixed', 'אתר + ניהול'),
+            ('unknown', 'לא ידוע'),
+        ],
+    )
     files_touched = models.JSONField(default=list, blank=True)
     processing_log = models.JSONField('לוג עיבוד', default=list, blank=True)
     created_by = models.ForeignKey(

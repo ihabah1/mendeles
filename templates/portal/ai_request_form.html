@@ -18,8 +18,10 @@
       {% if form.prompt.errors %}<div class="alert alert-error" style="margin-top:8px">{{ form.prompt.errors.0 }}</div>{% endif %}
     </div>
     <p style="font-size:.75rem;color:var(--muted);margin-bottom:16px;line-height:1.5">
-      דוגמאות: "הגדל את כותרת ה-hero", "שנה את צבע הכפתור הראשי לכחול", "הוסף ריווח בין הסטטיסטיקות".
-      אחרי השמירה תוכל לייצר diff ולאשר יצירת Pull Request.
+      <strong>אתר ראשי (/):</strong> ציין שינוי ב־<code>static/frontend/</code> (React).
+      <strong>דשבורד (/manage/):</strong> <code>templates/portal/</code> או <code>static/css/portal.css</code>.
+      אל תבקש שינוי ב־<code>home.html</code> – לא בשימוש.
+      כל שינוי שמוזג נשמר ב<strong>היסטוריית שינויים</strong> וב<strong>היסטוריית פעולות</strong>.
     </p>
     <button type="submit" class="btn btn-gold">שמור והמשך</button>
   </form>

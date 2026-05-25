@@ -1,37 +1,65 @@
 {% extends "portal/base_dashboard.html" %}
-{% block title %}שינויים AI – Mandeles{% endblock %}
-{% block topbar %}שינויים AI{% endblock %}
+{% block title %}היסטוריית שינויים באתר – Mandeles{% endblock %}
+{% block topbar %}היסטוריית שינויים באתר{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
-    <div class="page-title">בקשות שינוי AI</div>
-    <div class="page-sub">רק templates/ ו-static/ · PR אוטומטי (לא ל-main)</div>
+    <div class="page-title">היסטוריית שינויים באתר</div>
+    <div class="page-sub">
+      כל בקשות ה-AI · מוזגות ל-Git נשמרות גם ב
+      <a href="{% url 'portal:logs' %}" style="color:var(--gold)">היסטוריית פעולות</a>
+    </div>
   </div>
   <a href="{% url 'portal:ai_request_create' %}" class="btn btn-gold">+ בקשה חדשה</a>
 </div>
+
+<div class="alert alert-success" style="margin-bottom:16px;font-size:.82rem;line-height:1.5">
+  <strong>איפה רואים שינוי?</strong>
+  האתר ב־<code>/</code> הוא <strong>React</strong> (<code>static/frontend/</code>).
+  דשבורד ניהול ב־<code>/manage/</code> משתמש ב־<code>templates/portal/</code> ו־<code>static/css/portal.css</code>.
+  <code>templates/portal/home.html</code> לא מחובר – שינוי שם לא יופיע באתר.
+</div>
+
 <div class="table-wrap">
   <table>
     <thead>
-      <tr><th>#</th><th>בקשה</th><th>סטטוס</th><th>תאריך</th><th>PR</th><th></th></tr>
+      <tr>
+        <th>#</th>
+        <th>בקשה</th>
+        <th>סטטוס</th>
+        <th>איפה נראה</th>
+        <th>קבצים</th>
+        <th>מוזג</th>
+        <th>PR</th>
+        <th></th>
+      </tr>
     </thead>
     <tbody>
     {% for r in requests %}
     <tr>
       <td class="td-mono">{{ r.id }}</td>
-      <td>{{ r.prompt|truncatechars:60 }}</td>
+      <td>{{ r.prompt|truncatechars:50 }}</td>
       <td><span class="badge badge-gold">{{ r.get_status_display }}</span></td>
-      <td class="td-mono">{{ r.created_at|date:"Y-m-d H:i" }}</td>
+      <td style="font-size:.75rem">
+        {% if r.publish_scope == 'live' %}<span class="badge badge-green">אתר ראשי</span>
+        {% elif r.publish_scope == 'manage' %}<span class="badge badge-gray">ניהול בלבד</span>
+        {% elif r.publish_scope == 'mixed' %}<span class="badge badge-green">אתר+ניהול</span>
+        {% else %}—{% endif %}
+      </td>
+      <td style="font-size:.7rem;color:var(--muted);max-width:180px">
+        {% if r.files_touched %}{{ r.files_touched|join:", "|truncatechars:72 }}{% else %}—{% endif %}
+      </td>
+      <td class="td-mono">{% if r.merged_at %}{{ r.merged_at|date:"Y-m-d H:i" }}{% else %}—{% endif %}</td>
       <td>
         {% if r.pr_url %}
-        <a href="{{ r.pr_url }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">PR #{{ r.pr_number }}</a>
+        <a href="{{ r.pr_url }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">#{{ r.pr_number }}</a>
         {% else %}—{% endif %}
       </td>
       <td><a href="{% url 'portal:ai_request_detail' r.pk %}" class="btn btn-outline btn-sm">פתח</a></td>
     </tr>
     {% empty %}
-    <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">
-      אין בקשות עדיין – <a href="{% url 'portal:ai_request_create' %}" style="color:var(--gold)">צור בקשה ראשונה</a>
-      <br><span style="font-size:.72rem;margin-top:8px;display:block">אם קיבלת 404 על קישור ישן – הנתונים נמחקו; צור בקשה חדשה</span>
+    <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">
+      אין שינויים מתועדים – <a href="{% url 'portal:ai_request_create' %}" style="color:var(--gold)">צור בקשה</a>
     </td></tr>
     {% endfor %}
     </tbody>
