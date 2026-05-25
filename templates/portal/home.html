@@ -6,7 +6,7 @@
   <header class="home-header">
     <div class="home-brand">
       <span class="home-logo">🎯 MANDELES</span>
-      <span class="home-tagline">מערכת לוטו וניהול beta · <span class="home-version home-version--header">v{{ app_version|default:APP_VERSION }}</span></span>
+      <span class="home-tagline">מערכת לוטו וניהול beta</span>
     </div>
     <nav class="home-nav">
       {% if can_access_dashboard %}
@@ -41,7 +41,7 @@
   </main>
 
   <footer class="home-footer">
-    <div class="home-version home-version--footer">v{{ app_version|default:APP_VERSION }}</div>
+    {# Version number removed per AI request #}
     {% if can_access_dashboard %}
     <a href="{% url 'portal:dashboard' %}" class="admin-link admin-link--active admin-link--footer">
       ⚙️ דשבורד ניהול
