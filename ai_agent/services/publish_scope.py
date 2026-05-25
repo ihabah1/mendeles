@@ -6,7 +6,8 @@ UNUSED_TEMPLATE_PATHS = frozenset({
     'templates/portal/home.html',
 })
 
-LIVE_SITE_PREFIXES = ('static/frontend/',)
+LIVE_SITE_PREFIXES = ('templates/web/', 'static/css/public_site.css', 'static/js/public_site.js')
+LIVE_SITE_LEGACY_REACT = ('static/frontend/',)
 MANAGE_PREFIXES = ('templates/portal/', 'static/css/portal')
 
 
@@ -14,7 +15,10 @@ def classify_publish_scope(files: list[str]) -> str:
     paths = [p.replace('\\', '/') for p in (files or []) if p]
     if not paths:
         return 'unknown'
-    live = any(p.startswith(LIVE_SITE_PREFIXES) for p in paths)
+    live = any(
+        p.startswith(LIVE_SITE_PREFIXES) or p.startswith(LIVE_SITE_LEGACY_REACT)
+        for p in paths
+    )
     manage = any(
         p.startswith(MANAGE_PREFIXES) or p in UNUSED_TEMPLATE_PATHS
         for p in paths
@@ -30,7 +34,7 @@ def classify_publish_scope(files: list[str]) -> str:
 
 def scope_label(scope: str) -> str:
     return {
-        'live': 'אתר ראשי (React)',
+        'live': 'אתר ראשי (Django)',
         'manage': 'דשבורד ניהול בלבד',
         'mixed': 'אתר + ניהול',
         'unknown': 'לא ידוע',
@@ -47,6 +51,6 @@ def scope_warning(scope: str, files: list[str]) -> str | None:
     if scope == 'manage':
         return (
             'השינוי משפיע על דשבורד הניהול (/manage/) בלבד. '
-            'האתר הראשי ב-/ הוא React – לשינוי שם צריך static/frontend/.'
+            'האתר הראשי ב-/ הוא תבניות Django – לשינוי שם צריך templates/web/ או static/css/public_site.css.'
         )
     return None

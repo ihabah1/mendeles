@@ -6,7 +6,8 @@
 
 | כתובת | מה מוצג |
 |--------|---------|
-| `http://127.0.0.1:8000/` | **אתר ראשי React** – לוטו וטוטו (Mandeles.co.il) |
+| `http://127.0.0.1:8000/` | **אתר ראשי Django** – תבניות `templates/web/` (לוטו וטוטו) |
+| `http://127.0.0.1:8000/app/` | React ישן (גיבוי בלבד) |
 | `http://127.0.0.1:8000/manage/login/` | **כניסת מנהל** לדשבורד ניהול |
 | `http://127.0.0.1:8000/manage/` | דשבורד ניהול (לקוחות, הזמנות, אשראי…) |
 | `http://127.0.0.1:8000/django-admin/` | Django Admin מסורתי (אופציונלי) |
@@ -21,7 +22,7 @@
 
 או בטרמינל נפרד: `python start_all.py` ואז `python manage.py runserver 8000`.
 
-- **React + `/api/auth/`** → משתמשי Django (`accounts.User`)
+- **אתר ראשי + `/api/auth/`** → משתמשי Django (`accounts.User`)
 - **`/auth/`, `/lotto/`** → ממשק קלאסי (Flask, `data/auth.db`)
 
 ### מה **לא** דף ראשי

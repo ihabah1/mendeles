@@ -3,7 +3,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
-# סדר קריטי: portal (ניהול) לפני web (React)
+# סדר קריטי: portal (ניהול) לפני web (אתר ציבורי Django)
 urlpatterns = [
     path('django-admin/', admin.site.urls),
     path('', include('portal.urls')),

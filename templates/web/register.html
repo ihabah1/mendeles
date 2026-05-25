@@ -1,0 +1,54 @@
+{% extends 'web/base_public.html' %}
+{% block content %}
+<div class="page-wrap" style="max-width:420px">
+  <div class="card">
+    <h1 style="font-family:'Frank Ruhl Libre',serif;color:var(--cream);margin-bottom:8px;text-align:center">הרשמה</h1>
+    <form id="reg-form" style="display:flex;flex-direction:column;gap:10px">
+      <label style="font-size:.8rem;color:var(--muted)">אימייל</label>
+      <input type="email" id="reg-email" required autocomplete="email" style="background:var(--navy);border:1.5px solid var(--navy-b);border-radius:8px;padding:10px;color:var(--text);font-family:Heebo,sans-serif">
+      <label style="font-size:.8rem;color:var(--muted)">סיסמה (לפחות 6 תווים)</label>
+      <input type="password" id="reg-pw" required minlength="6" autocomplete="new-password" style="background:var(--navy);border:1.5px solid var(--navy-b);border-radius:8px;padding:10px;color:var(--text);font-family:Heebo,sans-serif">
+      <button type="submit" class="btn btn-primary btn-block">צור חשבון</button>
+    </form>
+    <p id="reg-msg" style="margin-top:12px;font-size:.82rem;text-align:center;display:none"></p>
+    <p style="margin-top:14px;text-align:center;font-size:.8rem;color:var(--muted)">יש חשבון? <a href="/login/" style="color:var(--gold)">כניסה</a></p>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+async function getCsrf() {
+  const r = await fetch('/api/auth/csrf/', { credentials: 'same-origin' });
+  const d = await r.json();
+  return d.csrfToken;
+}
+document.getElementById('reg-form').addEventListener('submit', async function (e) {
+  e.preventDefault();
+  const msg = document.getElementById('reg-msg');
+  msg.style.display = 'block';
+  msg.textContent = 'יוצר חשבון...';
+  try {
+    const csrf = await getCsrf();
+    const res = await fetch('/api/auth/register/', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+      body: JSON.stringify({
+        email: document.getElementById('reg-email').value.trim(),
+        password: document.getElementById('reg-pw').value,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      msg.style.color = 'var(--loss)';
+      msg.textContent = data.error || 'שגיאה';
+      return;
+    }
+    window.location.href = '/';
+  } catch (err) {
+    msg.style.color = 'var(--loss)';
+    msg.textContent = 'שגיאת רשת';
+  }
+});
+</script>
+{% endblock %}

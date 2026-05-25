@@ -1,0 +1,31 @@
+<div id="product-toto" style="display:none" role="tabpanel" aria-labelledby="tab-toto">
+<header class="toto-hero">
+  <div class="toto-badge" aria-hidden="true">⚽ כלי ניתוח מקצועי</div>
+  <h1>ניתוח <span>טוטו</span> חכם</h1>
+  <p>בחר סוג טוטו ומשחק, וקבל ניתוח סטטיסטי עמוק עם המלצת 1X2 ומחולל טורים מצומצמים</p>
+</header>
+<main id="toto-main" tabindex="-1" style="max-width:1040px;margin:0 auto;padding:26px 16px 80px">
+  <section class="card" aria-labelledby="gt-title">
+    <div class="card-title"><span>🎮</span><h2 id="gt-title">שלב 1 – בחר סוג טוטו</h2></div>
+    <div class="game-type-row" role="group" aria-label="סוגי טוטו">
+      <button type="button" class="game-type-btn active" onclick="selectGameType('toto16',this)" aria-pressed="true"><span class="gt-icon">⚽</span><span class="gt-name">טוטו רגיל</span><span class="gt-desc">16 משחקים<br>ליגת העל</span><span class="gt-count">Winner 16</span></button>
+      <button type="button" class="game-type-btn" onclick="selectGameType('toto_zahav',this)" aria-pressed="false"><span class="gt-icon">🏆</span><span class="gt-name">טוטו זהב</span><span class="gt-desc">משחקי בכורה<br>ממוקד</span><span class="gt-count">Winner Gold</span></button>
+      <button type="button" class="game-type-btn" onclick="selectGameType('toto_layb',this)" aria-pressed="false"><span class="gt-icon">🔴</span><span class="gt-name">טוטו לייב</span><span class="gt-desc">בזמן אמת<br>תוך כדי משחק</span><span class="gt-count">Live</span></button>
+      <button type="button" class="game-type-btn" onclick="selectGameType('toto4',this)" aria-pressed="false"><span class="gt-icon">4️⃣</span><span class="gt-name">טוטו 4</span><span class="gt-desc">4 משחקים<br>קל להשתתף</span><span class="gt-count">4 Games</span></button>
+    </div>
+  </section>
+  <section class="card" aria-labelledby="gs-title">
+    <div class="card-title"><span>📋</span><h2 id="gs-title">שלב 2 – בחר משחק לניתוח</h2></div>
+    <div class="section-label" id="round-label">🗓️ סבב 28 – מאי 2026 · ליגת העל</div>
+    <div style="margin-top:10px">
+      <div class="game-list" id="game-list" role="list" aria-label="משחקי הטוטו"></div>
+    </div>
+  </section>
+  <section class="card" id="analysis-section" aria-labelledby="an-title" aria-live="polite">
+    <div class="card-title"><span>📊</span><h2 id="an-title">שלב 3 – ניתוח סטטיסטי</h2></div>
+    <div id="analysis-content">
+      <div class="empty-state"><span class="es-icon">⚽</span><p>בחר משחק מהרשימה למעלה<br>לקבלת ניתוח מלא</p></div>
+    </div>
+  </section>
+</main>
+</div>

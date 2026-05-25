@@ -1,0 +1,17 @@
+<div class="overlay" id="pay-modal" role="dialog" aria-modal="true" aria-labelledby="modal-h">
+  <div class="modal">
+    <button type="button" class="modal-close" onclick="closeModal()" aria-label="סגור">✕</button>
+    <h2 id="modal-h">🌟 גישה מלאה</h2>
+    <p class="modal-sub">לוטו + טוטו – ניתוח מלא ומחולל טורים</p>
+    <div class="modal-validity"><span>⏳</span><div><strong style="color:var(--gold-l);display:block;margin-bottom:2px">תוקף לוטו</strong>הצירופים תקפים עד ההגרלה הקרובה. לגישה מתמשכת – מנוי חודשי.</div></div>
+    <div class="plan-grid">
+      <div class="plan-card sel" onclick="selPlan(this)" role="button" tabindex="0" aria-pressed="true" data-price="25" data-type="weekly"><div class="plan-name">⚡ שבועי</div><div class="plan-price">₪25 <span>/ שבוע</span></div><div class="plan-desc">200 סטים × 2 הגרלות</div><div class="plan-valid warn">⏳ תקף שבוע</div></div>
+      <div class="plan-card" onclick="selPlan(this)" role="button" tabindex="0" aria-pressed="false" data-price="50" data-type="monthly"><div class="plan-name">⭐ חודשי</div><div class="plan-price">₪50 <span>/ חודש</span></div><div class="plan-desc">200 סטים × ~8 הגרלות</div><div class="plan-valid ok">✅ כל ההגרלות</div></div>
+    </div>
+    <button type="button" class="pay-stripe" onclick="pay('stripe')">💳 שלם עם כרטיס אשראי</button>
+    <div class="divider" aria-hidden="true">או</div>
+    <button type="button" class="pay-pp" onclick="pay('paypal')">שלם עם PayPal</button>
+    <div class="svc-row"><div class="svc-badge"><span>🔒</span><div><strong>Stripe</strong>PCI DSS</div></div><div class="svc-badge"><span>🧾</span><div><strong>iCount</strong>חשבונית אוטומטית</div></div></div>
+    <p class="modal-legal">בלחיצה אתה מסכים ל<a href="/legal/">תנאי השימוש</a>. ניתן לביטול בכל עת.</p>
+  </div>
+</div>

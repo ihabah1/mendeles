@@ -32,6 +32,28 @@ def select_files_for_prompt(
 
     prompt_l = prompt.lower()
     explicit = [m.group(1).replace('\\', '/') for m in _PATH_IN_PROMPT.finditer(prompt)]
+    # מילות מפתח → קבצי אתר ראשי (Django)
+    if any(
+        k in prompt_l
+        for k in (
+            'דף ראשי',
+            'דף הבית',
+            'אתר ראשי',
+            'סרגל',
+            'ניווט',
+            'מצב הדגמה',
+            'לוטו',
+            'טוטו',
+            'רכוש גישה',
+            'אסטרטגיית',
+        )
+    ):
+        explicit.extend([
+            'templates/web/base_public.html',
+            'templates/web/home.html',
+            'templates/web/partials/lotto_panel.html',
+            'static/css/public_site.css',
+        ])
     by_name: list[tuple[str, str]] = []
     rest: list[tuple[str, str]] = []
 

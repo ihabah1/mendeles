@@ -1,0 +1,46 @@
+<div id="product-lotto" role="tabpanel" aria-labelledby="tab-lotto">
+<header class="hero" role="banner">
+  <div class="hero-badge" aria-hidden="true">✦ ניתוח מקצועי</div>
+  <h1>אסטרטגיית <span>מנדל</span> ללוטו</h1>
+  <p class="hero-sub">בדיקת צירופים, כיסוי מקסימלי, סטטיסטיקה מתקדמת</p>
+  <div class="validity-banner" role="note">
+    <span aria-hidden="true">⏳</span>
+    <p><strong>שים לב:</strong> הצירופים תקפים <strong>עד ההגרלה הקרובה בלבד</strong>. לאחר כל הגרלה מתבצעים חישובים מחדש. לגישה מתמשכת – מנוי חודשי.</p>
+  </div>
+  <div id="site-stats-bar" style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin:14px 0 0;font-size:.78rem;color:var(--muted)" aria-live="polite">
+    <span>🏆 סה"כ זכיות באתר: <strong id="stat-total-wins" style="color:var(--gold)">טוען...</strong></span>
+    <span>💰 כסף שנזכה: <strong id="stat-total-prize" style="color:var(--win)">טוען...</strong></span>
+    <span>👥 מנויים פעילים: <strong id="stat-members" style="color:var(--cream)">טוען...</strong></span>
+  </div>
+  <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+    <button type="button" class="btn btn-primary" onclick="goPremium()" aria-haspopup="dialog">⭐ רכוש גישה מלאה</button>
+    <button type="button" class="btn" onclick="goToAuth()" style="background:transparent;border:1.5px solid var(--gold);color:var(--gold);border-radius:10px;padding:10px 20px;font-family:'Heebo',sans-serif;font-weight:700;cursor:pointer;font-size:.88rem">כניסה לחשבון</button>
+  </div>
+</header>
+<main id="main-content" tabindex="-1">
+  <section class="card" aria-labelledby="lc-title">
+    <div class="card-title"><span>🔍</span><h2 id="lc-title">בדיקת צירוף – חינם</h2></div>
+    <p style="color:var(--muted);font-size:.86rem;margin-bottom:13px">הזן 6 מספרים (1–37)</p>
+    <fieldset style="border:none;padding:0"><legend class="sr-only">מספרי לוטו</legend>
+      <div class="input-row">
+        <input type="number" min="1" max="37" class="num-input" aria-label="מספר 1" placeholder="–" inputmode="numeric">
+        <input type="number" min="1" max="37" class="num-input" aria-label="מספר 2" placeholder="–" inputmode="numeric">
+        <input type="number" min="1" max="37" class="num-input" aria-label="מספר 3" placeholder="–" inputmode="numeric">
+        <input type="number" min="1" max="37" class="num-input" aria-label="מספר 4" placeholder="–" inputmode="numeric">
+        <input type="number" min="1" max="37" class="num-input" aria-label="מספר 5" placeholder="–" inputmode="numeric">
+        <input type="number" min="1" max="37" class="num-input" aria-label="מספר 6" placeholder="–" inputmode="numeric">
+      </div>
+    </fieldset>
+    <div style="text-align:center"><button type="button" class="btn btn-primary" onclick="checkLotto()">🔍 בדוק צירוף</button></div>
+    <div id="lotto-result" class="status" role="alert" aria-live="assertive" aria-atomic="true"></div>
+  </section>
+  <section class="card" aria-labelledby="lp-title">
+    <div class="card-title"><span>⭐</span><h2 id="lp-title">אסטרטגיות מתקדמות – Premium</h2></div>
+    <div class="premium-grid">
+      <div class="prem-item"><span class="lock-badge">🔒 Premium</span><h3 style="color:var(--cream);font-size:.88rem;margin-bottom:5px">כיסוי מקסימלי</h3><p style="color:var(--muted);font-size:.77rem;margin-bottom:11px">200 צירופים מאושרים</p><button type="button" class="btn-locked" onclick="goPremium()">🔒 רכוש לגישה</button><div class="validity-inline"><span>⏳</span><span><strong>תקף עד ההגרלה הבאה</strong></span></div></div>
+      <div class="prem-item"><span class="lock-badge">🔒 Premium</span><h3 style="color:var(--cream);font-size:.88rem;margin-bottom:5px">סטטיסטיקה חזקה</h3><p style="color:var(--muted);font-size:.77rem;margin-bottom:11px">Hot Numbers היסטוריים</p><button type="button" class="btn-locked" onclick="goPremium()">🔒 רכוש לגישה</button><div class="validity-inline"><span>⏳</span><span><strong>תקף עד ההגרלה הבאה</strong></span></div></div>
+      <div class="prem-item"><span class="lock-badge">🔒 Premium</span><h3 style="color:var(--cream);font-size:.88rem;margin-bottom:5px">גיוון עשרויות</h3><p style="color:var(--muted);font-size:.77rem;margin-bottom:11px">פיזור מקסימלי</p><button type="button" class="btn-locked" onclick="goPremium()">🔒 רכוש לגישה</button><div class="validity-inline"><span>⏳</span><span><strong>תקף עד ההגרלה הבאה</strong></span></div></div>
+    </div>
+  </section>
+</main>
+</div>

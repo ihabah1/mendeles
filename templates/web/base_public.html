@@ -1,0 +1,89 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
+  <title>{{ page_title }}</title>
+  <meta name="app-version" content="{{ app_version }}">
+  <meta name="description" content="mandeles.co.il – ניתוח לוטו וטוטו חכם. סטטיסטיקה מתקדמת, המלצות 1X2, צמצומי טורים.">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&family=Frank+Ruhl+Libre:wght@700;900&display=swap" rel="stylesheet" crossorigin="anonymous">
+  <link rel="icon" type="image/svg+xml" href="{% static 'frontend/favicon.svg' %}">
+  <link rel="stylesheet" href="{% static 'css/public_site.css' %}?v={{ app_version }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body data-active-product="{{ active_product|default:'lotto' }}">
+<a href="#main-content" class="skip-link">דלג לתוכן הראשי</a>
+<nav role="navigation" aria-label="ניווט ראשי">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">🎯 Mandeles<span>.co.il v{{ app_version }}</span></a>
+    <div class="main-tabs" role="tablist" aria-label="בחר מוצר">
+      <a href="/" class="main-tab {% if active_product == 'lotto' %}active{% endif %}" id="tab-lotto" role="tab" aria-selected="{% if active_product == 'lotto' %}true{% else %}false{% endif %}">🎱 לוטו</a>
+      <a href="/toto/" class="main-tab {% if active_product == 'toto' %}active{% endif %}" id="tab-toto" role="tab" aria-selected="{% if active_product == 'toto' %}true{% else %}false{% endif %}">⚽ טוטו</a>
+    </div>
+    <div id="engine-status" style="display:flex;align-items:center;gap:6px;flex-shrink:0" aria-live="polite" aria-label="סטטוס מנוע">
+      <span id="engine-dot" style="width:8px;height:8px;border-radius:50%;background:#e8a030;flex-shrink:0;transition:background .3s;display:none" aria-hidden="true"></span>
+      <span id="engine-lbl" style="font-size:.68rem;color:var(--muted);white-space:nowrap;display:none"></span>
+    </div>
+    {% if user %}
+      <span class="wallet-badge" id="nav-wallet" style="display:none"></span>
+      <button type="button" id="user-avatar" aria-label="פרופיל" style="display:none"></button>
+    {% else %}
+      <a href="/login/" class="nav-login-btn" id="nav-login-btn">כניסה / הרשמה</a>
+    {% endif %}
+    {% if is_admin %}
+      <a href="/manage/" class="nav-login-btn" style="background:var(--navy-c);color:var(--gold);border:1px solid var(--gold-d)">ניהול</a>
+    {% endif %}
+    <button class="nav-menu-btn" type="button" onclick="toggleNav()" aria-expanded="false" aria-controls="nav-list" aria-label="תפריט">☰</button>
+    <ul class="nav-links" id="nav-list" role="list">
+      <li><a href="/about/">אודות</a></li>
+      <li><a href="/legal/">תנאים</a></li>
+      <li><a href="/accessibility/">נגישות</a></li>
+      {% if user %}
+        <li><a href="#" onclick="logoutUser();return false">יציאה</a></li>
+      {% endif %}
+    </ul>
+  </div>
+</nav>
+
+{% block content %}{% endblock %}
+
+<footer role="contentinfo">
+  <div class="footer-links">
+    <a href="/">לוטו</a>
+    <a href="/toto/">טוטו</a>
+    <a href="/about/">אודות</a>
+    <a href="/legal/">תנאי שימוש</a>
+    <a href="/accessibility/">נגישות</a>
+  </div>
+  <p>© 2026 Mandeles.co.il | כל הזכויות שמורות</p>
+  <p>גילאי 18+ בלבד | משחק אחראי: <a href="tel:1800232425">1-800-23-24-25</a></p>
+  <p>תשלום: Stripe | חשבוניות: iCount | נגיש לפי ת"י 5568 AA</p>
+</footer>
+
+{% include 'web/partials/pay_modal.html' %}
+{% include 'web/partials/a11y_widget.html' %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" crossorigin="anonymous"></script>
+<script src="{% static 'js/public_site.js' %}?v={{ app_version }}"></script>
+<script>
+async function logoutUser() {
+  try {
+    const r = await fetch('/api/auth/csrf/', { credentials: 'same-origin' });
+    const d = await r.json();
+    await fetch('/api/auth/logout/', { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': d.csrfToken } });
+  } catch (e) {}
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('fb_token');
+  localStorage.removeItem('demo_mode');
+  window.location.href = '/';
+}
+document.addEventListener('DOMContentLoaded', function () {
+  var tab = document.body.dataset.activeProduct;
+  if (tab === 'toto' && typeof switchProduct === 'function') switchProduct('toto');
+  if (tab === 'lotto' && typeof switchProduct === 'function') switchProduct('lotto');
+});
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
