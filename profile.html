@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
+<title>הפרופיל שלי — Mandeles</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&family=Frank+Ruhl+Libre:wght@700;900&display=swap" rel="stylesheet" crossorigin="anonymous">
+<style>
+:root{
+  --gold:#c9a84c;--gold-l:#e8c870;--gold-d:#9a7a30;
+  --navy:#0d1b2a;--navy-m:#162436;--navy-c:#1a2d42;--navy-b:#263d57;
+  --cream:#f0e8d8;--text:#e8dcc8;--muted:#8aaabe;
+  --win:#27ae60;--loss:#e74c3c;--blue:#3b9eff;--orange:#f09030;
+  --r:10px;--r2:14px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Heebo',sans-serif;background:var(--navy);color:var(--text);min-height:100vh}
+.nav{background:var(--navy-m);border-bottom:1px solid var(--navy-b);padding:0 20px;height:52px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50}
+.nav-logo{font-family:'Frank Ruhl Libre',serif;font-size:1.1rem;color:var(--gold);font-weight:900;text-decoration:none;margin-left:auto}
+.nav-back{background:none;border:none;color:var(--muted);font-family:'Heebo',sans-serif;font-size:.82rem;cursor:pointer;display:flex;align-items:center;gap:4px}
+.nav-back:hover{color:var(--gold)}
+.page{max-width:680px;margin:0 auto;padding:20px 16px 60px}
+.profile-header{background:var(--navy-c);border:1px solid var(--navy-b);border-radius:var(--r2);padding:22px;margin-bottom:14px;display:flex;align-items:center;gap:16px}
+.avatar{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-d));color:var(--navy);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:900;flex-shrink:0;font-family:'Frank Ruhl Libre',serif}
+.profile-name{font-size:1rem;font-weight:700;color:var(--cream)}
+.profile-sub{font-size:.75rem;color:var(--muted);margin-top:3px}
+.badge{display:inline-block;font-size:.65rem;font-weight:700;padding:3px 8px;border-radius:20px;margin-top:5px}
+.badge-on{background:rgba(39,174,96,.15);color:var(--win);border:1px solid rgba(39,174,96,.3)}
+.badge-off{background:rgba(138,170,190,.1);color:var(--muted);border:1px solid var(--navy-b)}
+.wallet-card{background:linear-gradient(135deg,var(--navy-c),rgba(201,168,76,.06));border:1px solid rgba(201,168,76,.25);border-radius:var(--r2);padding:18px 20px;margin-bottom:14px}
+.wallet-lbl{font-size:.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.wallet-bal{font-size:2rem;font-weight:900;color:var(--gold);font-family:'Frank Ruhl Libre',serif;line-height:1}
+.wallet-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.card{background:var(--navy-c);border:1px solid var(--navy-b);border-radius:var(--r2);margin-bottom:12px;overflow:hidden}
+.card-head{padding:12px 16px;border-bottom:1px solid var(--navy-b);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:.85rem;font-weight:700;color:var(--cream)}
+.card-body{padding:14px 16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:8px 16px;border-radius:var(--r);font-family:'Heebo',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;border:none;transition:all .15s;text-decoration:none;white-space:nowrap}
+.btn-gold{background:var(--gold);color:var(--navy)}.btn-gold:hover{background:var(--gold-l)}
+.btn-outline{background:transparent;border:1px solid var(--navy-b);color:var(--text)}.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+.btn-red{background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.3);color:var(--loss)}.btn-red:hover{background:rgba(231,76,60,.2)}
+.btn-sm{padding:5px 11px;font-size:.74rem}
+.btn-full{width:100%}
+.sub-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--navy-b)}
+.sub-row:last-child{border-bottom:none}
+.sub-k{font-size:.76rem;color:var(--muted)}
+.sub-v{font-size:.8rem;font-weight:700;color:var(--cream)}
+.sets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:7px;max-height:280px;overflow-y:auto}
+.set-item{background:var(--navy);border:1px solid var(--navy-b);border-radius:var(--r);padding:9px 11px;cursor:pointer;transition:border-color .15s,background .15s;user-select:none}
+.set-item:hover{border-color:var(--gold-d)}
+.set-item.sel{border-color:var(--gold);background:rgba(201,168,76,.07)}
+.set-idx{font-size:.63rem;color:var(--muted);margin-bottom:3px}
+.set-nums{font-size:.82rem;font-weight:700;color:var(--gold);letter-spacing:.5px}
+.set-strong{font-size:.72rem;color:var(--blue);margin-top:2px}
+.order-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--navy-b)}
+.order-row:last-child{border-bottom:none}
+.order-num{font-size:.74rem;font-weight:700;color:var(--gold)}
+.order-meta{font-size:.7rem;color:var(--muted);margin-top:2px}
+.st{font-size:.62rem;font-weight:700;padding:3px 7px;border-radius:20px}
+.st-paid{background:rgba(240,144,48,.1);color:var(--orange);border:1px solid rgba(240,144,48,.3)}
+.st-printed{background:rgba(59,158,255,.1);color:var(--blue);border:1px solid rgba(59,158,255,.3)}
+.st-sent{background:rgba(201,168,76,.1);color:var(--gold);border:1px solid rgba(201,168,76,.3)}
+.st-delivered{background:rgba(39,174,96,.1);color:var(--win);border:1px solid rgba(39,174,96,.3)}
+.tx-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--navy-b);font-size:.76rem}
+.tx-row:last-child{border-bottom:none}
+.tx-plus{color:var(--win);font-weight:700}
+.tx-minus{color:var(--loss);font-weight:700}
+.empty{text-align:center;padding:24px;color:var(--muted);font-size:.8rem}
+.order-summary{background:var(--navy);border-radius:var(--r);padding:11px;margin-top:11px;font-size:.78rem}
+.order-summary div{display:flex;justify-content:space-between;padding:3px 0}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--navy-c);border:1px solid var(--navy-b);border-radius:16px;padding:22px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;position:relative}
+.modal-x{position:absolute;top:12px;left:12px;background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer}
+.modal-title{font-size:.95rem;font-weight:700;margin-bottom:14px;color:var(--cream)}
+.amounts{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0}
+.amt-btn{padding:9px;background:var(--navy);border:1px solid var(--navy-b);border-radius:var(--r);color:var(--text);font-family:'Heebo',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .15s;text-align:center}
+.amt-btn:hover,.amt-btn.sel{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.07)}
+.form-input{width:100%;background:var(--navy);border:1px solid var(--navy-b);border-radius:var(--r);color:var(--cream);font-family:'Heebo',sans-serif;font-size:.88rem;padding:9px 12px;outline:none;margin-top:8px}
+.form-input:focus{border-color:var(--gold)}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--navy);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:5px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast-wrap{position:fixed;top:14px;left:14px;z-index:999;display:flex;flex-direction:column;gap:7px}
+.toast{background:var(--navy-c);border:1px solid var(--navy-b);border-radius:var(--r);padding:10px 13px;font-size:.78rem;display:flex;gap:8px;min-width:210px;box-shadow:0 6px 20px rgba(0,0,0,.4);animation:si .2s ease}
+@keyframes si{from{transform:translateX(-14px);opacity:0}to{transform:none;opacity:1}}
+.loading{text-align:center;padding:40px;color:var(--muted)}
+
+/* ═══ GLOBAL NAV ═══ */
+.gnav{background:var(--navy-m,#162436);border-bottom:1px solid var(--navy-b,#263d57);position:sticky;top:0;z-index:200;font-family:'Heebo',sans-serif}
+.gnav-inner{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:8px;padding:0 16px;height:54px}
+.gnav-logo{font-family:'Frank Ruhl Libre',serif;font-size:1rem;color:#c9a84c;font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0}
+.gnav-logo span{color:#8aaabe;font-size:.7rem;font-family:'Heebo',sans-serif;font-weight:400;margin-right:2px}
+.gnav-links{display:flex;gap:2px;list-style:none;flex:1;justify-content:center;flex-wrap:nowrap}
+.gnav-links a{color:#8aaabe;text-decoration:none;padding:6px 10px;border-radius:7px;font-size:.8rem;transition:color .15s,background .15s;white-space:nowrap}
+.gnav-links a:hover{color:#c9a84c;background:rgba(201,168,76,.07)}
+.gnav-links a.active{color:#c9a84c;background:rgba(201,168,76,.1)}
+.gnav-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.gnav-login{background:#c9a84c;color:#0d1b2a;border:none;border-radius:8px;font-family:'Heebo',sans-serif;font-size:.78rem;font-weight:800;padding:7px 13px;cursor:pointer;white-space:nowrap}
+.gnav-login:hover{background:#e8c870}
+.gnav-wallet{background:rgba(201,168,76,.15);border:1px solid #9a7a30;border-radius:6px;padding:4px 9px;font-size:.72rem;font-weight:700;color:#c9a84c;cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;gap:3px}
+.gnav-avatar{width:30px;height:30px;border-radius:50%;background:#c9a84c;color:#0d1b2a;border:none;font-family:'Heebo',sans-serif;font-size:.75rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.gnav-demo{background:rgba(232,160,48,.15);border:1px solid rgba(232,160,48,.3);color:#e8c870;border-radius:5px;font-family:'Heebo',sans-serif;font-size:.68rem;font-weight:700;padding:4px 8px;cursor:pointer;white-space:nowrap}
+.gnav-burger{display:none;background:none;border:1px solid #263d57;color:#8aaabe;border-radius:7px;padding:6px 9px;font-size:1rem;cursor:pointer;line-height:1}
+.gnav-drawer{display:none;flex-direction:column;position:absolute;top:54px;right:0;left:0;background:#162436;border-bottom:1px solid #263d57;padding:8px 16px 14px;gap:2px;z-index:199}
+.gnav-drawer.open{display:flex}
+.gnav-drawer a{color:#8aaabe;text-decoration:none;padding:10px 14px;font-size:.92rem;border-radius:7px}
+.gnav-drawer a:hover,.gnav-drawer a.active{color:#c9a84c;background:rgba(201,168,76,.07)}
+@media(max-width:640px){.gnav-links{display:none}.gnav-burger{display:block}}
+
+</style>
+</head>
+<body>
+<nav class="gnav" id="gnav" role="navigation" aria-label="ניווט ראשי">
+  <div class="gnav-inner">
+    <a href="/new_stite.html" class="gnav-logo">&#127919; Mandeles<span>.co.il</span></a>
+    <ul class="gnav-links" role="list">
+      <li><a href="/new_stite.html" data-page="home">&#127922; לוטו</a></li>
+      <li><a href="/new_stite.html?tab=toto" data-page="toto">&#9917; טוטו</a></li>
+      <li><a href="/profile.html" data-page="profile">&#128100; פרופיל</a></li>
+      <li><a href="/new_stite.html?tab=about" data-page="about">אודות</a></li>
+      <li><a href="/new_stite.html?tab=legal" data-page="legal">תנאים</a></li>
+    </ul>
+    <div class="gnav-right" id="gnav-right">
+      <button class="gnav-login" id="gnav-login-btn" onclick="gnavGoAuth()">כניסה / הרשמה</button>
+    </div>
+    <button class="gnav-burger" id="gnav-burger" onclick="gnavToggle()" aria-label="תפריט" aria-expanded="false">&#9776;</button>
+  </div>
+  <div class="gnav-drawer" id="gnav-drawer" role="menu">
+    <a href="/new_stite.html" data-page="home">&#127922; לוטו</a>
+    <a href="/new_stite.html?tab=toto" data-page="toto">&#9917; טוטו</a>
+    <a href="/profile.html" data-page="profile">&#128100; פרופיל</a>
+    <a href="/new_stite.html?tab=about" data-page="about">אודות</a>
+    <a href="/new_stite.html?tab=legal" data-page="legal">תנאים</a>
+    <a href="/new_stite.html?tab=accessibility" data-page="accessibility">נגישות</a>
+  </div>
+</nav>
+
+<div class="page" id="pg">
+  <div class="loading"><div style="font-size:1.5rem;margin-bottom:8px">⏳</div>טוען פרופיל...</div>
+</div>
+
+<!-- Modal: טעינת ארנק -->
+<div class="modal-overlay" id="m-topup">
+  <div class="modal">
+    <button class="modal-x" onclick="cm('m-topup')">✕</button>
+    <div class="modal-title">💳 טעינת ארנק</div>
+    <div class="amounts">
+      <button class="amt-btn" onclick="setAmt(50,this)">₪50</button>
+      <button class="amt-btn" onclick="setAmt(100,this)">₪100</button>
+      <button class="amt-btn" onclick="setAmt(200,this)">₪200</button>
+      <button class="amt-btn" onclick="setAmt(300,this)">₪300</button>
+      <button class="amt-btn" onclick="setAmt(500,this)">₪500</button>
+      <button class="amt-btn" onclick="setAmt(0,this)">אחר</button>
+    </div>
+    <input type="number" class="form-input" id="topup-amt" placeholder="סכום אחר..." min="10" max="5000" dir="ltr">
+    <div style="display:flex;gap:8px;margin-top:13px">
+      <button class="btn btn-outline btn-sm" onclick="cm('m-topup')">ביטול</button>
+      <button class="btn btn-gold" style="flex:1" onclick="doTopup()" id="btn-topup">המשך לתשלום →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: הזמנת טפסים -->
+<div class="modal-overlay" id="m-order">
+  <div class="modal" style="max-width:580px">
+    <button class="modal-x" onclick="cm('m-order')">✕</button>
+    <div class="modal-title">🖨️ בחר סטים למילוי טופס</div>
+    <p style="font-size:.74rem;color:var(--muted);margin-bottom:10px">כל סט = טבלה אחת בטופס | ₪7.5 לטופס (₪2.5 טבלה + ₪5 עמלה)</p>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <button class="btn btn-outline btn-sm" onclick="selAll()">בחר הכל</button>
+      <button class="btn btn-outline btn-sm" onclick="clrAll()">נקה הכל</button>
+    </div>
+    <div class="sets-grid" id="order-grid">טוען...</div>
+    <div class="order-summary" id="order-sum" style="display:none">
+      <div><span style="color:var(--muted)">סטים נבחרים:</span><span id="sum-cnt" style="font-weight:700"></span></div>
+      <div><span style="color:var(--muted)">עלות כוללת:</span><span id="sum-cost" style="color:var(--gold);font-weight:700"></span></div>
+      <div><span style="color:var(--muted)">יתרה אחרי:</span><span id="sum-after" style="font-weight:700"></span></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:13px">
+      <button class="btn btn-outline btn-sm" onclick="cm('m-order')">ביטול</button>
+      <button class="btn btn-gold" style="flex:1" onclick="submitOrder()" id="btn-order" disabled>הזמן מילוי טפסים →</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// PROFILE – מערכת מקומית (ללא Firebase)
+// ══════════════════════════════════════════════════════
+const AUTH_API   = '';  // ראוטר מרכזי
+const WALLET_API = '';  // ראוטר מרכזי
+// תמיכה ב-fb_token (Firebase legacy) וב-demo mode
+const _isDemoMode = localStorage.getItem('demo_mode') === '1';
+let _token = localStorage.getItem('auth_token') || localStorage.getItem('fb_token');
+let _balance = 0;
+let _sets = [];
+let _sel = new Set();
+
+// ── Auth check ────────────────────────────────────────
+if(!_token && !_isDemoMode){
+  window.location.href = '/auth.html?redirect=/profile.html';
+}
+
+// ── Demo mode data ────────────────────────────────────
+const _DEMO_USER = {
+  name: 'דמו', email: 'demo@mandeles.co.il', id: 0
+};
+const _DEMO_SETS = Array.from({length:10},(_,i)=>({
+  set_index:i+1, n1:i+1,n2:i+7,n3:i+13,n4:i+19,n5:i+25,n6:Math.min(i+31,37),
+  strong:(i%7)+1, draw_date:new Date().toISOString().slice(0,10)
+}));
+
+// ── Helpers ──────────────────────────────────────────
+function toast(msg, type='ok'){
+  const wrap = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.style.borderColor = type==='err'?'rgba(231,76,60,.4)':type==='load'?'rgba(201,168,76,.3)':'rgba(39,174,96,.4)';
+  el.innerHTML = `<span>${type==='err'?'❌':type==='load'?'⏳':'✅'}</span><span>${msg}</span>`;
+  wrap.appendChild(el);
+  if(type!=='load') setTimeout(()=>el.remove(),3000);
+  return el;
+}
+function fm(n){return '₪'+(Number(n)||0).toLocaleString('he-IL',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fd(d){return d?new Date(d).toLocaleDateString('he-IL'):'–';}
+function om(id){document.getElementById(id).classList.add('open');}
+function cm(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+
+async function get(url){
+  const r = await fetch(url,{headers:{'Authorization':'Bearer '+_token}});
+  if(r.status===401){ localStorage.removeItem('auth_token'); window.location.href='/auth.html'; }
+  if(!r.ok) throw new Error(r.status);
+  return r.json();
+}
+async function post(url,body){
+  const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+_token},body:JSON.stringify(body)});
+  const d = await r.json();
+  if(!r.ok) throw new Error(d.error||r.status);
+  return d;
+}
+
+// ── Load & render ─────────────────────────────────────
+async function load(){
+  // ── DEMO MODE ─────────────────────────────────────
+  if(_isDemoMode){
+    _balance = 500; _sets = _DEMO_SETS;
+    render(_DEMO_USER, 500, [
+      {type:'deposit',description:'טעינת דמו',amount_ils:500,created_at:new Date().toISOString()}
+    ], _DEMO_SETS, [], true);
+    return;
+  }
+  try{
+    // 1. פרטי משתמש
+    const me = await get(AUTH_API+'/auth/me');
+
+    // 2. ארנק
+    let bal=0, txs=[];
+    try{ const wb=await get(WALLET_API+'/auth/wallet/balance'); bal=wb.balance||0; _balance=bal; }catch{}
+    try{ const wh=await get(WALLET_API+'/auth/wallet/history'); txs=(wh.transactions||[]).slice(0,15); }catch{}
+
+    // 3. סטים
+    try{ const ss=await get(WALLET_API+'/lotto/my-sets'); _sets=ss.sets||[]; }catch{}
+
+    // 4. הזמנות
+    let orders=[];
+    try{ const so=await get(WALLET_API+'/lotto/orders'); orders=so.orders||[]; }catch{}
+
+    // 5. מנוי
+    let subs=[];
+    try{ const sb=await get(WALLET_API+'/admin/subscriptions'); subs=sb.subscriptions||[]; }catch{}
+    const hasSub = _sets.length>0;
+
+    render(me, bal, txs, _sets, orders, hasSub);
+  }catch(e){
+    document.getElementById('pg').innerHTML=`<div class="empty">❌ שגיאה בטעינת הפרופיל — ${e.message}</div>`;
+  }
+}
+
+function render(me, bal, txs, sets, orders, hasSub){
+  const name = me.name||me.phone||me.email||'משתמש';
+  document.getElementById('pg').innerHTML = `
+    <!-- פרופיל -->
+    <div class="profile-header">
+      <div class="avatar">${name[0].toUpperCase()}</div>
+      <div>
+        <div class="profile-name">${name}</div>
+        <div class="profile-sub">${me.phone||me.email||''}</div>
+        <span class="badge ${hasSub?'badge-on':'badge-off'}">${hasSub?'⭐ מנוי פעיל':'אין מנוי'}</span>
+      </div>
+    </div>
+
+    <!-- ארנק -->
+    <div class="wallet-card">
+      <div class="wallet-lbl">יתרת ארנק</div>
+      <div class="wallet-bal">${fm(bal)}</div>
+      <div class="wallet-actions">
+        <button class="btn btn-gold btn-sm" onclick="om('m-topup')">+ טעינה</button>
+        <button class="btn btn-outline btn-sm" onclick="toggleCard('c-tx')">היסטוריה</button>
+      </div>
+    </div>
+
+    <!-- מנוי / רכישה -->
+    ${!hasSub?`
+    <div class="card">
+      <div class="card-head"><span class="card-title">⭐ רכוש מנוי</span></div>
+      <div class="card-body">
+        <p style="font-size:.8rem;color:var(--muted);margin-bottom:13px">קבל 200 סטים מנצחים ומלא טפסים</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button class="btn btn-gold btn-full" onclick="buySub('weekly')">⚡ שבועי — ₪25</button>
+          <button class="btn btn-outline btn-full" onclick="buySub('monthly')">⭐ חודשי — ₪50</button>
+        </div>
+      </div>
+    </div>`:
+    `<div class="card">
+      <div class="card-head">
+        <span class="card-title">⭐ המנוי שלי — ${sets.length} סטים</span>
+        <button class="btn btn-gold btn-sm" onclick="openOrderModal()">🖨️ מלא טפסים</button>
+      </div>
+      <div class="card-body">
+        <div class="sub-row"><span class="sub-k">סטים זמינים</span><span class="sub-v" style="color:var(--gold)">${sets.length}</span></div>
+        <div class="sub-row"><span class="sub-k">תאריך הגרלה</span><span class="sub-v">${sets[0]?.draw_date||'–'}</span></div>
+        <div style="margin-top:12px">
+          <button class="btn btn-gold" onclick="openOrderModal()">🖨️ הזמן מילוי טפסים (₪7.5/טופס)</button>
+        </div>
+      </div>
+    </div>`}
+
+    <!-- הסטים שלי -->
+    ${sets.length?`
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">🔢 הסטים שלי (${sets.length})</span>
+        <button class="btn btn-outline btn-sm" onclick="toggleCard('c-sets')">הצג/הסתר</button>
+      </div>
+      <div class="card-body" id="c-sets" style="display:none">
+        <div class="sets-grid">
+          ${sets.slice(0,30).map(s=>`
+          <div class="set-item">
+            <div class="set-idx">סט ${s.set_index}</div>
+            <div class="set-nums">${[s.n1,s.n2,s.n3,s.n4,s.n5,s.n6].join(' · ')}</div>
+            <div class="set-strong">💪 חזק: ${s.strong}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>`:''}
+
+    <!-- הזמנות -->
+    <div class="card">
+      <div class="card-head"><span class="card-title">🖨️ ההזמנות שלי</span></div>
+      <div class="card-body">
+        ${orders.length?orders.map(o=>`
+        <div class="order-row">
+          <div>
+            <div class="order-num">${o.order_number}</div>
+            <div class="order-meta">${o.tables_count} טפסים · ${fm(o.total_ils)} · ${fd(o.created_at)}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="st st-${o.status}">${{paid:'⏳ ממתין',printed:'🖨️ הודפס',sent:'📬 נשלח',delivered:'✅ נמסר'}[o.status]||o.status}</span>
+            <a href="/lotto_form.html?id=${o.id}" class="btn btn-outline btn-sm">👁 טופס</a>
+          </div>
+        </div>`).join(''):'<div class="empty">📭 אין הזמנות עדיין</div>'}
+      </div>
+    </div>
+
+    <!-- היסטוריית עסקאות -->
+    <div class="card" id="c-tx" style="display:none">
+      <div class="card-head"><span class="card-title">💳 היסטוריית ארנק</span></div>
+      <div class="card-body">
+        ${txs.length?txs.map(t=>`
+        <div class="tx-row">
+          <div>
+            <div>${t.description||t.type}</div>
+            <div style="font-size:.68rem;color:var(--muted)">${fd(t.created_at)}</div>
+          </div>
+          <span class="${t.amount_ils>0?'tx-plus':'tx-minus'}">${t.amount_ils>0?'+':''}${fm(t.amount_ils)}</span>
+        </div>`).join(''):'<div class="empty">אין עסקאות</div>'}
+      </div>
+    </div>
+
+    <!-- כפתורים -->
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <a href="/new_stite.html" class="btn btn-outline" style="flex:1;justify-content:center">← חזרה לאתר</a>
+      <button class="btn btn-red" onclick="logout()">התנתק</button>
+    </div>
+  `;
+}
+
+function toggleCard(id){
+  const el=document.getElementById(id);
+  if(el) el.style.display=el.style.display==='none'?'block':'none';
+}
+
+// ── Logout ────────────────────────────────────────────
+function logout(){
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('fb_token');
+  localStorage.removeItem('demo_mode');
+  window.location.href='/new_stite.html';
+}
+
+// ── Topup ─────────────────────────────────────────────
+function setAmt(n, btn){
+  document.querySelectorAll('.amt-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  const inp=document.getElementById('topup-amt');
+  inp.value=n>0?n:''; if(!n) inp.focus();
+}
+async function doTopup(){
+  const amount=parseFloat(document.getElementById('topup-amt').value);
+  if(!amount||amount<10){toast('סכום מינימלי: ₪10','err');return;}
+  const btn=document.getElementById('btn-topup');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>מעבד...';
+  try{
+    await post(WALLET_API+'/auth/wallet/topup',{amount_ils:amount});
+    toast(`ארנק נטען ב-${fm(amount)} ✅`);
+    cm('m-topup'); setTimeout(load,800);
+  }catch(e){ toast('שגיאה: '+e.message,'err'); }
+  finally{ btn.disabled=false; btn.textContent='המשך לתשלום →'; }
+}
+
+// ── Buy sub ───────────────────────────────────────────
+async function buySub(plan){
+  const price=plan==='weekly'?25:50;
+  if(_balance<price){toast(`יתרה לא מספיקה — נדרש ${fm(price)}. טען ארנק קודם.`,'err');om('m-topup');return;}
+  if(!confirm(`לרכוש מנוי ${plan==='weekly'?'שבועי':'חודשי'} ב-${fm(price)}?`))return;
+  const t=toast('מרכש מנוי...','load');
+  try{
+    const today=new Date().toISOString().split('T')[0];
+    await post(WALLET_API+'/lotto/subscribe',{plan,draw_date:today});
+    t.remove(); toast('מנוי נרכש! 200 סטים נוצרו ✅');
+    setTimeout(load,1000);
+  }catch(e){ t.remove(); toast('שגיאה: '+e.message,'err'); }
+}
+
+// ── Order modal ───────────────────────────────────────
+function openOrderModal(){
+  _sel.clear();
+  const grid=document.getElementById('order-grid');
+  grid.innerHTML=_sets.map(s=>`
+    <div class="set-item" id="si-${s.id}" onclick="toggleSel(${s.id})">
+      <div class="set-idx">סט ${s.set_index}</div>
+      <div class="set-nums">${[s.n1,s.n2,s.n3,s.n4,s.n5,s.n6].join(' ')}</div>
+      <div class="set-strong">💪${s.strong}</div>
+    </div>`).join('');
+  updSum(); om('m-order');
+}
+function toggleSel(id){
+  _sel.has(id)?_sel.delete(id):_sel.add(id);
+  document.getElementById('si-'+id)?.classList.toggle('sel',_sel.has(id));
+  updSum();
+}
+function selAll(){ _sets.forEach(s=>{_sel.add(s.id);document.getElementById('si-'+s.id)?.classList.add('sel');}); updSum(); }
+function clrAll(){ _sel.clear(); document.querySelectorAll('.set-item').forEach(el=>el.classList.remove('sel')); updSum(); }
+function updSum(){
+  const cnt=_sel.size, cost=cnt*7.5, after=_balance-cost;
+  const sum=document.getElementById('order-sum');
+  const btn=document.getElementById('btn-order');
+  if(sum){ sum.style.display=cnt>0?'block':'none'; }
+  document.getElementById('sum-cnt').textContent=cnt;
+  document.getElementById('sum-cost').textContent=fm(cost);
+  const ae=document.getElementById('sum-after');
+  if(ae){ ae.textContent=fm(after); ae.style.color=after<0?'var(--loss)':'var(--win)'; }
+  if(btn) btn.disabled=cnt===0||after<0;
+}
+async function submitOrder(){
+  const ids=[..._sel];
+  if(!ids.length)return;
+  const cost=ids.length*7.5;
+  if(!confirm(`לשלוח ${ids.length} טפסים ב-${fm(cost)}?`))return;
+  const btn=document.getElementById('btn-order');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>שולח...';
+  try{
+    const drawDate=_sets[0]?.draw_date||new Date().toISOString().split('T')[0];
+    const d=await post(WALLET_API+'/lotto/order',{set_ids:ids,draw_date:drawDate});
+    toast(`הזמנה ${d.order_number} התקבלה! ✅`);
+    cm('m-order'); setTimeout(load,1000);
+  }catch(e){ toast('שגיאה: '+e.message,'err'); btn.disabled=false; btn.textContent='הזמן מילוי טפסים →'; }
+}
+
+// ── Init ──────────────────────────────────────────────
+load();
+
+// ── Global Nav ──
+
+(function(){
+  var page = window.location.pathname.split('/').pop() || 'new_stite.html';
+  document.querySelectorAll('[data-page]').forEach(function(a){
+    var href = a.getAttribute('href') || '';
+    if((page==='new_stite.html'&&href.includes('new_stite')&&!href.includes('?tab'))||
+       (page==='profile.html'&&href.includes('profile'))||
+       (page==='auth.html'&&href.includes('auth'))||
+       (page==='lotto_form.html'&&href.includes('lotto_form')))
+      a.classList.add('active');
+  });
+  window.gnavToggle=function(){
+    var d=document.getElementById('gnav-drawer'),b=document.getElementById('gnav-burger');
+    var o=d.classList.toggle('open');
+    b.setAttribute('aria-expanded',o);b.textContent=o?'\u2715':'\u2630';
+  };
+  document.addEventListener('click',function(e){
+    var d=document.getElementById('gnav-drawer');
+    if(d&&d.classList.contains('open')&&!e.target.closest('#gnav')){
+      d.classList.remove('open');
+      var b=document.getElementById('gnav-burger');
+      if(b){b.setAttribute('aria-expanded','false');b.textContent='\u2630';}
+    }
+  });
+  window.gnavGoAuth=function(){window.location.href='/auth.html?redirect='+encodeURIComponent(window.location.pathname);};
+  window.gnavGoProfile=function(){window.location.href='/profile.html';};
+  function gnavSetUser(name,balance,isDemo){
+    var right=document.getElementById('gnav-right');
+    if(!right)return;
+    right.innerHTML=(isDemo?'<button class="gnav-demo" onclick="gnavExitDemo()">&#129514; יציאה מ-DEMO</button>':'')+
+      '<a class="gnav-wallet" href="/profile.html">&#128179; &#8362;<span id="gnav-bal">'+(balance||'...')+'</span></a>'+
+      '<button class="gnav-avatar" onclick="gnavGoProfile()" aria-label="פרופיל">'+name[0].toUpperCase()+'</button>';
+  }
+  window.gnavExitDemo=function(){
+    localStorage.removeItem('demo_mode');localStorage.removeItem('auth_token');localStorage.removeItem('fb_token');
+    window.location.href='/new_stite.html';
+  };
+  function gnavCheckAuth(){
+    if(localStorage.getItem('demo_mode')==='1'){gnavSetUser('דמו','500.00',true);return;}
+    var token=localStorage.getItem('auth_token')||localStorage.getItem('fb_token');
+    if(!token)return;
+    try{
+      var payload=JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+      if(Date.now()/1000>(payload.exp||0)){localStorage.removeItem('auth_token');localStorage.removeItem('fb_token');return;}
+      var name=payload.name||payload.email||payload.phone_number||'משתמש';
+      gnavSetUser(name,null,false);
+      fetch('/auth/wallet/balance',{headers:{'Authorization':'Bearer '+token},signal:AbortSignal.timeout(3000)})
+        .then(function(r){return r.ok?r.json():null;}).then(function(d){
+          var el=document.getElementById('gnav-bal');
+          if(el&&d)el.textContent=(d.balance||0).toFixed(2);
+        }).catch(function(){});
+    }catch(e){return;}
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',gnavCheckAuth);}
+  else{gnavCheckAuth();}
+})();
+
+</script>
+</body>
+</html>

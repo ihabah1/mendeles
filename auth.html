@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&family=Frank+Ruhl+Libre:wght@700;900&display=swap" rel="stylesheet" crossorigin="anonymous">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" crossorigin="anonymous"></script>
 <style>
 :root{
   --gold:#c9a84c;--gold-l:#e8c870;--gold-d:#9a7a30;
@@ -584,7 +584,7 @@ window.loginEmail = async function loginEmail() {
     const cred = await auth.signInWithEmailAndPassword(email, pw);
     const token = await cred.user.getIdToken();
     showStatus('✅ ברוך הבא! מעביר...', 'success');
-    localStorage.setItem('fb_token', token);
+    localStorage.setItem('auth_token', token);
     setTimeout(() => {
       const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
       window.location.href = redirect;
@@ -682,7 +682,7 @@ window.verifyOtp = async function verifyOtp(context) {
   try {
     const cred  = await _confirmationResult.confirm(code);
     const token = await cred.user.getIdToken();
-    localStorage.setItem('fb_token', token);
+    localStorage.setItem('auth_token', token);
     showStatus('✅ אומת! מעביר...', 'success');
     setTimeout(() => {
       const redirect = new URLSearchParams(window.location.search).get('redirect') || '/new_stite.html';
@@ -711,7 +711,7 @@ window.loginGoogle = async function loginGoogle() {
   try {
     const cred  = await auth.signInWithPopup(googleProvider);
     const token = await cred.user.getIdToken();
-    localStorage.setItem('fb_token', token);
+    localStorage.setItem('auth_token', token);
     showStatus('✅ ברוך הבא! מעביר...', 'success');
     setTimeout(() => window.location.href = new URLSearchParams(window.location.search).get('redirect') || '/new_stite.html', 800);
   } catch(e) {
@@ -875,7 +875,7 @@ window.verifyRegOtp = async function verifyRegOtp() {
     }
 
     const token = await user.getIdToken();
-    localStorage.setItem('fb_token', token);
+    localStorage.setItem('auth_token', token);
     showStatus('🎉 ברוך הבא ל-Mandeles! מעביר...', 'success');
     setTimeout(() => window.location.href = new URLSearchParams(window.location.search).get('redirect') || '/', 1000);
   } catch(e) {
@@ -923,12 +923,11 @@ auth.onAuthStateChanged((user) => {
   if (user) {
     const params = new URLSearchParams(window.location.search);
     const redirect = params.get('redirect');
-    // העבר רק אם יש redirect מפורש
-    if (redirect && redirect !== '/auth.html') {
-      window.location.href = redirect;
-      return;
-    }
-    // הצג מצב "מחובר" בדף
+    // תמיד נתב החוצה
+    const dest = (redirect && redirect !== '/auth.html') ? redirect : '/new_stite.html';
+    window.location.href = dest;
+    return;
+    // הצג מצב "מחובר" בדף (קוד זה לא מגיע לכאן יותר)
     const name = user.displayName || user.phoneNumber || user.email || 'משתמש';
     const card = document.querySelector('.auth-card');
     if (card) {

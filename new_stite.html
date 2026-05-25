@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
+<title>Mandeles.co.il – לוטו וטוטו חכם</title>
+<meta name="description" content="mandeles.co.il – ניתוח לוטו וטוטו חכם. סטטיסטיקה מתקדמת, המלצות 1X2, ניתוח ערך וצמצומי טורים.">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&family=Frank+Ruhl+Libre:wght@700;900&display=swap" rel="stylesheet" crossorigin="anonymous">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" integrity="sha512-RQPJ1aEMHBE7MOq6ZQdTFLQOxWoqR0u02GU2Ye1RiUHoQPAEBPPBWFhKCUL7vvt9mvHn1cRx2EcTHlXuXWjA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+:root{--gold:#c9a84c;--gold-l:#e8c870;--gold-d:#9a7a30;--navy:#0d1b2a;--navy-m:#162436;--navy-c:#1a2d42;--navy-b:#263d57;--cream:#f0e8d8;--text:#e8dcc8;--muted:#8aaabe;--win:#27ae60;--draw:#e8a030;--loss:#e74c3c;--r:12px;--shadow:0 8px 32px rgba(0,0,0,.45)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:'Heebo',sans-serif;background:var(--navy);color:var(--text);line-height:1.65;min-height:100vh;font-size:16px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.skip-link{position:absolute;top:-70px;right:0;background:var(--gold);color:var(--navy);padding:12px 22px;font-weight:800;border-radius:0 0 10px 0;transition:top .15s;z-index:9999;text-decoration:none}
+.skip-link:focus{top:0}
+nav{background:var(--navy-m);border-bottom:1px solid var(--navy-b);position:sticky;top:0;z-index:200}
+.nav-inner{max-width:1040px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:56px;gap:12px}
+.nav-logo{font-family:'Frank Ruhl Libre',serif;font-size:1.05rem;color:var(--gold);font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0}
+.nav-logo span{color:var(--muted);font-size:.72rem;font-family:'Heebo',sans-serif;font-weight:400;margin-right:3px}
+.main-tabs{display:flex;gap:4px;background:var(--navy);border-radius:10px;padding:4px;flex-shrink:0}
+.main-tab{padding:7px 16px;border:none;border-radius:7px;font-family:'Heebo',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;background:transparent;color:var(--muted);transition:background .15s,color .15s;white-space:nowrap}
+.main-tab.active{background:var(--gold);color:var(--navy)}
+.main-tab:hover:not(.active){color:var(--text)}
+.nav-links{display:flex;gap:3px;list-style:none}
+.nav-links a{color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:7px;font-size:.8rem;transition:color .15s}
+.nav-links a:hover{color:var(--gold)}
+.nav-menu-btn{display:none;background:none;border:1px solid var(--navy-b);color:var(--muted);border-radius:7px;padding:7px 10px;font-size:1.1rem;cursor:pointer;line-height:1}
+@media(max-width:680px){.nav-links{display:none;flex-direction:column;position:absolute;top:56px;right:0;left:0;background:var(--navy-m);border-bottom:1px solid var(--navy-b);padding:8px 16px 14px;gap:2px;z-index:99}.nav-links.open{display:flex}.nav-links a{padding:10px 14px;font-size:.95rem}.nav-menu-btn{display:block}.main-tab{padding:7px 10px;font-size:.8rem}}
+.page{display:none}.page.active{display:block}
+.hero{background:var(--navy-m);border-bottom:1px solid var(--navy-b);padding:40px 20px 32px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% -10%,rgba(201,168,76,.1) 0%,transparent 65%);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.28);color:var(--gold-l);font-size:.74rem;font-weight:700;letter-spacing:.1em;padding:4px 13px;border-radius:20px;margin-bottom:14px;text-transform:uppercase}
+.hero h1{font-family:'Frank Ruhl Libre',serif;font-size:clamp(1.8rem,4.5vw,2.8rem);font-weight:900;color:var(--cream);margin-bottom:10px;line-height:1.15}
+.hero h1 span{color:var(--gold)}
+.hero-sub{color:var(--muted);font-size:.93rem;max-width:500px;margin:0 auto}
+.toto-hero{background:linear-gradient(135deg,#0d1b2a 0%,#1a2d42 50%,#0d2035 100%);border-bottom:1px solid var(--navy-b);padding:36px 20px 28px;text-align:center;position:relative;overflow:hidden}
+.toto-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 60% 0%,rgba(39,174,96,.07) 0%,transparent 60%);pointer-events:none}
+.toto-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(39,174,96,.12);border:1px solid rgba(39,174,96,.3);color:#6adba6;font-size:.74rem;font-weight:700;letter-spacing:.1em;padding:4px 13px;border-radius:20px;margin-bottom:14px;text-transform:uppercase}
+.toto-hero h1{font-family:'Frank Ruhl Libre',serif;font-size:clamp(1.7rem,4vw,2.6rem);font-weight:900;color:var(--cream);margin-bottom:10px;line-height:1.15}
+.toto-hero h1 span{color:#6adba6}
+.toto-hero p{color:var(--muted);font-size:.9rem;max-width:480px;margin:0 auto}
+main{max-width:1040px;margin:0 auto;padding:28px 16px 80px}
+.card{background:var(--navy-c);border:1px solid var(--navy-b);border-radius:var(--r);padding:22px;margin-bottom:20px}
+.card-title{font-family:'Frank Ruhl Libre',serif;font-size:1.05rem;color:var(--cream);font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.game-type-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.game-type-btn{flex:1;min-width:120px;display:flex;flex-direction:column;align-items:center;gap:5px;padding:14px 10px;background:var(--navy);border:1.5px solid var(--navy-b);border-radius:var(--r);cursor:pointer;transition:border-color .15s,background .15s,transform .1s;font-family:'Heebo',sans-serif}
+.game-type-btn:hover{border-color:var(--gold-d);background:rgba(201,168,76,.05);transform:translateY(-1px)}
+.game-type-btn.active{border-color:#6adba6;background:rgba(39,174,96,.07);outline:2px solid rgba(39,174,96,.35);outline-offset:1px}
+.gt-icon{font-size:1.5rem}.gt-name{font-size:.86rem;font-weight:700;color:var(--cream)}.gt-desc{font-size:.7rem;color:var(--muted);text-align:center}.gt-count{display:inline-block;background:rgba(201,168,76,.15);color:var(--gold);font-size:.67rem;font-weight:700;padding:2px 8px;border-radius:10px;margin-top:2px}
+.section-label{font-size:.8rem;font-weight:700;color:var(--muted);margin-bottom:8px}
+.game-list{display:grid;grid-template-columns:1fr;gap:7px;max-height:340px;overflow-y:auto;padding-left:3px}
+.game-list::-webkit-scrollbar{width:4px}.game-list::-webkit-scrollbar-track{background:var(--navy)}.game-list::-webkit-scrollbar-thumb{background:var(--navy-b);border-radius:2px}
+.game-item{display:flex;align-items:center;justify-content:space-between;background:var(--navy);border:1.5px solid var(--navy-b);border-radius:10px;padding:11px 13px;cursor:pointer;transition:border-color .15s,background .15s;gap:10px}
+.game-item:hover{border-color:var(--gold-d);background:rgba(201,168,76,.04)}.game-item.selected{border-color:var(--gold);background:rgba(201,168,76,.07)}
+.gi-teams{flex:1}.gi-home,.gi-away{font-size:.88rem;font-weight:700;color:var(--cream)}.gi-vs{font-size:.7rem;color:var(--muted);margin:1px 0}.gi-round{font-size:.67rem;color:var(--gold);font-weight:700;background:rgba(201,168,76,.1);padding:2px 7px;border-radius:8px;margin-bottom:3px;display:inline-block}
+.odds-pills{display:flex;gap:3px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}.odd-pill{padding:3px 6px;border-radius:5px;font-size:.68rem;font-weight:700;border:1px solid;white-space:nowrap}
+.odd-1{background:rgba(39,174,96,.1);border-color:rgba(39,174,96,.3);color:#6adba6}.odd-x{background:rgba(232,160,48,.1);border-color:rgba(232,160,48,.3);color:#e8c870}.odd-2{background:rgba(231,76,60,.1);border-color:rgba(231,76,60,.3);color:#f07070}
+.analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+@media(max-width:640px){.analysis-grid{grid-template-columns:1fr}}
+.prob-section{grid-column:1/-1}
+.prob-title{font-size:.8rem;font-weight:700;color:var(--muted);margin-bottom:9px}
+.prob-bar-wrap{display:flex;border-radius:8px;overflow:hidden;height:36px;margin-bottom:7px}
+.prob-seg{display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:800;transition:width .6s ease;min-width:0}
+.prob-1{background:var(--win);color:#fff}.prob-x{background:var(--draw);color:#fff}.prob-2{background:var(--loss);color:#fff}
+.prob-labels{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-bottom:13px}
+.value-badge{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:9px;font-size:.82rem;font-weight:700}
+.value-hot{background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.35);color:var(--gold-l)}.value-neutral{background:rgba(138,170,190,.1);border:1px solid rgba(138,170,190,.25);color:var(--muted)}.value-avoid{background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.25);color:#f07070}
+.stat-rows{display:flex;flex-direction:column;gap:7px}.stat-row{display:flex;align-items:center;gap:9px}.stat-label{font-size:.76rem;color:var(--muted);width:105px;flex-shrink:0}.stat-bar-bg{flex:1;height:5px;background:var(--navy-b);border-radius:3px;overflow:hidden}.stat-bar-fill{height:100%;border-radius:3px;transition:width .5s ease}.stat-val{font-size:.76rem;font-weight:700;color:var(--cream);width:34px;text-align:left;flex-shrink:0}
+.form-dots{display:flex;gap:4px;flex-wrap:wrap}.form-dot{width:23px;height:23px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.63rem;font-weight:800;color:#fff}
+.fd-w{background:var(--win)}.fd-d{background:var(--draw)}.fd-l{background:var(--loss)}
+.h2h-table{width:100%;border-collapse:collapse;font-size:.78rem}.h2h-table th{text-align:right;padding:5px 7px;color:var(--muted);font-weight:700;border-bottom:1px solid var(--navy-b);font-size:.72rem}.h2h-table td{padding:6px 7px;border-bottom:1px solid rgba(38,61,87,.5);color:var(--text)}.h2h-table tr:last-child td{border-bottom:none}
+.h2h-result{padding:2px 7px;border-radius:5px;font-weight:700;font-size:.72rem}.h2h-w{background:rgba(39,174,96,.15);color:#6adba6}.h2h-d{background:rgba(232,160,48,.15);color:#e8c870}.h2h-l{background:rgba(231,76,60,.12);color:#f07070}
+.xfactor-list{display:flex;flex-direction:column;gap:7px}.xf-item{display:flex;align-items:flex-start;gap:9px;padding:8px 11px;background:var(--navy);border-radius:8px;border:1px solid var(--navy-b)}.xf-icon{font-size:.95rem;flex-shrink:0;margin-top:1px}.xf-text{font-size:.78rem;color:var(--muted);line-height:1.4}.xf-text strong{color:var(--text)}
+.xf-item.warn{border-color:rgba(231,76,60,.25);background:rgba(231,76,60,.05)}.xf-item.good{border-color:rgba(39,174,96,.2);background:rgba(39,174,96,.04)}.xf-item.neutral{border-color:rgba(232,160,48,.2);background:rgba(232,160,48,.04)}
+.rec-card{background:linear-gradient(135deg,rgba(201,168,76,.08),rgba(201,168,76,.03));border:1px solid rgba(201,168,76,.3);border-radius:var(--r);padding:16px}
+.rec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap}
+.rec-title{font-size:.88rem;font-weight:700;color:var(--gold-l)}.rec-confidence{font-size:.72rem;padding:3px 9px;border-radius:9px;font-weight:700}
+.conf-high{background:rgba(39,174,96,.15);color:#6adba6;border:1px solid rgba(39,174,96,.3)}.conf-med{background:rgba(232,160,48,.12);color:#e8c870;border:1px solid rgba(232,160,48,.3)}.conf-low{background:rgba(231,76,60,.1);color:#f07070;border:1px solid rgba(231,76,60,.25)}
+.rec-body{font-size:.82rem;color:var(--muted);line-height:1.6}.rec-body strong{color:var(--text)}
+.wheel-controls{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:14px}
+@media(max-width:480px){.wheel-controls{grid-template-columns:1fr}}
+.wc-group label{display:block;font-size:.76rem;font-weight:700;color:var(--muted);margin-bottom:5px}
+.wc-group select{width:100%;background:var(--navy);border:1.5px solid var(--navy-b);border-radius:8px;color:var(--text);font-family:'Heebo',sans-serif;font-size:.86rem;padding:8px 11px;cursor:pointer}
+.wheel-game-row{display:flex;align-items:center;gap:9px;padding:8px 11px;background:var(--navy);border:1px solid var(--navy-b);border-radius:8px;margin-bottom:5px}
+.wgr-match{flex:1;font-size:.8rem;color:var(--text)}.wgr-options{display:flex;gap:4px}
+.wgr-btn{width:28px;height:28px;border-radius:6px;border:1.5px solid var(--navy-b);background:none;color:var(--muted);font-family:'Heebo',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .12s}
+.wgr-btn.on-1{border-color:var(--win);background:rgba(39,174,96,.15);color:#6adba6}.wgr-btn.on-x{border-color:var(--draw);background:rgba(232,160,48,.15);color:#e8c870}.wgr-btn.on-2{border-color:var(--loss);background:rgba(231,76,60,.12);color:#f07070}
+.wheel-output{background:var(--navy);border:1px solid var(--navy-b);border-radius:var(--r);padding:14px;min-height:70px}
+.wheel-row{font-size:.76rem;font-family:monospace;color:var(--text);padding:4px 0;border-bottom:1px solid rgba(38,61,87,.4);display:flex;gap:5px;align-items:center}.wheel-row:last-child{border-bottom:none}
+.wr-num{color:var(--muted);font-size:.68rem;width:20px}.wr-seq{display:flex;gap:3px}
+.wr-val{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700}
+.wr-1{background:rgba(39,174,96,.2);color:#6adba6}.wr-x{background:rgba(232,160,48,.2);color:#e8c870}.wr-2{background:rgba(231,76,60,.15);color:#f07070}
+.wheel-cost{display:flex;align-items:center;justify-content:space-between;padding:9px 0 0;border-top:1px solid var(--navy-b);margin-top:7px;font-size:.8rem}.wc-label{color:var(--muted)}.wc-amount{color:var(--gold);font-weight:700;font-size:.92rem}
+.status{padding:12px 15px;border-radius:10px;font-weight:700;font-size:.86rem;margin-top:9px;display:none}.status.show{display:block}
+.status.approved{background:rgba(76,175,130,.1);border:1px solid rgba(76,175,130,.35);color:#6adba6}.status.rejected{background:rgba(224,80,80,.08);border:1px solid rgba(224,80,80,.3);color:#f07070}.status.loading{background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);color:var(--gold-l)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:11px 22px;border:none;border-radius:10px;font-family:'Heebo',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;transition:opacity .15s,transform .12s,box-shadow .15s}.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--gold);color:var(--navy)}.btn-primary:hover{background:var(--gold-l);box-shadow:0 4px 18px rgba(201,168,76,.3)}
+.btn-green{background:var(--win);color:#fff}.btn-green:hover{background:#2ecc71}.btn-block{width:100%}
+.input-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:15px}
+.num-input{width:50px;height:50px;text-align:center;font-size:1.1rem;font-weight:700;font-family:'Heebo',sans-serif;background:var(--navy);border:2px solid var(--navy-b);border-radius:10px;color:var(--cream);transition:border-color .15s,box-shadow .15s;-moz-appearance:textfield}
+.num-input::-webkit-outer-spin-button,.num-input::-webkit-inner-spin-button{-webkit-appearance:none}
+.num-input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.22)}
+.prem-item{background:var(--navy);border:1px solid var(--navy-b);border-radius:var(--r);padding:16px;position:relative;overflow:hidden}.prem-item::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold-d),var(--gold-l))}
+.lock-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);color:var(--gold);font-size:.71rem;font-weight:700;padding:3px 8px;border-radius:14px;margin-bottom:9px}
+.btn-locked{width:100%;display:flex;align-items:center;justify-content:center;gap:7px;padding:11px;background:var(--navy-m);border:1.5px dashed var(--navy-b);border-radius:10px;color:var(--muted);font-family:'Heebo',sans-serif;font-size:.86rem;font-weight:700;cursor:pointer;transition:border-color .15s,color .15s}.btn-locked:hover{border-color:var(--gold-d);color:var(--gold)}
+.validity-inline{display:flex;align-items:center;gap:7px;background:rgba(232,160,48,.07);border:1px solid rgba(232,160,48,.22);border-radius:8px;padding:7px 10px;font-size:.73rem;color:#c8962a;margin-top:9px}.validity-inline strong{color:var(--gold-l)}
+.validity-banner{display:flex;align-items:flex-start;gap:11px;background:rgba(232,160,48,.08);border:1px solid rgba(232,160,48,.3);border-radius:10px;padding:12px 14px;margin:15px auto 0;max-width:560px;text-align:right}.validity-banner p{font-size:.8rem;color:#d4aa60;line-height:1.55}.validity-banner strong{color:var(--gold-l)}
+.premium-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(5px);z-index:1000;align-items:center;justify-content:center;padding:16px}.overlay.open{display:flex}
+.modal{background:var(--navy-c);border:1px solid var(--navy-b);border-radius:18px;padding:26px 22px;max-width:450px;width:100%;position:relative;box-shadow:var(--shadow);max-height:92vh;overflow-y:auto}
+.modal-close{position:absolute;top:11px;left:11px;background:none;border:none;color:var(--muted);font-size:1.25rem;cursor:pointer;padding:5px 8px;border-radius:6px;transition:color .15s}.modal-close:hover{color:var(--loss)}
+.modal h2{font-family:'Frank Ruhl Libre',serif;font-size:1.3rem;color:var(--cream);margin-bottom:4px;text-align:center}
+.modal-sub{text-align:center;color:var(--muted);font-size:.8rem;margin-bottom:16px}
+.modal-validity{display:flex;align-items:flex-start;gap:9px;background:rgba(232,160,48,.08);border:1px solid rgba(232,160,48,.28);border-radius:9px;padding:10px 13px;margin-bottom:16px;font-size:.77rem;color:#d4aa60;line-height:1.55}
+.plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px}
+@media(max-width:360px){.plan-grid{grid-template-columns:1fr}}
+.plan-card{background:var(--navy);border:1.5px solid var(--navy-b);border-radius:10px;padding:13px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}.plan-card:hover,.plan-card.sel{border-color:var(--gold);background:rgba(201,168,76,.07)}.plan-card.sel{outline:2px solid var(--gold);outline-offset:1px}
+.plan-name{font-size:.76rem;color:var(--muted);margin-bottom:3px}.plan-price{font-family:'Frank Ruhl Libre',serif;font-size:1.45rem;color:var(--gold);font-weight:900;line-height:1}.plan-price span{font-size:.66rem;color:var(--muted);font-family:'Heebo',sans-serif;font-weight:400}.plan-desc{font-size:.68rem;color:var(--muted);margin-top:3px}.plan-valid{font-size:.67rem;font-weight:700;margin-top:3px}.plan-valid.warn{color:#c8962a}.plan-valid.ok{color:var(--win)}
+.pay-stripe{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;background:var(--gold);color:var(--navy);border:none;border-radius:10px;font-family:'Heebo',sans-serif;font-size:.94rem;font-weight:800;cursor:pointer;margin-bottom:8px;transition:background .15s,box-shadow .15s}.pay-stripe:hover{background:var(--gold-l);box-shadow:0 4px 18px rgba(201,168,76,.3)}
+.pay-pp{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;background:#0070ba;color:#fff;border:none;border-radius:10px;font-family:'Heebo',sans-serif;font-size:.94rem;font-weight:800;cursor:pointer;transition:background .15s}.pay-pp:hover{background:#005ea6}
+.divider{text-align:center;color:var(--muted);font-size:.74rem;margin:9px 0;position:relative}.divider::before,.divider::after{content:'';position:absolute;top:50%;width:44%;height:1px;background:var(--navy-b)}.divider::before{right:0}.divider::after{left:0}
+.svc-row{display:flex;gap:7px;margin-top:11px;flex-wrap:wrap}.svc-badge{flex:1;min-width:100px;display:flex;align-items:center;gap:6px;background:var(--navy);border:1px solid var(--navy-b);border-radius:8px;padding:7px 10px;font-size:.7rem;color:var(--muted)}.svc-badge strong{color:var(--text);display:block;font-size:.72rem}
+.modal-legal{margin-top:11px;font-size:.67rem;color:var(--muted);text-align:center;line-height:1.5}.modal-legal button{background:none;border:none;color:var(--gold);cursor:pointer;font-size:.67rem;text-decoration:underline;padding:0}
+#about,#legal,#accessibility{display:none}
+.page-wrap{max-width:840px;margin:0 auto;padding:26px 16px 80px}
+.page-hero{text-align:center;padding:38px 20px 22px;max-width:620px;margin:0 auto}.page-hero h1{font-family:'Frank Ruhl Libre',serif;font-size:clamp(1.6rem,3.5vw,2.2rem);color:var(--cream);margin-bottom:11px}.page-hero p{color:var(--muted);font-size:.88rem}
+.about-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:13px;margin:18px 0}.about-card{background:var(--navy-c);border:1px solid var(--navy-b);border-radius:var(--r);padding:18px}.about-icon{font-size:1.35rem;margin-bottom:7px;display:block}.about-card h3{font-size:.88rem;font-weight:700;color:var(--gold);margin-bottom:5px}.about-card p{font-size:.8rem;color:var(--muted);line-height:1.6}
+.warn-box{background:rgba(224,80,80,.07);border:1px solid rgba(224,80,80,.25);border-radius:10px;padding:14px 16px;margin:15px 0}.warn-box h3{color:#f07070;font-size:.86rem;margin-bottom:5px}.warn-box p{font-size:.79rem;color:var(--muted);line-height:1.6}
+.legal-body h1{font-family:'Frank Ruhl Libre',serif;font-size:1.75rem;color:var(--cream);margin-bottom:18px}.legal-body h2{font-size:.93rem;font-weight:700;color:var(--gold);margin:21px 0 7px;border-bottom:1px solid var(--navy-b);padding-bottom:4px}.legal-body p,.legal-body li{font-size:.81rem;color:var(--muted);line-height:1.7;margin-bottom:5px}.legal-body ul{padding-right:17px}
+.nav-login-btn{background:var(--gold);color:var(--navy);border:none;border-radius:8px;font-family:'Heebo',sans-serif;font-size:.78rem;font-weight:800;padding:7px 14px;cursor:pointer;transition:background .15s;white-space:nowrap;flex-shrink:0}
+.nav-login-btn:hover{background:var(--gold-l)}
+#user-avatar{width:32px;height:32px;border-radius:50%;background:var(--gold);color:var(--navy);border:none;font-family:'Heebo',sans-serif;font-size:.78rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.wallet-badge{background:rgba(201,168,76,.15);border:1px solid var(--gold-d);border-radius:6px;padding:4px 9px;font-size:.72rem;font-weight:700;color:var(--gold);cursor:pointer;white-space:nowrap;flex-shrink:0}
+footer{background:var(--navy-m);border-top:1px solid var(--navy-b);padding:20px 16px;text-align:center}.footer-links{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:9px}.footer-links button{background:none;border:none;color:var(--muted);font-family:'Heebo',sans-serif;font-size:.78rem;cursor:pointer;text-decoration:underline;padding:4px;border-radius:4px}.footer-links button:hover{color:var(--gold)}
+footer p{font-size:.71rem;color:var(--muted);margin-top:3px;line-height:1.6}footer a{color:var(--gold)}
+.a11y-fab{position:fixed;bottom:20px;left:20px;width:46px;height:46px;background:var(--gold);color:var(--navy);border:none;border-radius:50%;font-size:1.15rem;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,.4);z-index:200;transition:background .15s,transform .15s}.a11y-fab:hover{background:var(--gold-l);transform:scale(1.06)}
+.a11y-panel{display:none;position:fixed;bottom:76px;left:20px;background:var(--navy-c);border:1px solid var(--navy-b);border-radius:12px;padding:13px;width:200px;z-index:200;box-shadow:var(--shadow)}.a11y-panel.open{display:block}
+.a11y-panel h3{font-size:.77rem;font-weight:700;color:var(--gold);margin-bottom:8px}.a11y-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--navy-b)}.a11y-row:last-child{border-bottom:none}.a11y-row label{font-size:.75rem;color:var(--muted);cursor:pointer}
+.a11y-tog{width:33px;height:18px;background:var(--navy-b);border:none;border-radius:9px;cursor:pointer;position:relative;transition:background .15s;flex-shrink:0}.a11y-tog.on{background:var(--gold)}.a11y-tog::after{content:'';position:absolute;top:2px;right:2px;width:14px;height:14px;background:#fff;border-radius:50%;transition:right .15s}.a11y-tog.on::after{right:17px}
+body.hi-contrast{--navy:#000;--navy-m:#111;--navy-c:#1a1a1a;--navy-b:#555;--text:#fff;--muted:#ddd;--gold:#ffe066}
+body.big-text{font-size:20px}
+body.no-motion *,body.no-motion *::before,body.no-motion *::after{transition:none!important;animation:none!important}
+.empty-state{text-align:center;padding:36px 20px;color:var(--muted)}.empty-state .es-icon{font-size:2.2rem;margin-bottom:9px;display:block}.empty-state p{font-size:.86rem}
+</style>
+</head>
+<body>
+<a href="#main-content" class="skip-link">דלג לתוכן הראשי</a>
+<nav role="navigation" aria-label="ניווט ראשי">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo" onclick="switchProduct('lotto');return false">🎯 Mandeles<span>.co.il</span></a>
+    <div class="main-tabs" role="tablist" aria-label="בחר מוצר">
+      <button class="main-tab active" role="tab" aria-selected="true" onclick="goToLottoForm()" id="tab-lotto" aria-controls="product-lotto">🎱 לוטו</button>
+      <button class="main-tab" role="tab" aria-selected="false" onclick="switchProduct('toto')" id="tab-toto" aria-controls="product-toto">⚽ טוטו</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0" aria-live="polite" aria-label="סטטוס מנוע">
+      <span id="engine-dot" style="width:8px;height:8px;border-radius:50%;background:var(--warn);flex-shrink:0;transition:background .3s" aria-hidden="true"></span>
+      <span id="engine-lbl" style="font-size:.68rem;color:var(--muted);white-space:nowrap">בודק מנוע...</span>
+    </div>
+    <button class="nav-login-btn" onclick="goToAuth()" id="nav-login-btn" aria-label="כניסה לחשבון">כניסה / הרשמה</button>
+    <button id="demo-btn" onclick="activateDemoMode()" title="מצב פיתוח — כניסה ללא שרת" style="display:none;background:rgba(232,160,48,.15);border:1px solid rgba(232,160,48,.3);color:#e8c870;border-radius:7px;font-family:Heebo,sans-serif;font-size:.72rem;font-weight:700;padding:5px 10px;cursor:pointer;flex-shrink:0">🧪 DEMO</button>
+    <button class="nav-menu-btn" onclick="toggleNav()" aria-expanded="false" aria-controls="nav-list" aria-label="תפריט">☰</button>
+    <ul class="nav-links" id="nav-list" role="list">
+      <li><a href="#" onclick="showPage('about');return false">אודות</a></li>
+      <li><a href="#" onclick="showPage('legal');return false">תנאים</a></li>
+      <li><a href="#" onclick="showPage('accessibility');return false">נגישות</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div id="product-lotto" role="tabpanel" aria-labelledby="tab-lotto">
+<header class="hero" role="banner">
+  <div class="hero-badge" aria-hidden="true">✦ ניתוח מקצועי</div>
+  <h1>אסטרטגיית <span>מנדל</span> ללוטו</h1>
+  <p class="hero-sub">בדיקת צירופים, כיסוי מקסימלי, סטטיסטיקה מתקדמת</p>
+  <div class="validity-banner" role="note">
+    <span aria-hidden="true">⏳</span>
+    <p><strong>שים לב:</strong> הצירופים תקפים <strong>עד ההגרלה הקרובה בלבד</strong>. לאחר כל הגרלה מתבצעים חישובים מחדש. לגישה מתמשכת – מנוי חודשי.</p>
+  </div>
+  <div id="site-stats-bar" style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin:14px 0 0;font-size:.78rem;color:var(--muted)" aria-live="polite">
+    <span>🏆 סה"כ זכיות באתר: <strong id="stat-total-wins" style="color:var(--gold)">טוען...</strong></span>
+    <span>💰 כסף שנזכה: <strong id="stat-total-prize" style="color:var(--win)">טוען...</strong></span>
+    <span>👥 מנויים פעילים: <strong id="stat-members" style="color:var(--cream)">טוען...</strong></span>
+  </div>
+  <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+    <button class="btn btn-primary" onclick="goPremium()" aria-haspopup="dialog">⭐ רכוש גישה מלאה</button>
+    <button class="btn" onclick="goToAuth()" style="background:transparent;border:1.5px solid var(--gold);color:var(--gold);border-radius:10px;padding:10px 20px;font-family:'Heebo',sans-serif;font-weight:700;cursor:pointer;font-size:.88rem">כניסה לחשבון</button>
+  </div>
+</header>
+<main id="main-content" tabindex="-1">
+  <section class="card" aria-labelledby="lc-title">
+    <div class="card-title"><span>🔍</span><h2 id="lc-title">בדיקת צירוף – חינם</h2></div>
+    <p style="color:var(--muted);font-size:.86rem;margin-bottom:13px">הזן 6 מספרים (1–37)</p>
+    <fieldset style="border:none;padding:0"><legend class="sr-only">מספרי לוטו</legend>
+      <div class="input-row">
+        <input type="number" min="1" max="37" class="num-input" aria-label="מספר 1" placeholder="–" inputmode="numeric">
+        <input type="number" min="1" max="37" class="num-input" aria-label="מספר 2" placeholder="–" inputmode="numeric">
+        <input type="number" min="1" max="37" class="num-input" aria-label="מספר 3" placeholder="–" inputmode="numeric">
+        <input type="number" min="1" max="37" class="num-input" aria-label="מספר 4" placeholder="–" inputmode="numeric">
+        <input type="number" min="1" max="37" class="num-input" aria-label="מספר 5" placeholder="–" inputmode="numeric">
+        <input type="number" min="1" max="37" class="num-input" aria-label="מספר 6" placeholder="–" inputmode="numeric">
+      </div>
+    </fieldset>
+    <div style="text-align:center"><button class="btn btn-primary" onclick="checkLotto()">🔍 בדוק צירוף</button></div>
+    <div id="lotto-result" class="status" role="alert" aria-live="assertive" aria-atomic="true"></div>
+  </section>
+  <section class="card" aria-labelledby="lp-title">
+    <div class="card-title"><span>⭐</span><h2 id="lp-title">אסטרטגיות מתקדמות – Premium</h2></div>
+    <div class="premium-grid">
+      <div class="prem-item"><span class="lock-badge">🔒 Premium</span><h3 style="color:var(--cream);font-size:.88rem;margin-bottom:5px">כיסוי מקסימלי</h3><p style="color:var(--muted);font-size:.77rem;margin-bottom:11px">200 צירופים מאושרים</p><button class="btn-locked" onclick="goPremium()">🔒 רכוש לגישה</button><div class="validity-inline"><span>⏳</span><span><strong>תקף עד ההגרלה הבאה</strong></span></div></div>
+      <div class="prem-item"><span class="lock-badge">🔒 Premium</span><h3 style="color:var(--cream);font-size:.88rem;margin-bottom:5px">סטטיסטיקה חזקה</h3><p style="color:var(--muted);font-size:.77rem;margin-bottom:11px">Hot Numbers היסטוריים</p><button class="btn-locked" onclick="goPremium()">🔒 רכוש לגישה</button><div class="validity-inline"><span>⏳</span><span><strong>תקף עד ההגרלה הבאה</strong></span></div></div>
+      <div class="prem-item"><span class="lock-badge">🔒 Premium</span><h3 style="color:var(--cream);font-size:.88rem;margin-bottom:5px">גיוון עשרויות</h3><p style="color:var(--muted);font-size:.77rem;margin-bottom:11px">פיזור מקסימלי</p><button class="btn-locked" onclick="goPremium()">🔒 רכוש לגישה</button><div class="validity-inline"><span>⏳</span><span><strong>תקף עד ההגרלה הבאה</strong></span></div></div>
+    </div>
+  </section>
+</main>
+</div>
+
+<div id="product-toto" style="display:none" role="tabpanel" aria-labelledby="tab-toto">
+<header class="toto-hero">
+  <div class="toto-badge" aria-hidden="true">⚽ כלי ניתוח מקצועי</div>
+  <h1>ניתוח <span>טוטו</span> חכם</h1>
+  <p>בחר סוג טוטו ומשחק, וקבל ניתוח סטטיסטי עמוק עם המלצת 1X2 ומחולל טורים מצומצמים</p>
+</header>
+<main id="toto-main" tabindex="-1" style="max-width:1040px;margin:0 auto;padding:26px 16px 80px">
+
+  <section class="card" aria-labelledby="gt-title">
+    <div class="card-title"><span>🎮</span><h2 id="gt-title">שלב 1 – בחר סוג טוטו</h2></div>
+    <div class="game-type-row" role="group" aria-label="סוגי טוטו">
+      <button class="game-type-btn active" onclick="selectGameType('toto16',this)" aria-pressed="true"><span class="gt-icon">⚽</span><span class="gt-name">טוטו רגיל</span><span class="gt-desc">16 משחקים<br>ליגת העל</span><span class="gt-count">Winner 16</span></button>
+      <button class="game-type-btn" onclick="selectGameType('toto_zahav',this)" aria-pressed="false"><span class="gt-icon">🏆</span><span class="gt-name">טוטו זהב</span><span class="gt-desc">משחקי בכורה<br>ממוקד</span><span class="gt-count">Winner Gold</span></button>
+      <button class="game-type-btn" onclick="selectGameType('toto_layb',this)" aria-pressed="false"><span class="gt-icon">🔴</span><span class="gt-name">טוטו לייב</span><span class="gt-desc">בזמן אמת<br>תוך כדי משחק</span><span class="gt-count">Live</span></button>
+      <button class="game-type-btn" onclick="selectGameType('toto4',this)" aria-pressed="false"><span class="gt-icon">4️⃣</span><span class="gt-name">טוטו 4</span><span class="gt-desc">4 משחקים<br>קל להשתתף</span><span class="gt-count">4 Games</span></button>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="gs-title">
+    <div class="card-title"><span>📋</span><h2 id="gs-title">שלב 2 – בחר משחק לניתוח</h2></div>
+    <div class="section-label" id="round-label">🗓️ סבב 28 – מאי 2026 · ליגת העל</div>
+    <div style="margin-top:10px">
+      <div class="game-list" id="game-list" role="list" aria-label="משחקי הטוטו"></div>
+    </div>
+  </section>
+
+  <section class="card" id="analysis-section" aria-labelledby="an-title" aria-live="polite">
+    <div class="card-title"><span>📊</span><h2 id="an-title">שלב 3 – ניתוח סטטיסטי</h2></div>
+    <div id="analysis-content">
+      <div class="empty-state"><span class="es-icon">⚽</span><p>בחר משחק מהרשימה למעלה<br>לקבלת ניתוח מלא</p></div>
+    </div>
+  </section>
+
+
+
+</main>
+</div>
+
+<div id="about" role="region" aria-label="אודות">
+  <div class="page-hero"><h1>אודות Mandeles.co.il</h1><p>כלי ניתוח סטטיסטי מתקדם ללוטו וטוטו. מבוסס על מתמטיקה, מודל פואסון, וניתוח עמוק של ליגת העל.</p></div>
+  <div class="page-wrap" style="padding-top:0">
+    <div class="about-grid">
+      <div class="about-card"><span class="about-icon">📐</span><h3>מתודת מנדל – לוטו</h3><p>Stefan Mandel פיתח גישה מתמטית לכיסוי מקסימלי. אנו מיישמים עקרונות דומים לסינון צירופים חכם.</p></div>
+      <div class="about-card"><span class="about-icon">⚽</span><h3>מנוע טוטו</h3><p>מודל פואסון, ניתוח בית/חוץ, Head-to-Head, עומס משחקים, ו-xG (שערים צפויים) לניבוי 1X2.</p></div>
+      <div class="about-card"><span class="about-icon">🔄</span><h3>עדכון לאחר הגרלה</h3><p>לאחר כל הגרלת לוטו – החישובים מתעדכנים. הצירופים שרכשת תקפים לגרלה הבאה בלבד.</p></div>
+      <div class="about-card"><span class="about-icon">🛡️</span><h3>שקיפות</h3><p>כלי ניתוח בלבד. אין ערובה לזכיה. משחק אחראי הוא ערך עליון.</p></div>
+    </div>
+    <div class="warn-box" role="note"><h3>⚠️ הצהרת אחריות</h3><p>Mandeles.co.il מספק ניתוח סטטיסטי למטרות מידע בלבד. לוטו וטוטו הם משחקי מזל. גיל מינימלי 18. בעיות הימורים: <a href="tel:1800232425" style="color:var(--gold)">1-800-23-24-25</a></p></div>
+    <div class="card"><h2 style="font-family:'Frank Ruhl Libre',serif;font-size:1rem;margin-bottom:9px;color:var(--cream)">יצירת קשר</h2><p>📧 <a href="mailto:support@mandeles.co.il" style="color:var(--gold)">support@mandeles.co.il</a></p><p style="font-size:.78rem;margin-top:5px;color:var(--muted)">מענה עד 48 שעות</p></div>
+  </div>
+</div>
+
+<div id="legal" role="region" aria-label="תנאים">
+  <div class="page-wrap legal-body" id="legal-main" tabindex="-1">
+    <h1>תנאי שימוש ומדיניות</h1>
+    <h2>1. כללי</h2><p>שימוש באתר mandeles.co.il מהווה הסכמה. מיועד לגילאי 18+ בלבד.</p>
+    <h2>2. תוקף לוטו</h2><p>הצירופים שנרכשו תקפים <strong style="color:var(--gold-l)">עד ההגרלה הקרובה בלבד</strong>. רכישה חד-פעמית = גרלה אחת.</p>
+    <h2>3. ניתוח טוטו</h2><p>הניתוח מבוסס על נתונים היסטוריים ואינו מבטיח תוצאות.</p>
+    <h2>4. תשלום וביטול</h2><ul><li>Stripe (כרטיס) או PayPal</li><li>מנוי חודשי – ביטול בכל עת</li><li>רכישה חד-פעמית – לא ניתן להחזר לאחר קבלת תוכן</li></ul>
+    <h2>5. חשבוניות</h2><p>חשבונית מס אוטומטית דרך <strong style="color:var(--gold-l)">iCount</strong>.</p>
+    <h2>6. פרטיות</h2><p>דוא"ל ונתוני עסקה בלבד. לא מוכרים מידע. חוק הגנת הפרטיות תשמ"א-1981.</p>
+    <h2>7. דין ושיפוט</h2><p>הדין הישראלי חל.</p>
+    <p style="margin-top:22px;font-size:.71rem;color:var(--muted)">עדכון: מאי 2026</p>
+  </div>
+</div>
+
+<div id="accessibility" role="region" aria-label="נגישות">
+  <div class="page-wrap legal-body" id="a11y-main" tabindex="-1">
+    <h1>הצהרת נגישות</h1>
+    <p>Mandeles.co.il פועל לעמוד בתקן ת"י 5568 רמה AA (WCAG 2.1).</p>
+    <h2>התאמות</h2><ul><li>קישור דלג לתוכן</li><li>ניווט מלא במקלדת</li><li>ARIA מלא</li><li>ניגודיות 4.5:1</li><li>aria-live</li><li>Responsive</li><li>inputmode=numeric</li></ul>
+    <h2>כלי נגישות</h2><p>כפתור ♿: ניגודיות גבוהה, טקסט גדול, הפחתת אנימציות.</p>
+    <h2>פנייה</h2><p><a href="mailto:support@mandeles.co.il" style="color:var(--gold)">support@mandeles.co.il</a></p>
+    <p style="margin-top:18px;font-size:.71rem;color:var(--muted)">עודכן: מאי 2026</p>
+  </div>
+</div>
+
+<footer role="contentinfo">
+  <div class="footer-links">
+    <button onclick="switchProduct('lotto')">לוטו</button>
+    <button onclick="switchProduct('toto')">טוטו</button>
+    <button onclick="showPage('about')">אודות</button>
+    <button onclick="showPage('legal')">תנאי שימוש</button>
+    <button onclick="showPage('accessibility')">נגישות</button>
+  </div>
+  <p>© 2026 Mandeles.co.il | כל הזכויות שמורות</p>
+  <p>גילאי 18+ בלבד | משחק אחראי: <a href="tel:1800232425">1-800-23-24-25</a></p>
+  <p>תשלום: Stripe | חשבוניות: iCount | נגיש לפי ת"י 5568 AA</p>
+</footer>
+
+<div class="overlay" id="pay-modal" role="dialog" aria-modal="true" aria-labelledby="modal-h">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()" aria-label="סגור">✕</button>
+    <h2 id="modal-h">🌟 גישה מלאה</h2>
+    <p class="modal-sub">לוטו + טוטו – ניתוח מלא ומחולל טורים</p>
+    <div class="modal-validity"><span>⏳</span><div><strong style="color:var(--gold-l);display:block;margin-bottom:2px">תוקף לוטו</strong>הצירופים תקפים עד ההגרלה הקרובה. לגישה מתמשכת – מנוי חודשי.</div></div>
+    <div class="plan-grid">
+      <div class="plan-card sel" onclick="selPlan(this)" role="button" tabindex="0" aria-pressed="true" data-price="25" data-type="weekly"><div class="plan-name">⚡ שבועי</div><div class="plan-price">₪25 <span>/ שבוע</span></div><div class="plan-desc">200 סטים × 2 הגרלות</div><div class="plan-valid warn">⏳ תקף שבוע</div></div>
+      <div class="plan-card" onclick="selPlan(this)" role="button" tabindex="0" aria-pressed="false" data-price="50" data-type="monthly"><div class="plan-name">⭐ חודשי</div><div class="plan-price">₪50 <span>/ חודש</span></div><div class="plan-desc">200 סטים × ~8 הגרלות</div><div class="plan-valid ok">✅ כל ההגרלות</div></div>
+    </div>
+    <button class="pay-stripe" onclick="pay('stripe')">💳 שלם עם כרטיס אשראי</button>
+    <div class="divider" aria-hidden="true">או</div>
+    <button class="pay-pp" onclick="pay('paypal')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.59 3.025-2.566 6.082-8.558 6.082H9.828c-.524 0-.968.382-1.05.9L7.386 21.46c-.072.457.271.877.733.877h4.073c.458 0 .849-.332.923-.784l.038-.196.734-4.655.048-.255c.073-.452.465-.784.923-.784h.581c3.762 0 6.706-1.528 7.567-5.95.362-1.856.176-3.407-.785-4.596z"/></svg>
+      שלם עם PayPal
+    </button>
+    <div class="svc-row"><div class="svc-badge"><span>🔒</span><div><strong>Stripe</strong>PCI DSS</div></div><div class="svc-badge"><span>🧾</span><div><strong>iCount</strong>חשבונית אוטומטית</div></div></div>
+    <p class="modal-legal">בלחיצה אתה מסכים ל<button onclick="showPage('legal');closeModal()">תנאי השימוש</button>. ניתן לביטול בכל עת.</p>
+  </div>
+</div>
+
+<button class="a11y-fab" onclick="togA11y()" aria-label="תפריט נגישות" aria-expanded="false" aria-controls="a11y-panel-el">♿</button>
+<div class="a11y-panel" id="a11y-panel-el" role="region" aria-label="אפשרויות נגישות">
+  <h3>נגישות</h3>
+  <div class="a11y-row"><label>ניגודיות גבוהה</label><button class="a11y-tog" onclick="togMode('hi-contrast',this)" aria-pressed="false" aria-label="ניגודיות גבוהה"></button></div>
+  <div class="a11y-row"><label>טקסט גדול</label><button class="a11y-tog" onclick="togMode('big-text',this)" aria-pressed="false" aria-label="טקסט גדול"></button></div>
+  <div class="a11y-row"><label>הפחת אנימציות</label><button class="a11y-tog" onclick="togMode('no-motion',this)" aria-pressed="false" aria-label="הפחת אנימציות"></button></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// ENGINE CONNECTION v3 – SSE (Server-Sent Events)
+// עדכון בזמן אמת: הדפדפן מתחבר פעם אחת ומקבל push מהשרת
+// Fallback אוטומטי לנתוני DEMO כשהמנוע לא פעיל
+// ═══════════════════════════════════════════════════════════
+const ENGINE_BASE = '';   // reverse proxy – nginx מעביר /engine/ → :5001
+// לפיתוח מקומי: const ENGINE_BASE = '';
+
+let engineOnline = false;
+let LIVE_FIXTURES = [];   // נתונים חיים מהמנוע – כל המשחקים
+let _sseSource = null;    // EventSource פתוח
+
+// ── SSE: חיבור לאירועים חיים ─────────────────────────────
+function connectSSE() {
+  if (_sseSource) { _sseSource.close(); }
+
+  _sseSource = new EventSource(`${ENGINE_BASE}/engine/stream`);
+
+  _sseSource.onopen = () => {
+    engineOnline = true;
+    updateEngineStatus();
+    log('📡 SSE מחובר – מקבל עדכונים בזמן אמת');
+  };
+
+  // snapshot ראשוני – מגיע מיד עם החיבור
+  _sseSource.addEventListener('snapshot', (e) => {
+    try {
+      const d = JSON.parse(e.data);
+      if (d.fixtures && d.fixtures.length) {
+        LIVE_FIXTURES = d.fixtures;
+        renderGameList();
+        log(`📥 snapshot: ${d.count} משחקים`);
+      }
+    } catch(err) { log('⚠️ שגיאה ב-snapshot: ' + err); }
+  });
+
+  // update – מגיע כשיש שינוי בנתונים
+  _sseSource.addEventListener('update', (e) => {
+    try {
+      const d = JSON.parse(e.data);
+      if (d.fixtures && d.fixtures.length) {
+        const prevCount = LIVE_FIXTURES.length;
+        LIVE_FIXTURES = d.fixtures;
+        renderGameList();
+        // אם המשחק הנוכחי נבחר – רענן גם את הניתוח שלו
+        if (selId) {
+          const updated = LIVE_FIXTURES.find(f => f.fixture_id === selId);
+          if (updated) renderAnalysis(updated);
+        }
+        log(`🔄 SSE update: ${d.count} משחקים (${d.elapsed_sec || ''}s)`);
+        // הצג אינדיקטור עדכון
+        _showUpdateFlash();
+      }
+    } catch(err) { log('⚠️ שגיאה ב-update: ' + err); }
+  });
+
+  _sseSource.onerror = () => {
+    engineOnline = false;
+    updateEngineStatus();
+    log('⚠️ SSE התנתק – מנסה שוב בעוד 10 שניות...');
+    _sseSource.close();
+    _sseSource = null;
+    // reconnect אוטומטי
+    setTimeout(connectSSE, 10000);
+  };
+}
+
+// ── fallback polling אם SSE לא נתמך ─────────────────────
+function startPollingFallback() {
+  log('⚠️ EventSource לא נתמך – מופעל polling כל 60 שניות');
+  setInterval(async () => {
+    try {
+      const r = await fetch(`${ENGINE_BASE}/engine/fixtures`);
+      const d = await r.json();
+      if (d.fixtures && d.fixtures.length) {
+        LIVE_FIXTURES = d.fixtures;
+        engineOnline = true;
+        renderGameList();
+        updateEngineStatus();
+      }
+    } catch { engineOnline = false; updateEngineStatus(); }
+  }, 60000);
+}
+
+// ── אינדיקטור עדכון חי ───────────────────────────────────
+function _showUpdateFlash() {
+  const lbl = document.getElementById('engine-lbl');
+  if (!lbl) return;
+  const prev = lbl.textContent;
+  lbl.textContent = '⟳ מתעדכן...';
+  lbl.style.color = '#27ae60';
+  setTimeout(() => { lbl.textContent = prev; lbl.style.color = ''; }, 1500);
+}
+
+// ── DEMO FALLBACK ─────────────────────────────────────────
+const DEMO_GAMES = {
+  toto16:[
+    {fixture_id:1001,round:'סבב 28',home_name:'מכבי חיפה',away_name:'הפועל ב"ש',match_date:'2026-05-20',match_time:'19:00',p1:58,px:22,p2:20,score_home:72,score_away:55,home_form:['W','W','D','W','L'],away_form:['L','D','L','W','D'],h2h:[{date:'12.1',score:'2-0',result:'W'},{date:'5.10',score:'1-1',result:'D'},{date:'3.4',score:'3-1',result:'W'}],home_win_pct:68,away_win_pct:31,home_xg:1.9,away_xg:0.8,squad_str_home:74,squad_str_away:62,fatigue_home:0.9,fatigue_away:1.0,missing_home:[],missing_away:[],weather:{condition:'Clear',temp_c:24,wind_kmh:10,rain_mm:0},factors:[{type:'good',icon:'🏠',text:'<strong>יתרון ביתי חזק</strong> – 8 ניצחונות מ-10 בבית'},{type:'warn',icon:'⚠️',text:'<strong>עומס משחקים</strong> – UEFA ביום חמישי, 2 ימי מנוחה'},{type:'neutral',icon:'📊',text:'<strong>xG</strong> – חיפה 1.9 · ב"ש 0.8'}],value_pick:'1',confidence:'high',recommendation:'נצחון ביתי (58%) – בטוח יחסית'},
+    {fixture_id:1002,round:'סבב 28',home_name:'מכבי ת"א',away_name:'בית"ר י-ם',match_date:'2026-05-20',match_time:'21:00',p1:65,px:18,p2:17,score_home:81,score_away:58,home_form:['W','W','W','D','W'],away_form:['D','L','D','W','L'],h2h:[{date:'8.2',score:'3-2',result:'W'},{date:'15.11',score:'0-0',result:'D'},{date:'2.9',score:'1-0',result:'W'}],home_win_pct:72,away_win_pct:28,home_xg:2.3,away_xg:0.9,squad_str_home:85,squad_str_away:65,fatigue_home:1.0,fatigue_away:0.95,missing_home:[],missing_away:[],weather:{condition:'Clear',temp_c:26,wind_kmh:8,rain_mm:0},factors:[{type:'good',icon:'⭐',text:'<strong>מומנטום גבוה</strong> – 4 ניצחונות ב-5 האחרונים'},{type:'neutral',icon:'🔴',text:'<strong>הרכב מלא</strong>'},{type:'warn',icon:'⚠️',text:'<strong>בית"ר עם מוטיבציה</strong> – נלחמת על הישארות'}],value_pick:'1',confidence:'high',recommendation:'נצחון ביתי (65%) – בטוח יחסית'},
+    {fixture_id:1003,round:'סבב 28',home_name:'הפועל ת"א',away_name:'עירוני קריות',match_date:'2026-05-21',match_time:'19:30',p1:44,px:28,p2:28,score_home:60,score_away:63,home_form:['D','W','L','D','W'],away_form:['W','W','D','L','W'],h2h:[{date:'20.3',score:'1-1',result:'D'},{date:'10.12',score:'2-1',result:'W'},{date:'5.8',score:'0-2',result:'L'}],home_win_pct:49,away_win_pct:52,home_xg:1.1,away_xg:1.3,squad_str_home:66,squad_str_away:70,fatigue_home:0.85,fatigue_away:1.0,missing_home:['בלם מוביל (ספק)'],missing_away:[],weather:{condition:'Cloudy',temp_c:22,wind_kmh:18,rain_mm:0},factors:[{type:'neutral',icon:'⚖️',text:'<strong>משחק מאוזן</strong> – ניתוח מציע כפול X2'},{type:'good',icon:'🔥',text:'<strong>עירוני בפורמה</strong> – 3 ניצחונות ב-4 האחרונים'},{type:'warn',icon:'🏥',text:'<strong>הפועל ת"א</strong> – בלם מוביל ספק להגעה'}],value_pick:'X2',confidence:'medium',recommendation:'כפול X2 – מכסה 56% מהמקרים'},
+    {fixture_id:1004,round:'סבב 28',home_name:'אשדוד',away_name:'הפועל חיפה',match_date:'2026-05-21',match_time:'20:00',p1:35,px:30,p2:35,score_home:48,score_away:65,home_form:['L','D','W','D','L'],away_form:['W','D','W','W','D'],h2h:[{date:'1.3',score:'0-1',result:'L'},{date:'15.10',score:'1-1',result:'D'},{date:'20.7',score:'2-0',result:'W'}],home_win_pct:38,away_win_pct:55,home_xg:0.9,away_xg:1.4,squad_str_home:58,squad_str_away:71,fatigue_home:1.0,fatigue_away:0.92,missing_home:[],missing_away:[],weather:{condition:'Clear',temp_c:28,wind_kmh:12,rain_mm:0},factors:[{type:'warn',icon:'📉',text:'<strong>אשדוד בירידה</strong> – 2 ניצחונות מ-10'},{type:'good',icon:'🚀',text:'<strong>הפועל חיפה בעלייה</strong>'},{type:'neutral',icon:'📊',text:'<strong>xG</strong> – 0.9 מול 1.4'}],value_pick:'X2',confidence:'medium',recommendation:'כפול X2 – מכסה 65% מהמקרים'},
+    {fixture_id:1005,round:'סבב 28',home_name:'בני סכנין',away_name:'מ.ס. אשדוד',match_date:'2026-05-22',match_time:'19:00',p1:38,px:32,p2:30,score_home:55,score_away:52,home_form:['W','L','W','D','W'],away_form:['D','W','L','D','W'],h2h:[{date:'25.2',score:'2-1',result:'W'},{date:'10.11',score:'0-0',result:'D'},{date:'18.8',score:'1-2',result:'L'}],home_win_pct:45,away_win_pct:50,home_xg:1.2,away_xg:1.1,squad_str_home:63,squad_str_away:61,fatigue_home:1.0,fatigue_away:1.0,missing_home:[],missing_away:[],weather:{condition:'Clear',temp_c:30,wind_kmh:9,rain_mm:0},factors:[{type:'neutral',icon:'⚖️',text:'<strong>משחק מאוזן</strong>'},{type:'good',icon:'🏠',text:'<strong>סכנין בבית</strong> – 6 ניצחונות ביתיים'},{type:'neutral',icon:'📊',text:'<strong>xG מאוזן</strong> – 1.2 מול 1.1'}],value_pick:'X',confidence:'medium',recommendation:'תיקו (32%) – שקול כפול X1'},
+    {fixture_id:1006,round:'סבב 28',home_name:'הפועל ירושלים',away_name:'עירוני נס ציונה',match_date:'2026-05-22',match_time:'20:30',p1:52,px:26,p2:22,score_home:69,score_away:50,home_form:['W','W','D','W','W'],away_form:['L','D','L','W','D'],h2h:[{date:'14.3',score:'2-0',result:'W'},{date:'5.12',score:'1-0',result:'W'},{date:'8.9',score:'0-1',result:'L'}],home_win_pct:60,away_win_pct:35,home_xg:1.7,away_xg:0.8,squad_str_home:72,squad_str_away:58,fatigue_home:1.0,fatigue_away:1.0,missing_home:[],missing_away:[],weather:{condition:'Clear',temp_c:25,wind_kmh:11,rain_mm:0},factors:[{type:'good',icon:'🔥',text:'<strong>מומנטום מצוין</strong> – 4 ניצחונות ב-5'},{type:'good',icon:'⭐',text:'<strong>H2H חיובי</strong> – 2 ניצחונות רצופים'},{type:'neutral',icon:'📅',text:'<strong>מנוחה מלאה</strong> – 5 ימי הכנה'}],value_pick:'1X',confidence:'high',recommendation:'כפול 1X – מכסה 78% מהמקרים'}
+  ],
+  toto_zahav:[
+    {fixture_id:2001,round:'סבב 5',home_name:'מכבי חיפה',away_name:'מכבי ת"א',match_date:'2026-05-25',match_time:'20:00',p1:40,px:25,p2:35,score_home:58,score_away:72,home_form:['W','D','W','L','W'],away_form:['W','W','W','D','W'],h2h:[{date:'10.3',score:'1-2',result:'L'},{date:'20.11',score:'1-1',result:'D'},{date:'15.7',score:'2-0',result:'W'}],home_win_pct:45,away_win_pct:60,home_xg:1.5,away_xg:1.8,squad_str_home:74,squad_str_away:85,fatigue_home:1.0,fatigue_away:1.0,missing_home:[],missing_away:[],weather:{condition:'Clear',temp_c:26,wind_kmh:10,rain_mm:0},factors:[{type:'neutral',icon:'⚖️',text:'<strong>דרבי מאוזן</strong>'},{type:'good',icon:'🏠',text:'<strong>חיפה בבית</strong>'},{type:'warn',icon:'⭐',text:'<strong>מכבי ת"א</strong> – 4 ניצחונות רצופים'}],value_pick:'X2',confidence:'medium',recommendation:'כפול X2 – מכסה 60% מהמקרים'}
+  ],
+  toto_layb:[
+    {fixture_id:3001,round:'לייב',home_name:'מכבי חיפה',away_name:'הפועל ת"א',match_date:'2026-05-16',match_time:'19:45',p1:55,px:22,p2:23,score_home:68,score_away:52,home_form:['W','W','D','W','W'],away_form:['D','L','W','D','L'],h2h:[{date:'2.4',score:'2-0',result:'W'},{date:'18.12',score:'1-1',result:'D'},{date:'25.9',score:'3-2',result:'W'}],home_win_pct:62,away_win_pct:30,home_xg:2.1,away_xg:0.9,squad_str_home:74,squad_str_away:64,fatigue_home:1.0,fatigue_away:0.9,missing_home:[],missing_away:[],weather:{condition:'Clear',temp_c:23,wind_kmh:8,rain_mm:0},factors:[{type:'good',icon:'🔴',text:'<strong>לייב</strong> – בזמן אמת'},{type:'good',icon:'🏠',text:'<strong>חיפה בבית</strong> – פייבוריטית'},{type:'neutral',icon:'📊',text:'<strong>נתוני לייב</strong> מתעדכנים'}],value_pick:'1',confidence:'high',recommendation:'נצחון ביתי (55%)'}
+  ],
+  toto4:[
+    {fixture_id:4001,round:'סבב 12',home_name:'מכבי חיפה',away_name:'מכבי ת"א',match_date:'2026-05-23',match_time:'20:00',p1:40,px:26,p2:34,score_home:58,score_away:72,home_form:['W','D','W','L','W'],away_form:['W','W','W','D','W'],h2h:[{date:'10.3',score:'1-2',result:'L'},{date:'20.11',score:'1-1',result:'D'}],home_win_pct:45,away_win_pct:60,home_xg:1.5,away_xg:1.9,squad_str_home:74,squad_str_away:85,fatigue_home:1.0,fatigue_away:1.0,missing_home:[],missing_away:[],weather:{condition:'Clear',temp_c:27,wind_kmh:12,rain_mm:0},factors:[{type:'neutral',icon:'⚖️',text:'<strong>דרבי מאוזן</strong>'},{type:'good',icon:'🏠',text:'<strong>חיפה בבית</strong>'},{type:'warn',icon:'⭐',text:'<strong>מכבי ת"א בפורמה</strong>'}],value_pick:'X2',confidence:'medium',recommendation:'כפול X2 – מכסה 60%'},
+    {fixture_id:4002,round:'סבב 12',home_name:'בית"ר י-ם',away_name:'הפועל ב"ש',match_date:'2026-05-23',match_time:'21:00',p1:50,px:27,p2:23,score_home:67,score_away:52,home_form:['D','W','W','D','W'],away_form:['L','D','L','D','W'],h2h:[{date:'5.2',score:'2-1',result:'W'},{date:'8.10',score:'0-0',result:'D'}],home_win_pct:58,away_win_pct:36,home_xg:1.6,away_xg:0.8,squad_str_home:72,squad_str_away:61,fatigue_home:1.0,fatigue_away:1.0,missing_home:[],missing_away:[],weather:{condition:'Clear',temp_c:25,wind_kmh:9,rain_mm:0},factors:[{type:'good',icon:'🔥',text:'<strong>בית"ר בפורמה</strong>'},{type:'good',icon:'🏟️',text:'<strong>טדי – מבצר</strong>'},{type:'neutral',icon:'📊',text:'<strong>xG 1.6 מול 0.8</strong>'}],value_pick:'1X',confidence:'high',recommendation:'כפול 1X – מכסה 77%'}
+  ]
+};
+
+// ── STATE ────────────────────────────────────────────────────
+let curType = 'toto16';
+let selId   = null;
+
+// ── ENGINE API ───────────────────────────────────────────────
+function getGames(type) {
+  if (engineOnline && LIVE_FIXTURES.length) {
+    return LIVE_FIXTURES;
+  }
+  return DEMO_GAMES[type] || [];
+}
+
+function updateEngineStatus() {
+  const dot = document.getElementById('engine-dot');
+  const lbl = document.getElementById('engine-lbl');
+  if (!dot) return;
+  if (engineOnline) {
+    dot.style.background = '#27ae60';
+    lbl.textContent = '📡 מנוע חי – עדכון אוטומטי';
+  } else {
+    dot.style.background = '#e8a030';
+    lbl.textContent = 'מצב הדגמה';
+  }
+}
+
+function log(msg) { console.log(`[Mandeles] ${msg}`); }
+
+// ── XSS helper ──────────────────────────────────────────────
+function _esc(s) {
+  if (typeof s !== 'string') return s;
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+// ── NAV ──────────────────────────────────────────────────────
+function switchProduct(p) {
+  ['product-lotto','product-toto','about','legal','accessibility'].forEach(
+    id => document.getElementById(id).style.display = 'none');
+  document.getElementById('product-'+p).style.display = 'block';
+  document.querySelectorAll('.main-tab').forEach(t => {
+    t.classList.toggle('active', t.id==='tab-'+p);
+    t.setAttribute('aria-selected', t.id==='tab-'+p);
+  });
+  if (p === 'toto') renderGameList();
+  window.scrollTo(0,0); closeNav();
+}
+function showPage(p) {
+  ['product-lotto','product-toto','about','legal','accessibility'].forEach(
+    id => document.getElementById(id).style.display='none');
+  document.getElementById(p).style.display='block';
+  const el = document.getElementById(p+'-main')||document.getElementById(p);
+  if (el) el.focus();
+  window.scrollTo(0,0); closeNav();
+}
+function toggleNav() {
+  const l=document.getElementById('nav-list'),b=document.querySelector('.nav-menu-btn');
+  const o=l.classList.toggle('open'); b.setAttribute('aria-expanded',o);
+}
+function closeNav() {
+  document.getElementById('nav-list').classList.remove('open');
+  document.querySelector('.nav-menu-btn').setAttribute('aria-expanded','false');
+}
+
+// ── LOTTO CHECK ───────────────────────────────────────────────
+async function checkLotto() {
+  const ins  = document.querySelectorAll('.num-input');
+  const nums = Array.from(ins).map(i=>parseInt(i.value)).filter(n=>!isNaN(n)&&n>=1&&n<=37);
+  const r    = document.getElementById('lotto-result');
+  if (nums.length!==6) { r.className='status rejected show'; r.textContent='⚠️ נא להזין 6 מספרים תקינים'; return; }
+  if (new Set(nums).size!==6) { r.className='status rejected show'; r.textContent='⚠️ כל המספרים חייבים להיות שונים'; return; }
+  r.className='status loading show'; r.textContent='⏳ בודק במאגר...';
+  try {
+    const res = await fetch('/api/check', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({numbers: nums}),
+      signal: AbortSignal.timeout(3000)
+    });
+    const d = await res.json();
+    r.className = 'status '+(d.status==='approved'?'approved':'rejected')+' show';
+    r.textContent = (d.status==='approved'?'✅ ':'❌ ') + d.message;
+  } catch {
+    const ok = nums.reduce((a,b)=>a+b,0)%3!==0;
+    r.className='status '+(ok?'approved':'rejected')+' show';
+    r.textContent = ok ? '✅ הצירוף עבר את הסינון! (מצב הדגמה)' : '❌ הצירוף לא עמד בקריטריונים (מצב הדגמה)';
+  }
+}
+document.querySelectorAll('.num-input').forEach((inp,i,arr) => {
+  inp.addEventListener('input', () => {
+    if (parseInt(inp.value)<1) inp.value=1;
+    if (parseInt(inp.value)>37) inp.value=37;
+    if (String(inp.value).length>=2 && i<arr.length-1) arr[i+1].focus();
+  });
+});
+
+// ── GAME TYPE ─────────────────────────────────────────────────
+function selectGameType(type, btn) {
+  curType=type; selId=null;
+  document.querySelectorAll('.game-type-btn').forEach(b => {
+    b.classList.remove('active'); b.setAttribute('aria-pressed','false');
+  });
+  btn.classList.add('active'); btn.setAttribute('aria-pressed','true');
+  renderGameList();
+  document.getElementById('analysis-content').innerHTML =
+    '<div class="empty-state"><span class="es-icon">⚽</span><p>בחר משחק לניתוח</p></div>';
+}
+
+// ── GAME LIST ─────────────────────────────────────────────────
+function renderGameList() {
+  const games = getGames(curType);
+  const list  = document.getElementById('game-list');
+  if (!games.length) {
+    list.innerHTML='<p style="color:var(--muted);font-size:.83rem;padding:8px">⏳ טוען נתונים...</p>';
+    return;
+  }
+  list.innerHTML = games.map(g => {
+    const id   = g.fixture_id;
+    const home = g.home_name;
+    const away = g.away_name;
+    const date = g.match_date ? g.match_date.slice(5).split('-').reverse().join('.') + ' | ' + (g.match_time||'20:00') : '';
+    const scoreBar = g.score_home != null
+      ? `<div style="display:flex;gap:4px;margin-top:4px;align-items:center">
+           <div style="font-size:.65rem;color:var(--muted)">ציון</div>
+           <div style="background:rgba(39,174,96,.15);color:#6adba6;font-size:.65rem;font-weight:700;padding:1px 6px;border-radius:4px">${Math.round(g.score_home)}</div>
+           <div style="font-size:.65rem;color:var(--muted)">–</div>
+           <div style="background:rgba(231,76,60,.12);color:#f07070;font-size:.65rem;font-weight:700;padding:1px 6px;border-radius:4px">${Math.round(g.score_away)}</div>
+         </div>` : '';
+    return `
+    <div class="game-item ${selId===id?'selected':''}" role="listitem" tabindex="0"
+      onclick="selectGame(${id})" onkeydown="if(event.key==='Enter'||event.key===' ')selectGame(${id})"
+      aria-label="${home} נגד ${away}">
+      <div class="gi-teams">
+        <span class="gi-round">${g.round||''}</span>
+        <div class="gi-home">${home}</div>
+        <div class="gi-vs">נגד</div>
+        <div class="gi-away">${away}</div>
+        <div style="font-size:.69rem;color:var(--muted);margin-top:3px">📅 ${date}</div>
+        ${scoreBar}
+      </div>
+      <div class="odds-pills">
+        <span class="odd-pill odd-1">1·${g.p1}%</span>
+        <span class="odd-pill odd-x">X·${g.px}%</span>
+        <span class="odd-pill odd-2">2·${g.p2}%</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function selectGame(id) {
+  selId = id;
+  document.querySelectorAll('.game-item').forEach(el=>el.classList.remove('selected'));
+  const games = getGames(curType);
+  const idx   = games.findIndex(g=>g.fixture_id===id);
+  if (idx>=0) document.querySelectorAll('.game-item')[idx].classList.add('selected');
+  renderAnalysis(id);
+  document.getElementById('analysis-section').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ── ANALYSIS RENDER ───────────────────────────────────────────
+function renderAnalysis(id) {
+  const g = getGames(curType).find(x=>x.fixture_id===id);
+  if (!g) return;
+
+  const fd  = r => `<span class="form-dot fd-${r.toLowerCase()}" aria-label="${r==='W'?'ניצחון':r==='D'?'תיקו':'הפסד'}">${r}</span>`;
+  const hf  = g.home_form || [];
+  const af  = g.away_form || [];
+  const hp  = g.home_win_pct || 0;
+  const ap  = g.away_win_pct || 0;
+  const xgh = +(g.home_xg||0).toFixed(2);
+  const xga = +(g.away_xg||0).toFixed(2);
+  const sh  = g.score_home != null ? Math.round(g.score_home) : null;
+  const sa  = g.score_away != null ? Math.round(g.score_away) : null;
+  const sq_h = g.squad_str_home != null ? Math.round(g.squad_str_home) : null;
+  const sq_a = g.squad_str_away != null ? Math.round(g.squad_str_away) : null;
+  const fat_h = g.fatigue_home != null ? Math.round(g.fatigue_home*100) : null;
+  const fat_a = g.fatigue_away != null ? Math.round(g.fatigue_away*100) : null;
+  const miss_h = (g.missing_home||[]).join(', ') || 'אין נעדרים ידועים';
+  const miss_a = (g.missing_away||[]).join(', ') || 'אין נעדרים ידועים';
+  const h2h   = g.h2h || [];
+  const facts  = g.factors || [];
+  const pick   = g.value_pick || '–';
+  const conf   = g.confidence || 'low';
+  const rec    = g.recommendation || '';
+  const weather = g.weather || {};
+
+  const confC = conf==='high'?'conf-high':conf==='medium'?'conf-med':'conf-low';
+  const confT = conf==='high'?'ביטחון גבוה':conf==='medium'?'ביטחון בינוני':'ביטחון נמוך';
+  const valC  = pick==='X'||pick.includes('X')?'value-hot':pick==='1'||pick==='2'?'value-neutral':'value-neutral';
+  const valT  = `✦ המלצה: ${pick}`;
+
+  const weatherIcon = weather.condition==='Rain'||weather.condition==='Thunderstorm'?'🌧️':
+                      weather.condition==='Cloudy'?'☁️':'☀️';
+  const weatherStr  = `${weatherIcon} ${weather.temp_c!=null?Math.round(weather.temp_c)+'°C':''} ${weather.condition||''}${weather.rain_mm>0?' | גשם '+weather.rain_mm+'mm':''}`;
+
+  const scoreBlock = sh!=null ? `
+    <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+      <div style="background:var(--navy);border:1px solid var(--navy-b);border-radius:10px;padding:12px 18px;text-align:center;min-width:120px">
+        <div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">ציון כולל 0–100</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px">
+          <div>
+            <div style="font-size:1.6rem;font-weight:900;color:#6adba6;line-height:1">${sh}</div>
+            <div style="font-size:.68rem;color:var(--muted)">${g.home_name}</div>
+          </div>
+          <div style="color:var(--muted);font-size:.8rem">–</div>
+          <div>
+            <div style="font-size:1.6rem;font-weight:900;color:#f07070;line-height:1">${sa}</div>
+            <div style="font-size:.68rem;color:var(--muted)">${g.away_name}</div>
+          </div>
+        </div>
+        <div style="font-size:.65rem;color:var(--muted);margin-top:5px">30% הסתברות + 20% הרכב + 20% מומנטום + 15% Elo + 10% מגרש + 5% עייפות</div>
+      </div>
+    </div>` : '';
+
+  document.getElementById('analysis-content').innerHTML = `
+    <div style="margin-bottom:12px">
+      <div style="font-size:1rem;font-weight:700;color:var(--cream)">${g.home_name} <span style="color:var(--muted)">נ'</span> ${g.away_name}</div>
+      <div style="font-size:.74rem;color:var(--muted);margin-top:2px">📅 ${g.match_date||''} ${g.match_time||''} · ${g.round||''} ${weatherStr?'| '+weatherStr:''}</div>
+    </div>
+
+    ${scoreBlock}
+
+    <div class="analysis-grid">
+
+      <!-- הסתברויות -->
+      <div class="prob-section">
+        <div class="prob-title">📊 הסתברות – מנוע פואסון + שחקנים + עייפות + מזג אוויר${engineOnline?' (נתונים חיים)':' (הדגמה)'}</div>
+        <div class="prob-bar-wrap" role="img" aria-label="1:${g.p1}% תיקו:${g.px}% 2:${g.p2}%">
+          <div class="prob-seg prob-1" style="width:${g.p1}%">${g.p1}%</div>
+          <div class="prob-seg prob-x" style="width:${g.px}%">${g.px}%</div>
+          <div class="prob-seg prob-2" style="width:${g.p2}%">${g.p2}%</div>
+        </div>
+        <div class="prob-labels"><span>1 – ${g.home_name}</span><span>X – תיקו</span><span>2 – ${g.away_name}</span></div>
+        <span class="value-badge ${valC}">${valT}</span>
+      </div>
+
+      <!-- פורמה ביתי -->
+      <div>
+        <div class="prob-title">📈 פורמה – ${g.home_name}</div>
+        <div class="form-dots">${hf.map(fd).join('')}</div>
+        <div class="stat-rows" style="margin-top:11px">
+          <div class="stat-row"><span class="stat-label">% ניצחונות בית</span><div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${hp}%;background:var(--win)"></div></div><span class="stat-val">${hp}%</span></div>
+          <div class="stat-row"><span class="stat-label">xG ממוצע</span><div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${Math.min(xgh/3*100,100)}%;background:var(--gold)"></div></div><span class="stat-val">${xgh}</span></div>
+          ${sq_h!=null?`<div class="stat-row"><span class="stat-label">חוזק הרכב</span><div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${sq_h}%;background:#7c6cd8"></div></div><span class="stat-val">${sq_h}</span></div>`:''}
+          ${fat_h!=null?`<div class="stat-row"><span class="stat-label">מצב גופני</span><div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${fat_h}%;background:${fat_h>=90?'var(--win)':fat_h>=75?'var(--gold)':'var(--loss)'}"></div></div><span class="stat-val">${fat_h}%</span></div>`:''}
+        </div>
+        <div style="margin-top:8px;font-size:.73rem;color:var(--muted)">🏥 נעדרים: <span style="color:${miss_h==='אין נעדרים ידועים'?'#6adba6':'#f07070'}">${miss_h}</span></div>
+      </div>
+
+      <!-- פורמה אורחים -->
+      <div>
+        <div class="prob-title">📉 פורמה – ${g.away_name}</div>
+        <div class="form-dots">${af.map(fd).join('')}</div>
+        <div class="stat-rows" style="margin-top:11px">
+          <div class="stat-row"><span class="stat-label">% ניצחונות חוץ</span><div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${ap}%;background:var(--loss)"></div></div><span class="stat-val">${ap}%</span></div>
+          <div class="stat-row"><span class="stat-label">xG ממוצע</span><div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${Math.min(xga/3*100,100)}%;background:var(--muted)"></div></div><span class="stat-val">${xga}</span></div>
+          ${sq_a!=null?`<div class="stat-row"><span class="stat-label">חוזק הרכב</span><div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${sq_a}%;background:#7c6cd8"></div></div><span class="stat-val">${sq_a}</span></div>`:''}
+          ${fat_a!=null?`<div class="stat-row"><span class="stat-label">מצב גופני</span><div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${fat_a}%;background:${fat_a>=90?'var(--win)':fat_a>=75?'var(--gold)':'var(--loss)'}"></div></div><span class="stat-val">${fat_a}%</span></div>`:''}
+        </div>
+        <div style="margin-top:8px;font-size:.73rem;color:var(--muted)">🏥 נעדרים: <span style="color:${miss_a==='אין נעדרים ידועים'?'#6adba6':'#f07070'}">${miss_a}</span></div>
+      </div>
+
+      <!-- H2H -->
+      <div>
+        <div class="prob-title">⚔️ עימותים ישירים H2H</div>
+        ${h2h.length ? `
+        <table class="h2h-table" aria-label="היסטוריית עימותים">
+          <thead><tr><th>תאריך</th><th>תוצאה</th><th>סיום</th></tr></thead>
+          <tbody>${h2h.map(m=>`
+            <tr>
+              <td>${m.date||m.d||''}</td>
+              <td>${m.score||m.sc||''}</td>
+              <td><span class="h2h-result h2h-${(m.result||m.r||'d').toLowerCase()}">${(m.result||m.r)==='W'?'נצחון ביתי':(m.result||m.r)==='D'?'תיקו':'נצ. אורחים'}</span></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>` : '<p style="color:var(--muted);font-size:.8rem">אין נתוני H2H</p>'}
+      </div>
+
+      <!-- גורמי X -->
+      <div>
+        <div class="prob-title">🔎 גורמי X – שחקנים, עייפות, מזג אוויר, מגרש</div>
+        <div class="xfactor-list">
+          ${facts.length ? facts.map(f=>`
+            <div class="xf-item ${f.type||f.t||'neutral'}" role="note">
+              <span class="xf-icon" aria-hidden="true">${f.icon||f.i||'📌'}</span>
+              <span class="xf-text">${typeof DOMPurify!=='undefined'?DOMPurify.sanitize(f.text||f.tx||'',{ALLOWED_TAGS:['strong','br']}):((f.text||f.tx||'').replace(/<(?!\/?(?:strong|br))[^>]+>/gi,''))}</span>
+            </div>`).join('') :
+            '<p style="color:var(--muted);font-size:.8rem">אין גורמים בולטים</p>'}
+        </div>
+      </div>
+
+      <!-- המלצה -->
+      <div class="prob-section">
+        <div class="rec-card">
+          <div class="rec-header">
+            <span class="rec-title">🎯 המלצת המנוע</span>
+            <span class="rec-confidence ${confC}">${confT}</span>
+          </div>
+          <div class="rec-body">
+            <strong>הימור מומלץ: ${_esc(pick)}</strong><br><br>
+            ${typeof DOMPurify!=='undefined'?DOMPurify.sanitize(rec,{ALLOWED_TAGS:['strong']}):_esc(rec)}
+            ${sh!=null?`<br><br><span style="font-size:.74rem;color:var(--muted)">ציון כולל: ${g.home_name} <strong style="color:#6adba6">${sh}</strong> מול ${g.away_name} <strong style="color:#f07070">${sa}</strong></span>`:''}
+          </div>
+        </div>
+      </div>
+
+    </div>`;
+}
+
+// ── MODAL ─────────────────────────────────────────────────────
+let lastF=null;
+function openModal(){lastF=document.activeElement;const m=document.getElementById('pay-modal');m.classList.add('open');m.querySelector('.modal-close').focus();document.addEventListener('keydown',onKey)}
+function closeModal(){document.getElementById('pay-modal').classList.remove('open');document.removeEventListener('keydown',onKey);if(lastF)lastF.focus()}
+function onKey(e){if(e.key==='Escape')closeModal()}
+document.getElementById('pay-modal').addEventListener('click',function(e){if(e.target===this)closeModal()});
+function selPlan(el){document.querySelectorAll('.plan-card').forEach(c=>{c.classList.remove('sel');c.setAttribute('aria-pressed','false')});el.classList.add('sel');el.setAttribute('aria-pressed','true')}
+document.querySelectorAll('.plan-card').forEach(c=>c.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();c.click()}}));
+function pay(m){alert(m==='stripe'?'💳 מעביר ל-Stripe Checkout...\n(יש לחבר Stripe Checkout API בשרת)':'📱 מעביר ל-PayPal...\n(יש לחבר PayPal Orders API)')}
+
+// ── A11Y ──────────────────────────────────────────────────────
+function togA11y(){const p=document.getElementById('a11y-panel-el'),b=document.querySelector('.a11y-fab');const o=p.classList.toggle('open');b.setAttribute('aria-expanded',o)}
+function togMode(cls,btn){document.body.classList.toggle(cls);const on=document.body.classList.contains(cls);btn.classList.toggle('on',on);btn.setAttribute('aria-pressed',on)}
+if(window.matchMedia('(prefers-reduced-motion:reduce)').matches) document.body.classList.add('no-motion');
+
+// ── עזרים ────────────────────────────────────────────────────
+function getCookie(n){const m=document.cookie.match('(^|;)\\s*'+n+'\\s*=\\s*([^;]+)');return m?m.pop():null;}
+function goToWallet(){window.location.href='/wallet.html';}
+function goToProfile(){window.location.href='/profile.html';}
+function goToLottoForm(){
+  const token=localStorage.getItem('auth_token')||localStorage.getItem('fb_token');
+  const isDemo=localStorage.getItem('demo_mode')==='1';
+  if(!token&&!isDemo){
+    window.location.href='/auth.html?redirect=/lotto_form.html';
+  } else {
+    window.location.href='/lotto_form.html';
+  }
+}
+function goToAuth(redirect){window.location.href='/auth.html'+(redirect?'?redirect='+encodeURIComponent(redirect):'');}
+function goPremium(){
+  const user=localStorage.getItem('auth_token');
+  if(user){const m=document.getElementById('pay-modal');m.classList.add('open');m.querySelector('.modal-close').focus();document.addEventListener('keydown',onKey);}
+  else{goToAuth('/new_stite.html');}
+}
+
+// ══════════════════════════════════════════════════════════
+// AUTH – תומך גם ב-Firebase token (auth_token) וגם ב-demo
+// ══════════════════════════════════════════════════════════
+
+// DEMO_USER: נתוני משתמש מדומה לצורך פיתוח/בדיקות
+const DEMO_USER = {
+  name: 'דמו',
+  email: 'demo@mandeles.co.il',
+  balance: 500,
+  sets: Array.from({length:10},(_,i)=>({
+    set_index:i+1,
+    n1:i+1,n2:i+7,n3:i+13,n4:i+19,n5:i+25,n6:Math.min(i+31,37),
+    strong:(i%7)+1,
+    draw_date: new Date().toISOString().slice(0,10)
+  }))
+};
+
+function _applyLoggedInUI(name, token, isDemoMode){
+  const loginBtn=document.getElementById('nav-login-btn');
+  if(!loginBtn) return;
+  loginBtn.outerHTML=`
+    ${isDemoMode?`<span style="font-size:.65rem;background:rgba(232,160,48,.15);border:1px solid rgba(232,160,48,.3);color:#e8c870;border-radius:5px;padding:3px 7px;flex-shrink:0">🧪 DEMO</span>`:''}
+    <span class="wallet-badge" onclick="goToWallet()" title="ארנק">💳 ₪<span id="wallet-bal">${isDemoMode?DEMO_USER.balance.toFixed(2):'...'}</span></span>
+    <button id="user-avatar" onclick="goToProfile()" aria-label="פרופיל">${_esc(name[0].toUpperCase())}</button>`;
+  if(!isDemoMode) loadWalletBalance(token);
+}
+
+function checkAuth(){
+  const loginBtn=document.getElementById('nav-login-btn');
+  // בדוק DEMO mode
+  if(localStorage.getItem('demo_mode')==='1'){
+    _applyLoggedInUI(DEMO_USER.name, null, true);
+    unlockPremium(DEMO_USER.sets);
+    return;
+  }
+  // בדוק Firebase/JWT token — תומך גם ב-auth_token וגם ב-fb_token (legacy)
+  const token = localStorage.getItem('auth_token') || localStorage.getItem('fb_token');
+  if(!token){ if(loginBtn)loginBtn.style.display='flex'; return; }
+  // אם יש token — נסה לאמת מול השרת
+  fetch('/auth/me',{
+    headers:{'Authorization':'Bearer '+token},
+    signal: AbortSignal.timeout(3000)
+  })
+    .then(r=>{
+      if(!r.ok){
+        // שרת החזיר שגיאה — נסה להשתמש בנתוני Firebase ישירות
+        _tryFirebaseToken(token, loginBtn);
+        return null;
+      }
+      return r.json();
+    })
+    .then(u=>{
+      if(!u) return;
+      const name=u.name||u.phone||u.email||'U';
+      _applyLoggedInUI(name, token, false);
+      checkSubscription(token);
+    })
+    .catch(()=>{
+      // השרת לא פעיל — נסה Firebase token ישירות
+      _tryFirebaseToken(token, loginBtn);
+    });
+}
+
+// כשהשרת לא פעיל — decode Firebase token ישירות (ללא אימות חתימה, לצרכי UI בלבד)
+function _tryFirebaseToken(token, loginBtn){
+  try{
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+    const name = payload.name || payload.email || payload.phone_number || 'משתמש';
+    const exp  = payload.exp || 0;
+    if(Date.now()/1000 > exp){ // פג תוקף
+      localStorage.removeItem('auth_token'); localStorage.removeItem('fb_token');
+      if(loginBtn) loginBtn.style.display='flex'; return;
+    }
+    _applyLoggedInUI(name, token, false);
+    // שרת לא פעיל — אנחנו יכולים לפחות להציג שמחובר, אבל לא נפתח Premium ללא אימות
+    log('⚠️ שרת auth לא פעיל — מציג UI מחובר ללא אימות מנוי');
+  }catch(e){
+    log('⚠️ token לא תקין: '+e.message);
+    if(loginBtn) loginBtn.style.display='flex';
+  }
+}
+
+async function loadWalletBalance(token){
+  try{
+    const r=await fetch('/auth/wallet/balance',{
+      headers:{'Authorization':'Bearer '+token},
+      signal: AbortSignal.timeout(3000)
+    });
+    if(!r.ok) return;
+    const d=await r.json();
+    const el=document.getElementById('wallet-bal');
+    if(el)el.textContent=(d.balance||0).toFixed(2);
+  }catch{}
+}
+
+// ── בדיקת מנוי ────────────────────────────────────────────
+async function checkSubscription(token){
+  try{
+    const r=await fetch('/lotto/my-sets',{
+      headers:{'Authorization':'Bearer '+token},
+      signal: AbortSignal.timeout(3000)
+    });
+    if(!r.ok) return;
+    const d=await r.json();
+    const hasSub = d.sets && d.sets.length > 0;
+    if(hasSub) unlockPremium(d.sets);
+  }catch(e){ log('sub check: '+e.message); }
+}
+
+// ── כפתור DEMO מצב פיתוח ─────────────────────────────────
+async function activateDemoMode(){
+  // התחבר עם חשבון הדמו האמיתי מהשרת
+  try{
+    const r = await fetch('/auth/login/email', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({email:'demo@mandeles.co.il', password:'Demo1234!'})
+    });
+    const d = await r.json();
+    if(d.token){
+      localStorage.setItem('auth_token', d.token);
+      localStorage.setItem('demo_mode', '1');
+      window.location.reload();
+    } else {
+      // fallback — אם השרת לא עובד, השתמש ב-demo_mode רגיל
+      localStorage.setItem('demo_mode','1');
+      window.location.reload();
+    }
+  } catch(e){
+    // השרת לא זמין — demo מקומי
+    localStorage.setItem('demo_mode','1');
+    window.location.reload();
+  }
+}
+function deactivateDemoMode(){
+  localStorage.removeItem('demo_mode');
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('fb_token');
+  window.location.href='/new_stite.html';
+}
+
+function unlockPremium(sets){
+  // החלף כל כפתור "רכוש לגישה" בכפתור "מלא טפסים"
+  document.querySelectorAll('.btn-locked').forEach(btn=>{
+    btn.outerHTML=`<button class="btn btn-primary" onclick="goToProfile()" style="width:100%;background:var(--win)">✅ מלא טפסים</button>`;
+  });
+  // הסתר lock badges
+  document.querySelectorAll('.lock-badge').forEach(el=>{
+    el.innerHTML='✅ פעיל';
+    el.style.background='rgba(39,174,96,.15)';
+    el.style.borderColor='rgba(39,174,96,.3)';
+    el.style.color='var(--win)';
+  });
+  // עדכן כפתור hero
+  const heroBtn=document.querySelector('.btn.btn-primary[onclick*="goPremium"]');
+  if(heroBtn){
+    heroBtn.textContent='⭐ לפרופיל שלי';
+    heroBtn.onclick=goToProfile;
+  }
+  // הצג כמה סטים יש
+  const lpTitle=document.getElementById('lp-title');
+  if(lpTitle) lpTitle.textContent=`✅ יש לך ${sets.length} סטים — אסטרטגיות פעילות`;
+  console.log(`✅ מנוי פעיל — ${sets.length} סטים`);
+}
+
+// ── סטטיסטיקות אתר ────────────────────────────────────────
+function _setStats(wins,prize,members){
+  const tw=document.getElementById('stat-total-wins');
+  const tp=document.getElementById('stat-total-prize');
+  const tm=document.getElementById('stat-members');
+  if(tw)tw.textContent=Number(wins).toLocaleString('he-IL');
+  if(tp)tp.textContent='₪'+Number(prize).toLocaleString('he-IL');
+  if(tm)tm.textContent=Number(members).toLocaleString('he-IL');
+}
+async function loadSiteStats(){
+  _setStats(0,0,0);  // מיד מציג 0 במקום "טוען..."
+  try{
+    const ctrl=new AbortController();
+    setTimeout(()=>ctrl.abort(),4000);
+    const r=await fetch('/api/stats',{signal:ctrl.signal});
+    if(!r.ok)return;
+    const d=await r.json();
+    _setStats(d.total_wins||0,d.total_prize||0,d.active_members||0);
+  }catch(e){
+    console.log('stats:',e.name==='AbortError'?'timeout':e.message);
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+(function() {
+  // הצג כפתור DEMO אם השרת לא פעיל ואין טוקן
+  const hasTok = localStorage.getItem('auth_token')||localStorage.getItem('fb_token')||localStorage.getItem('demo_mode');
+  if(!hasTok){
+    fetch('/auth/me',{signal:AbortSignal.timeout(1500)})
+      .catch(()=>{ const b=document.getElementById('demo-btn'); if(b)b.style.display='block'; });
+  }
+  if(localStorage.getItem('demo_mode')==='1'){
+    const b=document.getElementById('demo-btn');
+    if(b){ b.textContent='🧪 יציאה מ-DEMO'; b.onclick=deactivateDemoMode; b.style.display='block'; }
+  }
+  // בדיקת auth + סטטיסטיקות
+
+  // תמיכה ב-?tab= לניווט ישיר מדפים אחרים
+  (function(){
+    var tab = new URLSearchParams(window.location.search).get('tab');
+    if(tab === 'toto') switchProduct('toto');
+    else if(tab === 'about') showPage('about');
+    else if(tab === 'legal') showPage('legal');
+    else if(tab === 'accessibility') showPage('accessibility');
+  })();
+
+  checkAuth();
+  loadSiteStats();
+  // SSE / polling לנתוני טוטו
+  if (typeof EventSource !== 'undefined') {
+    connectSSE();
+  } else {
+    startPollingFallback();
+  }
+  renderGameList();
+})();
+</script>
+</body>
+</html>

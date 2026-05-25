@@ -591,7 +591,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 // ══════════════════════════════════════════════════════════
 // MANDELES ADMIN – לוח בקרה
 // ══════════════════════════════════════════════════════════
-const API = 'http://localhost:5003';
+const API = '';
 const ADMIN_HDR = () => ({'Content-Type':'application/json','X-Admin-Token': getAdminToken()});
 
 function getAdminToken(){return sessionStorage.getItem('admin_token')||prompt('הזן טוקן אדמין:')||'';}
@@ -836,6 +836,7 @@ function renderOrdersTable(list,bodyId='orders-body',mini=false){
       <td>
         <div style="display:flex;gap:4px">
           <button class="btn btn-icon btn-outline btn-sm" onclick="viewOrder('${esc(o.order_number)}')" title="צפה">👁</button>
+          <button class="btn btn-icon btn-outline btn-sm" onclick="viewOrderForm('${esc(o.order_number)}')" title="טופס לוטו">📋</button>
           <button class="btn btn-icon btn-green btn-sm" onclick="advanceOrder(${o.id},'${o.status}')" title="קדם סטטוס">→</button>
         </div>
       </td>
@@ -881,6 +882,7 @@ async function viewOrder(num){
     </div>
     <div style="display:flex;gap:8px;margin-top:14px">
       <button class="btn btn-green" onclick="advanceOrder(${o.id},'${o.status}')">→ קדם סטטוס</button>
+      <button class="btn btn-outline" onclick="viewOrderForm('${esc(o.order_number)}')">📋 צפה בטופס</button>
       <button class="btn btn-outline" onclick="exportCSV('order_${o.id}')">⬇ CSV</button>
     </div>`;
   openModal('modal-order');
@@ -888,9 +890,20 @@ async function viewOrder(num){
 async function advanceOrder(id,status){
   const next={paid:'printed',printed:'sent',sent:'delivered'}[status];
   if(!next){toast('ההזמנה כבר נמסרה','error');return;}
-  const labels={printed:'הודפס ✓',sent:'נשלח ✓',delivered:'נמסר ✓'};
+  const labels={printed:'הודפס 🖨️',sent:'נשלח 📬',delivered:'נמסר ✅'};
+  const smsMsgs={printed:'לקוח יקבל SMS: "הטפסים הודפסו"',sent:'לקוח יקבל SMS: "הטפסים נשלחו למפעל הפיס"',delivered:'לקוח יקבל SMS: "אישור הגשה התקבל"'};
+  if(!confirm(`לעדכן סטטוס ל-${labels[next]}?\n${smsMsgs[next]||''}`)) return;
   const d=await api(`/admin/orders/${id}/status`,{method:'POST',body:JSON.stringify({status:next})});
-  if(d){toast('סטטוס עודכן: '+labels[next]);loadOrders();closeModal('modal-order');}
+  if(d){
+    const smsNote = d.sms_sent ? ' | SMS נשלח ✅' : ' | SMS לא נשלח (Twilio לא מוגדר)';
+    toast('סטטוס עודכן: '+labels[next]+smsNote);
+    loadOrders();
+    closeModal('modal-order');
+  }
+}
+
+async function viewOrderForm(orderNum){
+  window.open(`/lotto_form.html?order=${orderNum}`,'_blank');
 }
 
 // ── WINS ─────────────────────────────────────────────────

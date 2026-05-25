@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>טופס לוטו — Mandeles</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;900&family=Frank+Ruhl+Libre:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0d1b2a;--navy-c:#1a2d42;--navy-b:#263d57;--navy-m:#162436;
+  --gold:#c9a84c;--gold-l:#e8c870;--text:#e8dcc8;--muted:#8aaabe;
+  --red:#e8001e;--red-d:#b50017;--cream:#f0e8d8;--green:#1db96a;
+  --surface:rgba(26,45,66,.9);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Heebo',sans-serif;background:var(--navy);color:var(--text);min-height:100vh}
+
+/* GNAV */
+.gnav{background:var(--navy-m);border-bottom:1px solid var(--navy-b);position:sticky;top:0;z-index:300}
+.gnav-inner{max-width:960px;margin:0 auto;display:flex;align-items:center;gap:8px;padding:0 16px;height:52px}
+.gnav-logo{font-family:'Frank Ruhl Libre',serif;font-size:1rem;color:var(--gold);font-weight:700;text-decoration:none}
+.gnav-logo span{color:var(--muted);font-size:.7rem;font-family:'Heebo',sans-serif;font-weight:400}
+.gnav-links{display:flex;gap:2px;list-style:none;flex:1;justify-content:center}
+.gnav-links a{color:var(--muted);text-decoration:none;padding:5px 10px;border-radius:7px;font-size:.78rem;transition:all .15s}
+.gnav-links a:hover{color:var(--gold);background:rgba(201,168,76,.08)}
+.gnav-right{display:flex;align-items:center;gap:6px}
+.gnav-wallet{background:rgba(201,168,76,.12);border:1px solid #9a7a30;border-radius:6px;padding:4px 9px;font-size:.72rem;font-weight:700;color:var(--gold);text-decoration:none}
+.gnav-avatar{width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--navy);border:none;font-size:.72rem;font-weight:800;cursor:pointer}
+.gnav-login{background:var(--gold);color:var(--navy);border:none;border-radius:7px;font-family:'Heebo',sans-serif;font-size:.76rem;font-weight:800;padding:6px 12px;cursor:pointer}
+
+/* PAGE */
+.page{max-width:520px;margin:0 auto;padding:20px 14px 80px}
+
+/* INFO BAR */
+.info-bar{background:var(--surface);border:1px solid var(--navy-b);border-radius:12px;padding:13px 16px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.info-item .lbl{font-size:.65rem;color:var(--muted);margin-bottom:1px}
+.info-item .val{font-weight:700;color:var(--cream);font-size:.82rem}
+.info-item .order-n{font-size:.95rem;font-weight:900;color:var(--gold);font-family:'Frank Ruhl Libre',serif}
+.prog-row{display:flex;align-items:center;gap:8px;font-size:.7rem;color:var(--muted)}
+.prog-bar-sm{width:90px;height:4px;background:var(--navy-b);border-radius:2px;overflow:hidden}
+.prog-fill-sm{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-l));border-radius:2px;transition:width .4s}
+
+/* ══ MODAL OVERLAY ══ */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:400;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+.modal-bg.hidden{display:none}
+.modal{background:var(--navy-c);border:1px solid var(--navy-b);border-radius:16px;padding:24px;max-width:420px;width:100%;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.modal-close{position:absolute;top:12px;left:12px;background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;line-height:1;padding:4px}
+.modal-close:hover{color:var(--cream)}
+.modal-icon{font-size:2rem;text-align:center;margin-bottom:10px}
+.modal-title{font-family:'Frank Ruhl Libre',serif;font-size:1.1rem;font-weight:900;color:var(--cream);text-align:center;margin-bottom:8px}
+.modal-body{font-size:.8rem;color:var(--muted);line-height:1.7;text-align:center;margin-bottom:16px}
+.modal-body strong{color:var(--gold)}
+.modal-btn{width:100%;padding:11px;border:none;border-radius:9px;background:var(--gold);color:var(--navy);font-family:'Heebo',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer}
+.modal-btn:hover{background:var(--gold-l)}
+
+/* AUTO FILL MODAL */
+.auto-options{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.auto-opt{display:flex;align-items:center;justify-content:space-between;background:var(--navy);border:1px solid var(--navy-b);border-radius:9px;padding:10px 14px;cursor:pointer;transition:all .15s}
+.auto-opt:hover,.auto-opt.selected{border-color:var(--gold);background:rgba(201,168,76,.08)}
+.auto-opt-label{font-size:.82rem;font-weight:700;color:var(--cream)}
+.auto-opt-sub{font-size:.65rem;color:var(--muted)}
+.auto-opt-check{width:18px;height:18px;border-radius:50%;border:2px solid var(--navy-b);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.auto-opt.selected .auto-opt-check{background:var(--gold);border-color:var(--gold);color:var(--navy);font-size:.7rem;font-weight:900}
+.auto-custom{display:flex;gap:8px;align-items:center;margin-bottom:14px}
+.auto-custom input{flex:1;background:var(--navy);border:1px solid var(--navy-b);border-radius:7px;color:var(--cream);font-family:'Heebo',sans-serif;font-size:.88rem;padding:8px 11px;text-align:center}
+.auto-custom input:focus{outline:none;border-color:var(--gold)}
+.auto-custom label{font-size:.76rem;color:var(--muted);white-space:nowrap}
+
+/* FREE TABLE MODAL */
+
+.modal-btn-green{width:100%;padding:11px;border:none;border-radius:9px;background:linear-gradient(135deg,var(--green),#17a25d);color:#fff;font-family:'Frank Ruhl Libre',serif;font-size:.95rem;font-weight:900;cursor:pointer;margin-bottom:8px}
+.modal-btn-green:hover{opacity:.9}
+.modal-btn-outline{width:100%;padding:9px;border:1px solid var(--navy-b);border-radius:9px;background:none;color:var(--muted);font-family:'Heebo',sans-serif;font-size:.78rem;cursor:pointer}
+.modal-btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+
+/* TOOLBAR */
+.toolbar{display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border-radius:8px;font-family:'Heebo',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-l));color:var(--navy)}
+.btn-gold:hover{opacity:.9}
+.btn-teal{background:rgba(29,185,106,.15);border:1px solid rgba(29,185,106,.35);color:var(--green)}
+.btn-teal:hover{background:rgba(29,185,106,.25)}
+.btn-outline{background:transparent;border:1px solid var(--navy-b);color:var(--muted)}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+.btn-red-outline{background:transparent;border:1px solid rgba(232,0,30,.3);color:#ff6b7a}
+.btn-red-outline:hover{border-color:var(--red);background:rgba(232,0,30,.08)}
+
+/* LOTTO CARD */
+.lotto-card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.45);display:flex;direction:rtl;margin-bottom:16px}
+.card-spine{background:var(--red);width:36px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;border-left:2px solid var(--red-d)}
+.spine-brand{writing-mode:vertical-rl;transform:rotate(180deg);color:#fff;font-family:'Frank Ruhl Libre',serif;font-size:.92rem;font-weight:900;letter-spacing:3px;flex:1;display:flex;align-items:center;justify-content:center;padding:8px 0}
+.spine-sub{writing-mode:vertical-rl;transform:rotate(180deg);font-size:.42rem;color:rgba(255,255,255,.6);padding:5px 0;border-top:1px solid var(--red-d)}
+.card-body{flex:1;display:flex;flex-direction:column;min-width:0}
+.card-hdr{background:var(--red);padding:7px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--red-d)}
+.card-hdr-brand{color:#fff;font-family:'Frank Ruhl Libre',serif;font-size:1rem;font-weight:900}
+.card-hdr-info{color:rgba(255,255,255,.8);font-size:.6rem;text-align:left}
+
+/* טבלה */
+.tbl-row{display:flex;border-bottom:1px solid #e8e8e8;transition:background .12s;align-items:center}
+.tbl-row:last-child{border-bottom:none}
+.tbl-row.filled{background:#f5fff8}
+.tbl-tag{background:var(--red);color:#fff;width:28px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;border-left:1px solid var(--red-d);padding:2px 0}
+.tbl-tag-lbl{font-size:.44rem;opacity:.7;line-height:1}
+.tbl-tag-n{font-size:.8rem;font-weight:900;line-height:1.2}
+.tbl-body{flex:1;padding:1px 3px;display:flex;flex-direction:column;gap:1px}
+.nums-row{display:flex;gap:1px}
+.nb{width:26px;height:26px;border-radius:50%;border:1.5px solid #d5d5d5;background:#fff;font-size:.7rem;font-weight:700;color:#333;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .1s;flex-shrink:0;user-select:none;-webkit-tap-highlight-color:transparent}
+.nb:hover{border-color:var(--red);color:var(--red)}
+.nb.sel{background:var(--red);border-color:var(--red);color:#fff;transform:scale(1.08)}
+.nb.locked{opacity:.22;cursor:default;transform:none;pointer-events:none}
+.nb.str-sel{background:#8b0000;border-color:#8b0000;color:#fff}
+.strong-col{background:#fff5f5;border-right:1px solid #ffd0d0;width:30px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding:1px 2px;gap:0px;justify-content:space-evenly}
+.strong-lbl{font-size:.42rem;font-weight:900;color:var(--red);text-align:center;line-height:1;margin-bottom:1px}
+.tbl-mini-actions{display:flex;flex-direction:column;justify-content:center;gap:2px;padding:2px 3px;border-right:1px solid #ebebeb;flex-shrink:0}
+.tbl-mini-btn{background:none;border:1px solid #e5e5e5;border-radius:4px;font-size:.54rem;padding:2px 4px;cursor:pointer;color:#888;font-family:'Heebo',sans-serif;font-weight:700;transition:all .1s;white-space:nowrap}
+.tbl-mini-btn:hover{border-color:var(--red);color:var(--red)}
+.card-ftr{background:#f3f3f3;border-top:1px solid #e0e0e0;padding:5px 10px;display:flex;align-items:center;justify-content:space-between}
+.ftr-sum{font-size:.64rem;color:#555;font-weight:600}
+.ftr-sum strong{color:var(--red)}
+
+/* SUBMIT SECTION */
+.submit-section{background:var(--surface);border:2px solid rgba(29,185,106,.3);border-radius:14px;padding:16px 18px;margin-bottom:14px}
+.submit-title{font-size:.82rem;font-weight:700;color:var(--cream);margin-bottom:5px}
+.submit-stats{font-size:.74rem;color:var(--muted);margin-bottom:12px;line-height:1.7}
+.submit-stats strong{color:var(--green)}
+.submit-stats .warn{color:#ffb347}
+.btn-submit{width:100%;padding:14px;border:none;border-radius:11px;background:linear-gradient(135deg,#1db96a,#17a25d);color:#fff;font-family:'Frank Ruhl Libre',serif;font-size:1.05rem;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s}
+.btn-submit:hover:not(:disabled){opacity:.9;transform:translateY(-1px)}
+.btn-submit:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.submit-note{font-size:.63rem;color:var(--muted);text-align:center;margin-top:7px;line-height:1.5}
+
+/* TIER BANNER */
+.tier-banner{border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:.76rem;display:flex;align-items:center;gap:10px;line-height:1.5}
+.tier-banner.premium{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);color:var(--gold)}
+.tier-banner.registered{background:rgba(138,170,190,.08);border:1px solid rgba(138,170,190,.2);color:var(--muted)}
+.tier-banner .upgrade-link{color:var(--gold);font-weight:700;cursor:pointer;text-decoration:underline;white-space:nowrap}
+.btn-locked{opacity:.5;cursor:not-allowed;position:relative}
+.btn-locked::after{content:"🔒";position:absolute;top:-6px;left:-6px;font-size:.7rem}
+
+/* TOAST */
+.toast-wrap{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:500;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none}
+.toast{background:var(--navy-c);border:1px solid var(--navy-b);border-radius:9px;padding:8px 16px;font-size:.76rem;font-weight:600;box-shadow:0 4px 18px rgba(0,0,0,.5);animation:tin .18s ease;white-space:nowrap}
+.toast.ok{border-color:var(--green);color:var(--green)}
+.toast.err{border-color:#ff6b7a;color:#ff6b7a}
+.toast.info{border-color:var(--gold);color:var(--gold)}
+@keyframes tin{from{transform:translateY(-6px);opacity:0}to{transform:none;opacity:1}}
+.loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px;color:var(--muted);gap:12px}
+.spinner{width:28px;height:28px;border:3px solid var(--navy-b);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:600px){
+  .nb{width:19px;height:19px;font-size:.55rem}
+  .strong-col{width:24px}
+  .tbl-tag{width:24px}
+  .tbl-mini-actions{display:none}
+}
+@media print{
+  .gnav,.info-bar,.toolbar,.tbl-mini-actions,.submit-section,.bottom-bar,.toast-wrap,.modal-bg{display:none!important}
+  .page{max-width:100%;padding:0}
+  .lotto-card{box-shadow:none;border-radius:0}
+  .card-spine,.card-hdr,.tbl-tag,.nb.sel,.nb.str-sel{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<!-- GNAV -->
+<nav class="gnav" id="gnav">
+  <div class="gnav-inner">
+    <a href="/new_stite.html" class="gnav-logo">🎯 Mandeles<span>.co.il</span></a>
+    <ul class="gnav-links">
+      <li><a href="/new_stite.html">🎱 לוטו</a></li>
+      <li><a href="/new_stite.html?tab=toto">⚽ טוטו</a></li>
+      <li><a href="/profile.html">👤 פרופיל</a></li>
+    </ul>
+    <div class="gnav-right" id="gnav-right">
+      <button class="gnav-login" onclick="window.location.href='/auth.html'">כניסה</button>
+    </div>
+  </div>
+</nav>
+
+<!-- MODAL: הסבר אוטו-מילוי -->
+<div class="modal-bg hidden" id="modal-auto-info">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-auto-info')">✕</button>
+    <div class="modal-icon">⚡</div>
+    <div class="modal-title">מילוי אוטומטי — איך זה עובד?</div>
+    <div class="modal-body">
+      המספרים שיוכנסו לטבלאות <strong>נלקחים מתוך 200 הסטים שרכשת</strong>.<br><br>
+      כל סט כולל 6 מספרים + חזק שנבחרו במיוחד עבורך.<br>
+      המילוי האוטומטי ממלא את הטבלאות בהתאם לסטים שלך — <strong>לא מספרים אקראיים</strong>.<br><br>
+      בחר כמה טבלאות למלות:
+    </div>
+    <div class="auto-options" id="auto-options">
+      <div class="auto-opt selected" data-val="2" onclick="selectAutoOpt(this,2)">
+        <div><div class="auto-opt-label">2 טבלאות</div><div class="auto-opt-sub">מינימום לשליחה</div></div>
+        <div class="auto-opt-check">✓</div>
+      </div>
+      <div class="auto-opt" data-val="4" onclick="selectAutoOpt(this,4)">
+        <div><div class="auto-opt-label">4 טבלאות</div><div class="auto-opt-sub">הכי נפוץ</div></div>
+        <div class="auto-opt-check"></div>
+      </div>
+      <div class="auto-opt" data-val="6" onclick="selectAutoOpt(this,6)">
+        <div><div class="auto-opt-label">6 טבלאות</div><div class="auto-opt-sub">חצי טופס</div></div>
+        <div class="auto-opt-check"></div>
+      </div>
+      <div class="auto-opt" data-val="14" onclick="selectAutoOpt(this,14)">
+        <div><div class="auto-opt-label">14 טבלאות</div><div class="auto-opt-sub">מלא את כל הטופס</div></div>
+        <div class="auto-opt-check"></div>
+      </div>
+      <div class="auto-opt" data-val="custom" onclick="selectAutoOpt(this,'custom')">
+        <div><div class="auto-opt-label">מספר מותאם אישית</div><div class="auto-opt-sub">בחר כמה שתרצה</div></div>
+        <div class="auto-opt-check"></div>
+      </div>
+    </div>
+    <div class="auto-custom" id="auto-custom-row" style="display:none">
+      <label>כמה טבלאות:</label>
+      <input type="number" id="auto-custom-n" min="2" max="14" value="2" step="2">
+    </div>
+    <button class="modal-btn" onclick="doAutoFill()">⚡ מלא עכשיו</button>
+  </div>
+</div>
+
+<!-- MODAL: הדבקת סטים — המאפיין הייחודי -->
+<div class="modal-bg hidden" id="modal-free">
+  <div class="modal" style="max-width:500px">
+    <button class="modal-close" onclick="closeModal('modal-free')">✕</button>
+    <div class="modal-icon">🎯</div>
+    <div class="modal-title">מלא לפי הסטים שלך</div>
+    <div class="modal-body" style="margin-bottom:14px;text-align:right">
+      הדבק את הסטים שלך — כל שורה היא סט אחד.<br>
+      <strong>פורמט:</strong> 6 מספרים ואז מספר חזק, מופרדים בפסיקים או רווחים.<br>
+      <span style="color:var(--gold);font-size:.72rem">לדוגמה:<br>
+      3, 7, 12, 25, 33, 36, 5<br>
+      1 8 14 20 29 37 3</span>
+    </div>
+
+    <div style="margin-bottom:10px">
+      <div style="font-size:.72rem;color:var(--muted);margin-bottom:5px;display:flex;justify-content:space-between">
+        <span>הסטים שלך (שורה = סט אחד):</span>
+        <span id="paste-count" style="color:var(--gold)"></span>
+      </div>
+      <textarea id="paste-area"
+        style="width:100%;height:180px;background:var(--navy);border:1px solid var(--navy-b);border-radius:9px;color:var(--cream);font-family:monospace;font-size:.82rem;padding:10px 12px;resize:vertical;text-align:right;line-height:1.8"
+        placeholder="הדבק כאן את הסטים שלך...&#10;3, 7, 12, 25, 33, 36, 5&#10;1, 8, 14, 20, 29, 37, 3&#10;..."
+        oninput="parsePastePreview()"></textarea>
+    </div>
+
+    <div id="paste-preview" style="margin-bottom:12px;font-size:.7rem;color:var(--muted);max-height:80px;overflow-y:auto;line-height:1.7"></div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <label style="font-size:.72rem;color:var(--muted);white-space:nowrap">כמה טבלאות למלות:</label>
+      <input type="number" id="free-apply-n" min="2" max="14" value="14" step="2"
+        style="width:70px;background:var(--navy);border:1px solid var(--navy-b);border-radius:7px;color:var(--cream);font-family:Heebo,sans-serif;font-size:.88rem;padding:6px 10px;text-align:center">
+      <span style="font-size:.68rem;color:var(--muted)">(זוגי בלבד)</span>
+    </div>
+
+    <button class="modal-btn-green" onclick="applyFreeTable()">✅ מלא טבלאות לפי הסטים שלי</button>
+    <button class="modal-btn-outline" style="margin-top:8px" onclick="closeModal('modal-free')">ביטול</button>
+  </div>
+</div>
+
+<!-- PAGE -->
+<div class="page" id="page">
+  <div class="loading-wrap"><div class="spinner"></div><div>טוען...</div></div>
+</div>
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+const WALLET_API = '';
+const token      = localStorage.getItem('auth_token') || localStorage.getItem('fb_token');
+const isDemoMode = localStorage.getItem('demo_mode') === '1';
+const urlP       = new URLSearchParams(window.location.search);
+const orderId    = urlP.get('id');
+const adminToken = sessionStorage.getItem('admin_token');
+const orderNum   = urlP.get('order');
+const isAdmin    = !!orderNum && !!adminToken;
+
+const ROWS       = [[1,2,3,4,5,6,7,8,9,10],[11,12,13,14,15,16,17,18,19,20],[21,22,23,24,25,26,27,28,29,30],[31,32,33,34,35,36,37]];
+const STRONG_NUMS= [1,2,3,4,5,6,7];
+
+let _tables=[], _sel={}, _total=0;
+let _autoCount=2;
+
+/* ── TOAST ── */
+function toast(msg,type='ok'){
+  const w=document.getElementById('toasts'),el=document.createElement('div');
+  el.className=`toast ${type}`;el.textContent=msg;w.appendChild(el);
+  setTimeout(()=>el.remove(),2800);
+}
+
+/* ── MODAL ── */
+function openModal(id){document.getElementById(id).classList.remove('hidden');}
+function closeModal(id){document.getElementById(id).classList.add('hidden');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){['modal-auto-info','modal-free'].forEach(id=>closeModal(id));}});
+
+/* ── LOAD ── */
+async function loadOrder(){
+  try{
+    let data;
+    if(isDemoMode && !token){
+      // fallback אם אין token אמיתי — demo מקומי
+      const sets200=Array.from({length:200},(_,i)=>{
+        const pool=[...Array(37)].map((_,j)=>j+1);
+        for(let k=pool.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[pool[k],pool[j]]=[pool[j],pool[k]];}
+        return {set_index:i+1,n1:pool[0],n2:pool[1],n3:pool[2],n4:pool[3],n5:pool[4],n6:pool[5],strong:Math.floor(Math.random()*7)+1,draw_date:new Date().toISOString().slice(0,10)};
+      });
+      data={order_number:'DEMO-001',customer_name:'חשבון דמו',draw_date:new Date().toISOString().slice(0,10),sets:sets200,total_ils:'500.00',status:'paid'};
+    } else {
+      const liveToken = localStorage.getItem('auth_token') || localStorage.getItem('fb_token');
+      if(!liveToken && !isAdmin && !isDemoMode){
+        window.location.href='/auth.html?redirect='+encodeURIComponent(window.location.href);
+        return;
+      }
+      const authHdr = isAdmin
+        ? {'X-Admin-Token': adminToken}
+        : {'Authorization': 'Bearer ' + liveToken};
+
+      if(isAdmin){
+        const r=await fetch(`${WALLET_API}/admin/order/${orderNum}/form`,{headers:authHdr});
+        data=await r.json();
+        if(data.error){renderErr(data.error);return;}
+      } else if(orderId){
+        const r=await fetch(`${WALLET_API}/lotto/order/${orderId}/form`,{headers:authHdr});
+        data=await r.json();
+        if(data.error){renderErr(data.error);return;}
+      } else {
+        // כניסה ישירה — טוען סטים של המשתמש
+        const today=new Date().toISOString().slice(0,10);
+        let sets=[];
+        if(liveToken){
+          try{
+            const r=await fetch(`${WALLET_API}/lotto/my-sets`,{
+              headers:{'Authorization':'Bearer '+liveToken,'Content-Type':'application/json'}
+            });
+            if(r.ok){
+              const d=await r.json();
+              sets=(d.sets||[]).slice(0,14);
+            } else {
+              console.warn('my-sets status:',r.status);
+            }
+          }catch(e){console.warn('my-sets error:',e);}
+        }
+        // השלם ל-14 טבלאות ריקות
+        while(sets.length<14){
+          sets.push({set_index:sets.length+1,n1:0,n2:0,n3:0,n4:0,n5:0,n6:0,strong:0,draw_date:today});
+        }
+        sets=sets.map((s,i)=>({...s,set_index:i+1}));
+        data={order_number:'טופס חדש',customer_name:'',draw_date:today,sets:sets,total_ils:'0',status:'new'};
+      }
+    }
+    initData(data);
+  }catch(e){renderErr('שגיאה: '+e.message);}
+}
+
+// ══ USER TIER ══
+// isPremium = רכש מנוי (200 סטים)
+// isRegistered = משתמש רשום אבל ללא מנוי
+function getUserTier(){
+  if(isDemoMode) return 'premium'; // DEMO = premium לבדיקה
+  const token=localStorage.getItem('auth_token')||localStorage.getItem('fb_token');
+  if(!token) return 'guest';
+  try{
+    const p=JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+    // premium אם יש sub_type או sets_purchased
+    if(p.sub_type||p.sets_purchased||p.is_premium) return 'premium';
+    return 'registered';
+  }catch(e){ return 'registered'; }
+}
+// אפשר לעקוף מה-data שחזר מהשרת
+let _userTier = 'registered';
+
+function initData(data){
+  // קבע tier לפי data מהשרת (אמין יותר מ-JWT בלבד)
+  if(data.sets && data.sets.length>0 && data.sets[0].n1>0) _userTier='premium';
+  else _userTier = getUserTier();
+  if(isDemoMode) _userTier='premium';
+  // הטופס תמיד מציג 14 טבלאות — מתוך 200 הסטים
+  const allSets=data.sets||[];
+  _tables=allSets.slice(0,14); // 14 הטבלאות הראשונות לטופס זה
+  _total=_tables.length;
+  _sel={};
+  // כל טבלה מתחילה ריקה — הסטים הם הבסיס למילוי אוטומטי
+  _tables.forEach(s=>{
+    _sel[s.set_index]={nums:new Set(),strong:null};
+  });
+  // שמור את כל 200 הסטים לשימוש במילוי
+  window._allSets=allSets;
+  renderPage(data);
+}
+
+/* ── RENDER PAGE ── */
+function renderPage(data){
+  const filled=countFilled();
+  document.getElementById('page').innerHTML=`
+    <div class="info-bar">
+      <div class="info-item"><div class="lbl">הזמנה</div><div class="order-n">${data.order_number}</div></div>
+      ${data.customer_name?`<div class="info-item"><div class="lbl">לקוח</div><div class="val">${data.customer_name}</div></div>`:''}
+      <div class="info-item"><div class="lbl">הגרלה</div><div class="val">${data.draw_date||'–'}</div></div>
+      <div class="info-item"><div class="lbl">סטים שנרכשו</div><div class="val" style="color:var(--gold)">${(window._allSets||[]).length}</div></div>
+      <div class="prog-row">
+        <span>מולאו <strong id="prog-filled" style="color:var(--gold)">${filled}</strong>/14</span>
+        <div class="prog-bar-sm"><div class="prog-fill-sm" id="prog-fill" style="width:${(filled/14*100).toFixed(0)}%"></div></div>
+      </div>
+    </div>
+
+    <!-- TIER BANNER -->
+    <div id="tier-banner"></div>
+
+    <div class="toolbar" id="toolbar">
+      <button class="btn btn-gold" id="btn-auto-fill" onclick="checkPremiumAndOpen('modal-auto-info')">⚡ מילוי אוטומטי מהסטים שלי</button>
+      <button class="btn btn-teal" onclick="openModal('modal-free')">🎯 מלא לפי המספרים שלי</button>
+      <button class="btn btn-red-outline" onclick="clearAll()" style="margin-right:auto">🗑️ נקה הכל</button>
+    </div>
+
+    <div class="lotto-card">
+      <div class="card-spine">
+        <div class="spine-brand">לוטו</div>
+        <div class="spine-sub">מפעל הפיס</div>
+      </div>
+      <div class="card-body">
+        <div class="card-hdr">
+          <div class="card-hdr-brand">לוטו מפעל הפיס</div>
+          <div class="card-hdr-info">${data.order_number} | ${data.draw_date||''}</div>
+        </div>
+        <div id="tables-body"></div>
+        <div class="card-ftr">
+          <div class="ftr-sum" id="ftr-sum">בחר מספרים בטבלאות</div>
+          <div style="font-size:.58rem;color:#aaa">pais.co.il</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="submit-section">
+      <div class="submit-title">שליחה לאדמין</div>
+      <div class="submit-stats" id="submit-stats">טוען...</div>
+      <button class="btn-submit" id="btn-submit" onclick="submitTables()">שליחה ✉️</button>
+      <div class="submit-note">ניתן לשלוח כשיש לפחות 2 טבלאות מלאות • שליחה בזוגות בלבד (2, 4, 6...)</div>
+    </div>
+
+    <div class="bottom-bar" style="display:flex;gap:8px">
+      <button class="btn btn-outline" onclick="window.location.href='/profile.html'">← פרופיל</button>
+      <button class="btn btn-outline" onclick="window.print()">🖨️ הדפס</button>
+    </div>
+  `;
+  renderAllTables();
+  updateSubmitBar();
+  renderTierBanner();
+}
+
+/* ── RENDER TABLES ── */
+function renderAllTables(){
+  const body=document.getElementById('tables-body');
+  if(!body) return;
+  body.innerHTML=_tables.map(s=>tblHTML(s)).join('');
+  updateFooter();
+}
+function tblHTML(s){
+  const d=_sel[s.set_index]||{nums:new Set(),strong:null};
+  const full=d.nums.size>=6;
+  const filled=d.nums.size===6&&d.strong;
+  const numsHTML=ROWS.map(row=>`<div class="nums-row">${row.map(n=>{
+    const isSel=d.nums.has(n),lock=full&&!isSel;
+    return `<button class="nb ${isSel?'sel':''} ${lock?'locked':''}" onclick="toggleNum(${s.set_index},${n})">${n}</button>`;
+  }).join('')}</div>`).join('');
+  const strHTML=STRONG_NUMS.map(n=>`<button class="nb ${d.strong===n?'str-sel':''}" onclick="toggleStrong(${s.set_index},${n})">${n}</button>`).join('');
+  return `<div class="tbl-row ${filled?'filled':''}" id="tbl-${s.set_index}">
+    <div class="tbl-tag"><div class="tbl-tag-lbl">טבלה</div><div class="tbl-tag-n">${s.set_index}</div></div>
+    <div class="tbl-body">${numsHTML}</div>
+    <div class="strong-col"><div class="strong-lbl">חזק</div>${strHTML}</div>
+    <div class="tbl-mini-actions">
+      <button class="tbl-mini-btn" onclick="autoFillOne(${s.set_index})">⚡</button>
+      <button class="tbl-mini-btn" onclick="clearOne(${s.set_index})">✕</button>
+    </div>
+  </div>`;
+}
+function refreshTable(si){
+  const el=document.getElementById(`tbl-${si}`);
+  const s=_tables.find(x=>x.set_index===si);
+  if(el&&s) el.outerHTML=tblHTML(s);
+  updateFooter(); updateSubmitBar();
+}
+
+/* ── TOGGLE ── */
+function toggleNum(si,n){
+  const d=_sel[si];
+  if(d.nums.has(n))d.nums.delete(n);
+  else{if(d.nums.size>=6){toast('כבר 6 מספרים בטבלה '+si,'err');return;}d.nums.add(n);}
+  refreshTable(si);
+}
+function toggleStrong(si,n){
+  const d=_sel[si]; d.strong=d.strong===n?null:n; refreshTable(si);
+}
+
+/* ── AUTO FILL — מתוך הסטים שנרכשו ── */
+let _autoCountSelected=2;
+function selectAutoOpt(el,val){
+  document.querySelectorAll('.auto-opt').forEach(o=>{
+    o.classList.remove('selected');
+    o.querySelector('.auto-opt-check').textContent='';
+  });
+  el.classList.add('selected');
+  el.querySelector('.auto-opt-check').textContent='✓';
+  _autoCountSelected=val;
+  document.getElementById('auto-custom-row').style.display=val==='custom'?'flex':'none';
+}
+function autoFillOne(si){
+  const allSets=window._allSets||[];
+  // מצא סט שעוד לא שויך לטבלה אחרת
+  const usedSetIndices=new Set(
+    Object.entries(_sel)
+      .filter(([k,v])=>v.nums.size===6&&v.strong)
+      .map(([k])=>parseInt(k))
+  );
+  const available=allSets.filter(s=>!usedSetIndices.has(s.set_index)&&s.n1>0);
+  if(!available.length){
+    // fallback — אקראי
+    const pool=[...Array(37)].map((_,i)=>i+1);
+    for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+    _sel[si]={nums:new Set(pool.slice(0,6)),strong:Math.floor(Math.random()*7)+1};
+  } else {
+    const s=available[0];
+    _sel[si]={nums:new Set([s.n1,s.n2,s.n3,s.n4,s.n5,s.n6].map(Number)),strong:Number(s.strong)};
+  }
+  refreshTable(si);
+}
+function doAutoFill(){
+  closeModal('modal-auto-info');
+  let count=_autoCountSelected==='custom'
+    ?Math.max(2,Math.min(14,parseInt(document.getElementById('auto-custom-n').value)||2))
+    :_autoCountSelected;
+  // עגל לזוגי
+  if(count%2!==0) count--;
+  let filled=0;
+  for(let i=0;i<_tables.length&&filled<count;i++){
+    const s=_tables[i];
+    const d=_sel[s.set_index];
+    if(d.nums.size===0){autoFillOne(s.set_index);filled++;}
+  }
+  renderAllTables();
+  updateSubmitBar();
+  toast(`⚡ ${filled} טבלאות מולאו מהסטים שלך!`,'info');
+}
+function clearAll(){_tables.forEach(s=>{_sel[s.set_index]={nums:new Set(),strong:null};});renderAllTables();updateSubmitBar();toast('🗑️ נוקה');}
+function clearOne(si){_sel[si]={nums:new Set(),strong:null};refreshTable(si);}
+
+/* ── PASTE SETS — המאפיין הייחודי ── */
+let _parsedSets=[]; // סטים שפורסרו מהטקסט
+
+function parsePastePreview(){
+  const text=document.getElementById('paste-area').value;
+  _parsedSets=parseSetsFromText(text);
+  const cnt=document.getElementById('paste-count');
+  const prev=document.getElementById('paste-preview');
+  if(cnt) cnt.textContent=_parsedSets.length>0?`✓ ${_parsedSets.length} סטים זוהו`:'';
+  if(prev){
+    if(_parsedSets.length===0){prev.innerHTML='<span style="color:#ff6b7a">לא זוהו סטים תקינים — בדוק את הפורמט</span>';return;}
+    prev.innerHTML=_parsedSets.slice(0,6).map((s,i)=>
+      `<span style="color:var(--gold)">סט ${i+1}:</span> ${s.nums.join(' – ')} | 💪${s.strong}`
+    ).join('<br>')+(_parsedSets.length>6?`<br><span style="color:var(--muted)">...ועוד ${_parsedSets.length-6}</span>`:'');
+  }
+}
+
+function parseSetsFromText(text){
+  const lines=text.split(/\n/).map(l=>l.trim()).filter(l=>l.length>0);
+  const result=[];
+  for(const line of lines){
+    const nums=line.split(/[,\s،]+/).map(x=>parseInt(x.trim())).filter(x=>!isNaN(x)&&x>=1&&x<=37);
+    if(nums.length<7) continue; // צריך לפחות 6 מספרים + חזק
+    const main=nums.slice(0,6);
+    const strong=nums[6];
+    if(new Set(main).size!==6) continue; // כפולים
+    if(strong<1||strong>7) continue;
+    result.push({nums:main,strong});
+  }
+  return result;
+}
+
+function applyFreeTable(){
+  if(_parsedSets.length===0){
+    // נסה לפרסר שוב מהtextarea
+    const text=document.getElementById('paste-area')?.value||'';
+    _parsedSets=parseSetsFromText(text);
+    if(_parsedSets.length===0){toast('לא זוהו סטים תקינים','err');return;}
+  }
+  let n=Math.max(2,Math.min(14,parseInt(document.getElementById('free-apply-n').value)||14));
+  if(n%2!==0) n--;
+  const setsToUse=_parsedSets.slice(0,n);
+  let filled=0;
+  for(let i=0;i<_tables.length&&filled<setsToUse.length;i++){
+    const s=_tables[i];
+    if(_sel[s.set_index].nums.size===0){
+      _sel[s.set_index]={nums:new Set(setsToUse[filled].nums.map(Number)),strong:setsToUse[filled].strong};
+      filled++;
+    }
+  }
+  closeModal('modal-free');
+  renderAllTables();
+  updateSubmitBar();
+  toast(`✅ ${filled} טבלאות מולאו לפי הסטים שלך!`);
+}
+
+function buildFreeGrid(){ /* לא נחוץ יותר */ }
+
+/* ── COUNTERS ── */
+function countFilled(){
+  return _tables.filter(s=>{const d=_sel[s.set_index];return d&&d.nums.size===6&&d.strong;}).length;
+}
+function updateFooter(){
+  const filled=countFilled();
+  const el=document.getElementById('ftr-sum');
+  if(!el)return;
+  if(filled===0){el.textContent='בחר מספרים בטבלאות';return;}
+  const det=_tables.filter(s=>{const d=_sel[s.set_index];return d&&d.nums.size>0;})
+    .map(s=>{const d=_sel[s.set_index];return `${s.set_index}:${[...d.nums].sort((a,b)=>a-b).join('-')}${d.strong?'/'+d.strong:''}`;});
+  el.innerHTML=`<strong>${filled}/14 מולאו</strong> — ${det.slice(0,3).join(' | ')}${det.length>3?` +${det.length-3}...`:''}`;
+}
+function updateSubmitBar(){
+  const filled=countFilled();
+  const canSend=filled>=2?(filled%2===0?filled:filled-1):0;
+  const pf=document.getElementById('prog-fill'),pn=document.getElementById('prog-filled');
+  if(pf)pf.style.width=(filled/14*100).toFixed(0)+'%';
+  if(pn)pn.textContent=filled;
+  const stats=document.getElementById('submit-stats'),btn=document.getElementById('btn-submit');
+  if(!stats||!btn)return;
+  if(filled===0){stats.innerHTML='לא מולאה אף טבלה — מלא לפחות 2 לשליחה';btn.disabled=true;btn.textContent='שליחה ✉️';return;}
+  if(filled===1){stats.innerHTML='מולאה טבלה אחת — צריך עוד אחת לשליחה';btn.disabled=true;btn.textContent='שליחה ✉️';return;}
+  const leftover=filled-canSend;
+  stats.innerHTML=`מולאו <strong>${filled}</strong> טבלאות — ניתן לשלוח <strong>${canSend}</strong> עכשיו`+(leftover?` · <span class="warn">טבלה אחת לא תישלח (צריך זוג)</span>`:'');
+  btn.disabled=false;btn.textContent=`שליחה — ${canSend} טבלאות ✉️`;
+}
+
+/* ── SUBMIT ── */
+async function submitTables(){
+  const filled=countFilled();
+  const canSend=filled%2===0?filled:filled-1;
+  if(canSend<2){toast('מלא לפחות 2 טבלאות','err');return;}
+  // קרא token בזמן אמת
+  const liveToken = localStorage.getItem('auth_token') || localStorage.getItem('fb_token');
+  const liveDemoMode = localStorage.getItem('demo_mode') === '1';
+  if(!liveToken && !liveDemoMode){
+    toast('התחבר כדי לשלוח','err');
+    setTimeout(()=>window.location.href='/auth.html?redirect=/lotto_form.html',1200);
+    return;
+  }
+  // דמו בלי token — הדמיית שליחה מלאה
+  if(liveDemoMode && !liveToken){
+    const fakeOrder = 'DEMO-' + Math.floor(Math.random()*9000+1000);
+    document.querySelector('.submit-section').innerHTML=`
+      <div style="text-align:center;padding:14px 0">
+        <div style="font-size:2rem;margin-bottom:8px">🎉</div>
+        <div style="font-weight:900;color:var(--green);font-size:1rem;font-family:'Frank Ruhl Libre',serif">${canSend} טבלאות נשלחו!</div>
+        <div style="font-size:.74rem;color:var(--muted);margin-top:8px;line-height:1.7">
+          [מצב דמו] הזמנה ${fakeOrder}<br>
+          בחשבון אמיתי הטפסים יוגשו לדוכן הלוטו<br>ותקבל עדכון ב-SMS ובאימייל
+        </div>
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:14px">
+          <button class="btn btn-outline" onclick="window.location.href='/profile.html'">← פרופיל</button>
+        </div>
+      </div>`;
+    toast('🎉 [דמו] ' + canSend + ' טבלאות נשלחו — ' + fakeOrder);
+    return;
+  }
+  const btn=document.getElementById('btn-submit');
+  btn.disabled=true;btn.textContent='...שולח';
+  try{
+    const filledSets=_tables
+      .filter(s=>{const d=_sel[s.set_index];return d&&d.nums.size===6&&d.strong;})
+      .slice(0,canSend)
+      .map(s=>{const d=_sel[s.set_index],sorted=[...d.nums].sort((a,b)=>a-b);
+        return {set_index:s.set_index,n1:sorted[0],n2:sorted[1],n3:sorted[2],n4:sorted[3],n5:sorted[4],n6:sorted[5],strong:d.strong};});
+
+    // שלח תמיד לשרת — POST /lotto/submit
+    const r=await fetch(`${WALLET_API}/lotto/submit`,{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+liveToken,'Content-Type':'application/json'},
+      body:JSON.stringify({
+        sets: filledSets,
+        draw_date: new Date().toISOString().slice(0,10)
+      })
+    });
+    const resp=await r.json();
+    if(!r.ok){
+      // יתרה לא מספיקה
+      if(resp.need_topup){
+        toast(`יתרה לא מספיקה — חסר ₪${resp.shortfall}. טען ארנק.`,'err');
+        setTimeout(()=>window.location.href='/profile.html',2000);
+      } else {
+        toast(resp.error||'שגיאת שרת','err');
+      }
+      btn.disabled=false;updateSubmitBar();return;
+    }
+    document.querySelector('.submit-section').innerHTML=`
+      <div style="text-align:center;padding:14px 0">
+        <div style="font-size:2rem;margin-bottom:8px">🎉</div>
+        <div style="font-weight:900;color:var(--green);font-size:1rem;font-family:'Frank Ruhl Libre',serif">${canSend} טבלאות נשלחו!</div>
+        <div style="font-size:.74rem;color:var(--muted);margin-top:8px;line-height:1.7">
+          הטפסים יוגשו לדוכן הלוטו בהקדם<br>תקבל עדכון ב-SMS ובאימייל לאחר ההגשה
+        </div>
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:14px">
+          <button class="btn btn-outline" onclick="window.location.href='/profile.html'">← פרופיל</button>
+          <button class="btn btn-outline" onclick="window.print()">🖨️ הדפס</button>
+        </div>
+      </div>`;
+    toast(`🎉 ${canSend} טבלאות נשלחו — הזמנה ${resp?.order_number||''}`);
+  }catch(e){toast('שגיאה: '+e.message,'err');btn.disabled=false;updateSubmitBar();}
+}
+
+// ══ TIER UI ══
+function renderTierBanner(){
+  const el=document.getElementById('tier-banner');
+  if(!el) return;
+  if(_userTier==='premium'){
+    el.innerHTML=`<div class="tier-banner premium">✨ <span><strong>מנוי פעיל</strong> — גישה מלאה ל-200 הסטים ולכל הפונקציות</span></div>`;
+  } else {
+    el.innerHTML=`<div class="tier-banner registered">ℹ️ <span>
+      <strong>גישה חינמית</strong> — ממלא טבלאות לבד או עם הסטים שלך.<br>
+      <span class="upgrade-link" onclick="window.location.href='/new_stite.html'">שדרג לפרימיום</span>
+      לקבל 200 סטים מחושבים + מילוי אוטומטי.
+    </span></div>`;
+    // נעל כפתור מילוי אוטומטי מהסטים
+    const btn=document.getElementById('btn-auto-fill');
+    if(btn){btn.classList.add('btn-locked');btn.title='זמין למנויים בלבד';}
+  }
+}
+
+function checkPremiumAndOpen(modalId){
+  if(_userTier!=='premium'){
+    toast('מילוי אוטומטי מהסטים זמין למנויים בלבד 🔒','err');
+    setTimeout(()=>{ if(confirm('רוצה לשדרג לפרימיום ולקבל 200 סטים?')) window.location.href='/new_stite.html'; },300);
+    return;
+  }
+  openModal(modalId);
+}
+
+function renderErr(msg){document.getElementById('page').innerHTML=`<div class="loading-wrap" style="color:#ff6b7a">❌ ${msg}</div>`;}
+
+/* ── GNAV AUTH ── */
+(function(){
+  function gnavUser(name,bal,demo){
+    const r=document.getElementById('gnav-right');if(!r)return;
+    r.innerHTML=(demo?'<button style="background:rgba(232,160,48,.12);border:1px solid rgba(232,160,48,.3);color:#e8c870;border-radius:5px;font-size:.65rem;font-weight:700;padding:3px 8px;cursor:pointer;font-family:Heebo,sans-serif" onclick="gnavExit()">🧪 DEMO</button>':'')+
+      '<a class="gnav-wallet" href="/profile.html">💳 ₪<span id="gnav-bal">'+(bal||'...')+'</span></a>'+
+      '<button class="gnav-avatar" onclick="window.location.href=\'/profile.html\'">'+name[0].toUpperCase()+'</button>';
+  }
+  window.gnavExit=function(){localStorage.removeItem('demo_mode');localStorage.removeItem('auth_token');localStorage.removeItem('fb_token');window.location.href='/new_stite.html';};
+  if(isDemoMode){gnavUser('דמו','500.00',true);return;}
+  const tok=localStorage.getItem('auth_token')||localStorage.getItem('fb_token');if(!tok)return;
+  try{
+    const p=JSON.parse(atob(tok.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+    if(Date.now()/1000>(p.exp||0))return;
+    gnavUser(p.name||p.email||'משתמש',null,false);
+    fetch('/auth/wallet/balance',{headers:{'Authorization':'Bearer '+tok},signal:AbortSignal.timeout(3000)})
+      .then(r=>r.ok?r.json():null).then(d=>{const el=document.getElementById('gnav-bal');if(el&&d)el.textContent=(d.balance||0).toFixed(2);}).catch(()=>{});
+  }catch(e){}
+})();
+
+loadOrder();
+</script>
+</body>
+</html>
