@@ -69,6 +69,14 @@ python manage.py setup_portal
 
 מומלץ גם לחבר **PostgreSQL** (`DATABASE_URL`) – SQLite ב־`/tmp` נמחק בריסטארט.
 
+## סוכן AI (Django Admin)
+
+ממשק לשינוי `templates/` ו-`static/` דרך Gemini + PR אוטומטי.
+
+ראה [ai_agent/README.md](ai_agent/README.md) – נדרשים `AI_AGENT_ENABLED`, `GEMINI_API_KEY`, `GITHUB_TOKEN`.
+
+כניסה: `/django-admin/` → **בקשות שינוי AI**
+
 ## בניית Frontend מחדש
 
 ```powershell

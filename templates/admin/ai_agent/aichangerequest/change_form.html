@@ -1,0 +1,31 @@
+{% extends "admin/change_form.html" %}
+{% load i18n %}
+
+{% block submit_buttons_bottom %}
+{{ block.super }}
+
+{% if ai_agent_actions %}
+<div class="submit-row" style="margin-top:16px;padding:12px;background:#1a2332;border-radius:8px;">
+  <p style="margin:0 0 10px;color:#8b9cb3;font-size:13px;">
+    <strong>סוכן AI</strong> – משנה רק <code>templates/</code> ו־<code>static/</code>.
+    לא דוחף ל־main; יוצר PR לבדיקה.
+  </p>
+  {% if ai_agent_actions.can_generate %}
+  <a href="{{ ai_agent_actions.generate_url }}" class="button" style="background:#c9a84c;color:#0a0f14;">
+    ייצר diff (Gemini)
+  </a>
+  {% endif %}
+  {% if ai_agent_actions.can_approve_pr %}
+  <a href="{{ ai_agent_actions.approve_url }}" class="button" style="background:#2d6a4f;color:#fff;"
+     onclick="return confirm('לאשר את ה-diff וליצור Pull Request ב-GitHub?');">
+    אשר ויצור PR
+  </a>
+  {% endif %}
+  {% if ai_agent_actions.can_reject %}
+  <a href="{{ ai_agent_actions.reject_url }}" class="button" style="background:#6b2c2c;color:#fff;">
+    דחה
+  </a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
