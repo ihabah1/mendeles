@@ -42,7 +42,7 @@ def generate_diff(prompt: str, base_dir: Path | None = None) -> str:
     if not files:
         raise GeminiServiceError('לא נמצאו קבצים מותרים בפרויקט')
 
-    model_name = getattr(settings, 'GEMINI_MODEL', 'gemini-2.0-flash')
+    model_name = getattr(settings, 'GEMINI_MODEL', 'gemini-2.5-flash')
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel(
         model_name=model_name,

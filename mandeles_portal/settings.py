@@ -191,7 +191,7 @@ ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'admin@admin.com')
 # ── AI Agent (Django Admin → Gemini → PR) ─────────────────────────────────────
 AI_AGENT_ENABLED = os.getenv('AI_AGENT_ENABLED', 'false').lower() in ('1', 'true', 'yes')
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
-GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-2.0-flash')
+GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash')
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN', '')
 GITHUB_REPO = os.getenv('GITHUB_REPO', 'ihabah1/mendeles')
 GITHUB_DEFAULT_BRANCH = os.getenv('GITHUB_DEFAULT_BRANCH', 'main')

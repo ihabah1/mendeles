@@ -16,7 +16,7 @@
 | `GITHUB_TOKEN` | כן | Personal Access Token |
 | `GITHUB_REPO` | כן | `ihabah1/mendeles` |
 | `GITHUB_DEFAULT_BRANCH` | לא | ברירת מחדל `main` |
-| `GEMINI_MODEL` | לא | ברירת מחדל `gemini-2.0-flash` |
+| `GEMINI_MODEL` | לא | ברירת מחדל `gemini-2.5-flash` |
 | `AI_AGENT_WORK_DIR` | לא | תיקיית clone זמנית |
 
 ## הרשאות GitHub Token
