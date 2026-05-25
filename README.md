@@ -74,11 +74,9 @@ python manage.py setup_portal
 
 בלי `DATABASE_URL` – SQLite נשמר ב־`/tmp/mendeles-data` (נתונים עלולים להימחק בריסטארט).
 
-**Railway:** הקובץ `railway.toml` מריץ `migrate` + `setup_portal` לפני כל עלייה (`scripts/start.sh`).
+**Railway:** `railway.toml` משתמש ב-Railpack (ללא Nixpacks). `migrate` + `setup_portal` רצים ב-`scripts/start.sh` **בהפעלה** (לא בזמן build), כדי ש-`DATABASE_URL` / `postgres.railway.internal` יהיו זמינים.
 
-אם הופיע `no such table: accounts_user` – ב-Railway → Settings → Deploy:
-- **Start Command:** `sh scripts/start.sh`
-- או **Pre-deploy:** `python manage.py migrate --noinput && python manage.py setup_portal`
+אם הופיע `no such table: accounts_user` – ודא **Start Command:** `sh scripts/start.sh` ו-`DATABASE_URL` מחובר ל-Postgres.
 
 מומלץ גם לחבר **PostgreSQL** (`DATABASE_URL`) – SQLite ב־`/tmp` נמחק בריסטארט.
 

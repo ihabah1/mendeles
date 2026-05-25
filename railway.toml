@@ -1,8 +1,8 @@
-[build]
-builder = "nixpacks"
+# Railpack (ברירת מחדל) – בלי [build]/Nixpacks.
+# migrate + setup_portal רצים ב-scripts/start.sh אחרי עליית הקונטיינר,
+# כשהרשת הפרטית (postgres.railway.internal) זמינה.
 
 [deploy]
-preDeployCommand = "python manage.py migrate --noinput && python manage.py setup_portal"
 startCommand = "sh scripts/start.sh"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
