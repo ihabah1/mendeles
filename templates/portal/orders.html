@@ -1,0 +1,41 @@
+{% extends "portal/base_dashboard.html" %}
+{% block title %}הזמנות – Mandeles{% endblock %}
+{% block topbar %}ניהול הזמנות{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">הזמנות</div></div>
+</div>
+<div class="table-wrap">
+  <div class="table-toolbar">
+    <form method="get" style="display:flex;gap:8px;flex-wrap:wrap">
+      <input class="search-input" name="q" value="{{ q }}" placeholder="🔍 מספר / לקוח">
+      <select class="search-input" name="status" style="max-width:150px">
+        <option value="">כל הסטטוסים</option>
+        {% for val, lbl in orders.model.Status.choices %}
+        <option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ lbl }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-gold btn-sm">סנן</button>
+    </form>
+  </div>
+  <table>
+    <thead><tr><th>מספר</th><th>לקוח</th><th>הגרלה</th><th>טפסים</th><th>סכום</th><th>סטטוס</th><th>תאריך</th><th></th></tr></thead>
+    <tbody>
+    {% for o in orders %}
+    <tr>
+      <td class="td-mono">{{ o.order_number }}</td>
+      <td>{{ o.customer.full_name|default:o.customer.email }}</td>
+      <td>{{ o.draw_name }}</td>
+      <td class="td-mono">{{ o.forms_count }}</td>
+      <td class="td-mono">₪{{ o.amount_ils }}</td>
+      <td><span class="badge badge-blue">{{ o.get_status_display }}</span></td>
+      <td class="td-mono">{{ o.created_at|date:"d/m/Y" }}</td>
+      <td><a href="{% url 'portal:customer_detail' o.customer_id %}?tab=orders" class="btn btn-outline btn-sm">לקוח</a></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="8" style="text-align:center;padding:30px;color:var(--muted)">אין הזמנות</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

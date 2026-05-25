@@ -1,0 +1,68 @@
+from django.conf import settings
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.db import models
+
+
+class UserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra):
+        if not email:
+            raise ValueError('נדרש אימייל')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra):
+        extra.setdefault('is_staff', True)
+        extra.setdefault('is_superuser', True)
+        extra.setdefault('is_active', True)
+        extra.setdefault('role', User.Role.ADMIN)
+        return self.create_user(email, password, **extra)
+
+
+class User(AbstractBaseUser, PermissionsMixin):
+    class Role(models.TextChoices):
+        ADMIN = 'admin', 'מנהל'
+        TEAM = 'team', 'חבר צוות'
+        CUSTOMER = 'customer', 'לקוח'
+
+    email = models.EmailField('אימייל', unique=True)
+    full_name = models.CharField('שם מלא', max_length=120, blank=True)
+    phone = models.CharField('טלפון', max_length=20, blank=True)
+    role = models.CharField(max_length=20, choices=Role.choices, default=Role.CUSTOMER)
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+    date_joined = models.DateTimeField(auto_now_add=True)
+    last_login = models.DateTimeField(null=True, blank=True)
+
+    objects = UserManager()
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
+
+    class Meta:
+        verbose_name = 'משתמש'
+        verbose_name_plural = 'משתמשים'
+
+    def __str__(self):
+        return self.email
+
+    @property
+    def is_admin(self):
+        return self.email.lower() == settings.ADMIN_EMAIL.lower()
+
+    @property
+    def is_team_member(self):
+        return self.role == self.Role.TEAM
+
+    def get_role_display_badge(self):
+        return dict(self.Role.choices).get(self.role, self.role)
+
+    def get_initials(self):
+        if self.full_name:
+            parts = self.full_name.strip().split()
+            if len(parts) >= 2:
+                return (parts[0][0] + parts[-1][0]).upper()
+            return parts[0][0].upper()
+        return self.email[0].upper()

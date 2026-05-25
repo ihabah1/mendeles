@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}כניסת מנהל – Mandeles{% endblock %}
+{% block body %}
+<div class="login-page">
+  <div class="login-card">
+    <h1>🎯 MANDELES</h1>
+    <p>כניסה ללוח הניהול · ללא אימות מייל בשלב זה</p>
+    {% if form.non_field_errors %}
+    <div class="alert alert-error">{{ form.non_field_errors.0 }}</div>
+    {% endif %}
+    <form method="post" action="">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.GET.next }}">
+      <div class="form-row">
+        <label class="form-label" for="id_email">אימייל</label>
+        {{ form.email }}
+      </div>
+      <div class="form-row">
+        <label class="form-label" for="id_password">סיסמה</label>
+        {{ form.password }}
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-gold" style="width:100%;justify-content:center">כניסה</button>
+      </div>
+    </form>
+    <p style="margin-top:18px;font-size:.7rem;color:var(--muted);text-align:center">
+      גישה למנהלים בלבד · לא קשור ל־django-admin
+    </p>
+  </div>
+</div>
+{% endblock %}

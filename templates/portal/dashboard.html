@@ -1,0 +1,59 @@
+{% extends "portal/base_dashboard.html" %}
+{% block title %}דשבורד – Mandeles{% endblock %}
+{% block topbar %}סקירה כללית{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">סקירה כללית</div>
+    <div class="page-sub">ניהול לקוחות, הזמנות וחשבונות</div>
+  </div>
+</div>
+<div class="stats-grid">
+  <div class="stat-card gold"><div class="stat-label">לקוחות</div><div class="stat-value">{{ stats.users_count }}</div></div>
+  <div class="stat-card green"><div class="stat-label">הכנסות ₪</div><div class="stat-value">{{ stats.revenue|floatformat:0 }}</div></div>
+  <div class="stat-card blue"><div class="stat-label">הזמנות</div><div class="stat-value">{{ stats.orders_count }}</div></div>
+  <div class="stat-card orange"><div class="stat-label">ממתינות</div><div class="stat-value">{{ stats.pending_orders }}</div></div>
+  <div class="stat-card gold"><div class="stat-label">פעילים</div><div class="stat-value">{{ stats.active_customers }}</div></div>
+  <div class="stat-card blue"><div class="stat-label">הודעות</div><div class="stat-value">{{ stats.messages_sent }}</div></div>
+</div>
+<div class="table-wrap">
+  <div class="table-toolbar"><strong>הזמנות אחרונות</strong>
+    <a href="{% url 'portal:orders' %}" class="btn btn-outline btn-sm" style="margin-right:auto">הצג הכל</a>
+  </div>
+  <table>
+    <thead><tr><th>מספר</th><th>לקוח</th><th>הגרלה</th><th>סכום</th><th>סטטוס</th><th></th></tr></thead>
+    <tbody>
+    {% for o in recent_orders %}
+    <tr>
+      <td class="td-mono">{{ o.order_number }}</td>
+      <td>{{ o.customer.full_name|default:o.customer.email }}</td>
+      <td>{{ o.draw_name }}</td>
+      <td class="td-mono">₪{{ o.amount_ils }}</td>
+      <td><span class="badge badge-{% if o.status == 'completed' %}green{% elif o.status == 'pending' %}orange{% else %}blue{% endif %}">{{ o.get_status_display }}</span></td>
+      <td><a href="{% url 'portal:customer_detail' o.customer_id %}?tab=orders" class="btn btn-outline btn-sm">פרטים</a></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">אין הזמנות</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="table-wrap">
+  <div class="table-toolbar"><strong>פעילות אחרונה</strong></div>
+  <table>
+    <thead><tr><th>זמן</th><th>אירוע</th><th>לקוח</th><th>IP</th></tr></thead>
+    <tbody>
+    {% for l in recent_logs %}
+    <tr>
+      <td class="td-mono" style="font-size:.7rem">{{ l.created_at|date:"d/m/Y H:i" }}</td>
+      <td>{{ l.event }}</td>
+      <td>{% if l.customer %}{{ l.customer.full_name|default:l.customer.email }}{% else %}—{% endif %}</td>
+      <td class="td-mono">{{ l.ip_address|default:"—" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted)">אין לוגים</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

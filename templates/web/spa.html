@@ -1,0 +1,26 @@
+{% load static %}
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="{% static 'frontend/favicon.svg' %}" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ page_title }}</title>
+    <meta name="app-version" content="{{ app_version }}" />
+    {% for css in vite_css %}
+    <link rel="stylesheet" href="{% static css %}?v={{ app_version }}" />
+    {% endfor %}
+  </head>
+  <body>
+    <script>
+      (function () {
+        var p = location.pathname;
+        if (p.indexOf('/manage') !== 0) return;
+        if (p.indexOf('/manage/login') === 0) return;
+        location.replace('/manage/login/?next=' + encodeURIComponent(p + location.search));
+      })();
+    </script>
+    <div id="root"></div>
+    <script type="module" src="{% static vite_js %}?v={{ app_version }}"></script>
+  </body>
+</html>

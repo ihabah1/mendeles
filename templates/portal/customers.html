@@ -1,0 +1,56 @@
+{% extends "portal/base_dashboard.html" %}
+{% block title %}משתמשים – Mandeles{% endblock %}
+{% block topbar %}ניהול משתמשים{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">משתמשים ולקוחות</div>
+    <div class="page-sub">{{ customers|length }} רשומים · פרופילים · הרשאות · הודעות</div>
+  </div>
+  <a href="{% url 'portal:user_create' %}" class="btn btn-gold">+ הוסף משתמש</a>
+</div>
+<div class="table-wrap">
+  <div class="table-toolbar">
+    <form method="get" style="display:flex;gap:8px;flex-wrap:wrap;flex:1">
+      <input class="search-input" name="q" value="{{ q }}" placeholder="🔍 שם / טלפון / אימייל">
+      <select class="search-input" name="role" style="max-width:130px">
+        <option value="">כל הסוגים</option>
+        <option value="customer" {% if role_filter == 'customer' %}selected{% endif %}>לקוח</option>
+        <option value="team" {% if role_filter == 'team' %}selected{% endif %}>חבר צוות</option>
+      </select>
+      <select class="search-input" name="status" style="max-width:130px">
+        <option value="">כל הסטטוסים</option>
+        <option value="active" {% if status == 'active' %}selected{% endif %}>פעיל</option>
+        <option value="locked" {% if status == 'locked' %}selected{% endif %}>נעול</option>
+        <option value="pending" {% if status == 'pending' %}selected{% endif %}>ממתין</option>
+      </select>
+      <button type="submit" class="btn btn-gold btn-sm">חפש</button>
+    </form>
+  </div>
+  <table>
+    <thead><tr><th>שם</th><th>אימייל</th><th>סוג</th><th>סטטוס</th><th>הזמנות</th><th>פעולות</th></tr></thead>
+    <tbody>
+    {% for c in customers %}
+    <tr>
+      <td><strong>{{ c.full_name|default:"—" }}</strong></td>
+      <td class="td-mono">{{ c.email }}</td>
+      <td>
+        <span class="badge {% if c.role == 'team' %}badge-gold{% else %}badge-blue{% endif %}">
+          {{ c.get_role_display }}
+        </span>
+      </td>
+      <td>
+        {% if c.profile %}
+        <span class="badge badge-{% if c.profile.status == 'active' %}green{% elif c.profile.status == 'locked' %}red{% else %}gray{% endif %}">{{ c.profile.get_status_display }}</span>
+        {% else %}—{% endif %}
+      </td>
+      <td class="td-mono">{{ c.orders_count }}</td>
+      <td><a href="{% url 'portal:customer_detail' c.pk %}" class="btn btn-gold btn-sm">כרטיס מלא</a></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" style="text-align:center;padding:30px;color:var(--muted)">לא נמצאו משתמשים</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

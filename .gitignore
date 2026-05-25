@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Django / local data
+data/
+*.sqlite3
+db.sqlite3
+
+# Secrets & local env (never commit)
+env
+env.txt
+.env
+.env.local
+!.env.example
+
+# Node (if built locally inside project)
+node_modules/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

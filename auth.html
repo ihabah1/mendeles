@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
+<title>Mandeles.co.il – כניסה / הרשמה</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&family=Frank+Ruhl+Libre:wght@700;900&display=swap" rel="stylesheet" crossorigin="anonymous">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+:root{
+  --gold:#c9a84c;--gold-l:#e8c870;--gold-d:#9a7a30;
+  --navy:#0d1b2a;--navy-m:#162436;--navy-c:#1a2d42;--navy-b:#263d57;
+  --cream:#f0e8d8;--text:#e8dcc8;--muted:#8aaabe;
+  --win:#27ae60;--loss:#e74c3c;
+  --r:12px;--shadow:0 8px 32px rgba(0,0,0,.45);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:'Heebo',sans-serif;background:var(--navy);color:var(--text);min-height:100vh;font-size:16px;display:flex;flex-direction:column}
+
+/* ── PAGE LAYOUT ── */
+.auth-page{flex:1;display:flex;align-items:center;justify-content:center;padding:24px 16px;position:relative;overflow:hidden}
+.auth-page::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(201,168,76,.08) 0%,transparent 60%);pointer-events:none}
+.auth-page::after{content:'';position:absolute;bottom:-80px;right:-80px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(201,168,76,.04) 0%,transparent 70%);pointer-events:none}
+
+/* ── CARD ── */
+.auth-card{background:var(--navy-c);border:1px solid var(--navy-b);border-radius:18px;padding:36px 32px 32px;width:100%;max-width:420px;box-shadow:var(--shadow);position:relative;z-index:1}
+@media(max-width:480px){.auth-card{padding:28px 20px 24px}}
+
+/* ── LOGO ── */
+.auth-logo{text-align:center;margin-bottom:24px}
+.auth-logo a{font-family:'Frank Ruhl Libre',serif;font-size:1.6rem;color:var(--gold);font-weight:900;text-decoration:none;letter-spacing:-.5px}
+.auth-logo span{color:var(--muted);font-size:.8rem;font-family:'Heebo',sans-serif;font-weight:400;display:block;margin-top:2px}
+
+/* ── TABS ── */
+.auth-tabs{display:flex;background:var(--navy);border-radius:10px;padding:4px;margin-bottom:28px;gap:4px}
+.auth-tab{flex:1;padding:9px;border:none;border-radius:7px;font-family:'Heebo',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;background:transparent;color:var(--muted);transition:background .15s,color .15s}
+.auth-tab.active{background:var(--gold);color:var(--navy)}
+
+/* ── METHOD SELECTOR ── */
+.method-row{display:flex;gap:8px;margin-bottom:22px}
+.method-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:11px 8px;background:var(--navy);border:1.5px solid var(--navy-b);border-radius:var(--r);cursor:pointer;transition:border-color .15s,background .15s;font-family:'Heebo',sans-serif}
+.method-btn.active{border-color:var(--gold);background:rgba(201,168,76,.07)}
+.method-btn:hover:not(.active){border-color:var(--gold-d);background:rgba(201,168,76,.04)}
+.method-icon{font-size:1.2rem}
+.method-label{font-size:.72rem;font-weight:700;color:var(--muted)}
+.method-btn.active .method-label{color:var(--gold)}
+
+/* ── FORMS ── */
+.form-group{margin-bottom:16px;position:relative}
+.form-label{display:block;font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:6px}
+.form-input{width:100%;background:var(--navy);border:1.5px solid var(--navy-b);border-radius:10px;color:var(--cream);font-family:'Heebo',sans-serif;font-size:.93rem;padding:11px 14px;transition:border-color .15s,box-shadow .15s;outline:none;direction:ltr}
+.form-input[dir="rtl"]{direction:rtl}
+.form-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.15)}
+.form-input::placeholder{color:var(--muted);opacity:.6}
+.form-input.error{border-color:var(--loss)}
+.form-input.success{border-color:var(--win)}
+
+/* phone row */
+.phone-row{display:flex;gap:8px}
+.phone-prefix{width:80px;flex-shrink:0;text-align:center;cursor:pointer}
+.phone-prefix option{background:var(--navy-c)}
+.phone-field{flex:1}
+
+/* OTP boxes */
+.otp-wrap{display:flex;gap:8px;justify-content:center;margin-top:4px}
+.otp-input{width:48px;height:54px;text-align:center;font-size:1.3rem;font-weight:700;background:var(--navy);border:1.5px solid var(--navy-b);border-radius:10px;color:var(--cream);font-family:'Heebo',sans-serif;outline:none;transition:border-color .15s,box-shadow .15s;-moz-appearance:textfield}
+.otp-input::-webkit-outer-spin-button,.otp-input::-webkit-inner-spin-button{-webkit-appearance:none}
+.otp-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.15)}
+.otp-input.filled{border-color:var(--gold-d)}
+
+/* password toggle */
+.input-with-toggle{position:relative}
+.input-with-toggle .form-input{padding-left:42px}
+.pw-toggle{position:absolute;left:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:.95rem;padding:4px;line-height:1;transition:color .15s}
+.pw-toggle:hover{color:var(--gold)}
+
+/* ── BUTTONS ── */
+.btn-primary{width:100%;padding:13px;background:var(--gold);color:var(--navy);border:none;border-radius:10px;font-family:'Heebo',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;transition:background .15s,box-shadow .15s,transform .1s;margin-top:4px}
+.btn-primary:hover{background:var(--gold-l);box-shadow:0 4px 18px rgba(201,168,76,.3)}
+.btn-primary:active{transform:scale(.98)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+.btn-social{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;background:var(--navy);border:1.5px solid var(--navy-b);border-radius:10px;font-family:'Heebo',sans-serif;font-size:.88rem;font-weight:700;color:var(--text);cursor:pointer;transition:border-color .15s,background .15s;margin-bottom:10px}
+.btn-social:hover{border-color:var(--navy-b);background:rgba(255,255,255,.04)}
+.btn-google:hover{border-color:#4285f4;background:rgba(66,133,244,.06)}
+.btn-apple:hover{border-color:#888;background:rgba(255,255,255,.06)}
+
+/* ── DIVIDER ── */
+.divider{display:flex;align-items:center;gap:10px;margin:18px 0;color:var(--muted);font-size:.76rem}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--navy-b)}
+
+/* ── HELPERS ── */
+.resend-row{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+.resend-btn{background:none;border:none;color:var(--gold);font-family:'Heebo',sans-serif;font-size:.78rem;cursor:pointer;padding:0;text-decoration:underline}
+.resend-btn:disabled{color:var(--muted);text-decoration:none;cursor:not-allowed}
+.countdown{font-size:.76rem;color:var(--muted)}
+
+.forgot-link{background:none;border:none;color:var(--muted);font-family:'Heebo',sans-serif;font-size:.76rem;cursor:pointer;padding:0;text-decoration:underline;display:block;text-align:left;margin-top:6px}
+.forgot-link:hover{color:var(--gold)}
+
+.terms-note{font-size:.71rem;color:var(--muted);text-align:center;margin-top:14px;line-height:1.6}
+.terms-note a{color:var(--gold);text-decoration:none}
+
+/* ── STATUS ── */
+.auth-status{padding:11px 14px;border-radius:9px;font-size:.82rem;font-weight:700;margin-bottom:14px;display:none;line-height:1.4}
+.auth-status.show{display:block}
+.auth-status.error{background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.3);color:#f07070}
+.auth-status.success{background:rgba(39,174,96,.08);border:1px solid rgba(39,174,96,.3);color:#6adba6}
+.auth-status.loading{background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);color:var(--gold-l)}
+
+/* ── STEP INDICATOR ── */
+.step-dots{display:flex;gap:6px;justify-content:center;margin-bottom:20px}
+.step-dot{width:8px;height:8px;border-radius:50%;background:var(--navy-b);transition:background .2s,width .2s}
+.step-dot.active{background:var(--gold);width:22px;border-radius:4px}
+.step-dot.done{background:var(--win)}
+
+/* ── SECTIONS ── */
+.auth-section{display:none}
+.auth-section.active{display:block}
+
+/* ── BACK ── */
+.back-btn{display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--muted);font-family:'Heebo',sans-serif;font-size:.8rem;cursor:pointer;padding:0;margin-bottom:18px;transition:color .15s}
+.back-btn:hover{color:var(--gold)}
+.back-btn svg{flex-shrink:0}
+
+/* ── PASSWORD STRENGTH ── */
+.pw-strength{margin-top:6px;display:none}
+.pw-strength.show{display:block}
+.pw-bar-bg{height:4px;background:var(--navy-b);border-radius:2px;overflow:hidden;margin-bottom:4px}
+.pw-bar{height:100%;border-radius:2px;transition:width .3s,background .3s;width:0}
+.pw-hint{font-size:.69rem;color:var(--muted)}
+
+/* ── FOOTER NAV ── */
+.auth-footer{text-align:center;padding:18px 16px;font-size:.75rem;color:var(--muted)}
+.auth-footer a{color:var(--gold);text-decoration:none}
+
+/* ── LOADING SPINNER ── */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(13,27,42,.4);border-top-color:var(--navy);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-left:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── FOCUS ── */
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+</style>
+</head>
+<body>
+
+<main class="auth-page" id="main" role="main">
+<div class="auth-card">
+
+  <!-- Logo -->
+  <div class="auth-logo">
+    <a href="/">🎯 Mandeles<span style="color:var(--muted);font-size:.7rem;font-family:'Heebo',sans-serif;font-weight:400">.co.il</span></a>
+    <span>ניתוח לוטו וטוטו חכם</span>
+  </div>
+
+  <!-- Tabs: Login / Register -->
+  <div class="auth-tabs" role="tablist" aria-label="כניסה או הרשמה">
+    <button class="auth-tab active" role="tab" aria-selected="true" id="tab-login" onclick="switchTab('login')" aria-controls="panel-login">כניסה</button>
+    <button class="auth-tab" role="tab" aria-selected="false" id="tab-register" onclick="switchTab('register')" aria-controls="panel-register">הרשמה חדשה</button>
+  </div>
+
+  <!-- Status message -->
+  <div class="auth-status" id="auth-status" role="alert" aria-live="assertive" aria-atomic="true"></div>
+
+  <!-- ════════════════ LOGIN PANEL ════════════════ -->
+  <div id="panel-login" role="tabpanel" aria-labelledby="tab-login">
+
+    <!-- Method selector -->
+    <div class="method-row" role="group" aria-label="שיטת כניסה">
+      <button class="method-btn active" id="method-email" onclick="setLoginMethod('email')" aria-pressed="true">
+        <span class="method-icon" aria-hidden="true">✉️</span>
+        <span class="method-label">אימייל</span>
+      </button>
+      <button class="method-btn" id="method-phone" onclick="setLoginMethod('phone')" aria-pressed="false">
+        <span class="method-icon" aria-hidden="true">📱</span>
+        <span class="method-label">טלפון</span>
+      </button>
+    </div>
+
+    <!-- Email + Password login -->
+    <div id="login-email-form" class="auth-section active">
+      <div class="form-group">
+        <label class="form-label" for="login-email">אימייל</label>
+        <input type="email" id="login-email" class="form-input" placeholder="you@example.com" autocomplete="email" inputmode="email" dir="ltr">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="login-password">סיסמה</label>
+        <div class="input-with-toggle">
+          <input type="password" id="login-password" class="form-input" placeholder="הסיסמה שלך" autocomplete="current-password" dir="ltr">
+          <button type="button" class="pw-toggle" onclick="togglePw('login-password',this)" aria-label="הצג/הסתר סיסמה">👁</button>
+        </div>
+        <button type="button" class="forgot-link" onclick="showForgot()">שכחתי סיסמה</button>
+      </div>
+      <button class="btn-primary" onclick="loginEmail()" id="btn-login-email">כניסה</button>
+    </div>
+
+    <!-- Phone OTP login -->
+    <div id="login-phone-form" class="auth-section" style="display:none">
+      <!-- Step 1: enter phone -->
+      <div id="lp-step1">
+        <div class="form-group">
+          <label class="form-label" for="login-phone">מספר טלפון</label>
+          <div class="phone-row">
+            <select class="form-input phone-prefix" id="login-prefix" aria-label="קוד מדינה" dir="ltr">
+              <option value="+972">🇮🇱 +972</option>
+              <option value="+1">🇺🇸 +1</option>
+              <option value="+44">🇬🇧 +44</option>
+              <option value="+33">🇫🇷 +33</option>
+              <option value="+49">🇩🇪 +49</option>
+            </select>
+            <input type="tel" id="login-phone" class="form-input phone-field" placeholder="050-0000000" autocomplete="tel" inputmode="tel" dir="ltr">
+          </div>
+        </div>
+        <button class="btn-primary" onclick="sendPhoneOtp('login')" id="btn-send-otp-login">שלח קוד SMS</button>
+      </div>
+      <!-- Step 2: enter OTP -->
+      <div id="lp-step2" style="display:none">
+        <div class="form-group">
+          <label class="form-label" style="text-align:center;display:block">קוד אימות נשלח ל-<strong id="lp-phone-display" style="color:var(--gold)"></strong></label>
+          <div class="otp-wrap" role="group" aria-label="קוד אימות">
+            <input type="number" class="otp-input" maxlength="1" aria-label="ספרה 1" id="otp-l-0" oninput="otpInput(this,0,'l')">
+            <input type="number" class="otp-input" maxlength="1" aria-label="ספרה 2" id="otp-l-1" oninput="otpInput(this,1,'l')">
+            <input type="number" class="otp-input" maxlength="1" aria-label="ספרה 3" id="otp-l-2" oninput="otpInput(this,2,'l')">
+            <input type="number" class="otp-input" maxlength="1" aria-label="ספרה 4" id="otp-l-3" oninput="otpInput(this,3,'l')">
+            <input type="number" class="otp-input" maxlength="1" aria-label="ספרה 5" id="otp-l-4" oninput="otpInput(this,4,'l')">
+            <input type="number" class="otp-input" maxlength="1" aria-label="ספרה 6" id="otp-l-5" oninput="otpInput(this,5,'l')">
+          </div>
+        </div>
+        <div class="resend-row">
+          <button class="resend-btn" id="resend-login" onclick="resendOtp('login')" disabled>שלח שוב</button>
+          <span class="countdown" id="countdown-login">00:60</span>
+        </div>
+        <button class="btn-primary" onclick="verifyOtp('login')" id="btn-verify-login" style="margin-top:16px">אמת ‎וכנס</button>
+        <button type="button" class="back-btn" onclick="backToPhone('login')" style="justify-content:center;margin-top:12px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          שנה מספר טלפון
+        </button>
+      </div>
+    </div>
+
+    <!-- Social divider -->
+    <div class="divider" aria-hidden="true">או כניסה עם</div>
+
+    <!-- Google + Apple -->
+    <button class="btn-social btn-google" onclick="loginGoogle()" aria-label="כניסה עם Google">
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      המשך עם Google
+    </button>
+    <button class="btn-social btn-apple" onclick="loginApple()" aria-label="כניסה עם Apple">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+      המשך עם Apple
+    </button>
+
+  </div><!-- /panel-login -->
+
+  <!-- ════════════════ REGISTER PANEL ════════════════ -->
+  <div id="panel-register" role="tabpanel" aria-labelledby="tab-register" style="display:none">
+
+    <!-- Step dots -->
+    <div class="step-dots" aria-hidden="true" id="reg-dots">
+      <div class="step-dot active" id="dot-0"></div>
+      <div class="step-dot" id="dot-1"></div>
+      <div class="step-dot" id="dot-2"></div>
+    </div>
+
+    <!-- Step 0: choose method -->
+    <div id="reg-step0" class="auth-section active">
+      <p style="text-align:center;font-size:.84rem;color:var(--muted);margin-bottom:18px">בחר איך להירשם</p>
+
+      <button class="btn-social btn-google" onclick="registerGoogle()" aria-label="הרשמה עם Google" style="margin-bottom:10px">
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        הרשמה עם Google
+      </button>
+      <button class="btn-social btn-apple" onclick="registerApple()" aria-label="הרשמה עם Apple" style="margin-bottom:14px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+        הרשמה עם Apple
+      </button>
+
+      <div class="divider" aria-hidden="true">או הרשמה ידנית</div>
+
+      <div class="method-row" role="group" aria-label="שיטת הרשמה">
+        <button class="method-btn" id="reg-method-email" onclick="startEmailReg()" aria-pressed="false">
+          <span class="method-icon" aria-hidden="true">✉️</span>
+          <span class="method-label">אימייל</span>
+        </button>
+        <button class="method-btn" id="reg-method-phone" onclick="startPhoneReg()" aria-pressed="false">
+          <span class="method-icon" aria-hidden="true">📱</span>
+          <span class="method-label">טלפון</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 1a: Email registration details -->
+    <div id="reg-step1-email" class="auth-section" style="display:none">
+      <button type="button" class="back-btn" onclick="regBack(0)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        חזרה
+      </button>
+      <div class="form-group">
+        <label class="form-label" for="reg-name">שם מלא</label>
+        <input type="text" id="reg-name" class="form-input" placeholder="ישראל ישראלי" autocomplete="name" dir="rtl">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="reg-email">אימייל</label>
+        <input type="email" id="reg-email" class="form-input" placeholder="you@example.com" autocomplete="email" inputmode="email" dir="ltr">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="reg-password">סיסמה</label>
+        <div class="input-with-toggle">
+          <input type="password" id="reg-password" class="form-input" placeholder="לפחות 8 תווים" autocomplete="new-password" dir="ltr" oninput="checkPwStrength(this.value)">
+          <button type="button" class="pw-toggle" onclick="togglePw('reg-password',this)" aria-label="הצג/הסתר סיסמה">👁</button>
+        </div>
+        <div class="pw-strength show" id="pw-strength">
+          <div class="pw-bar-bg"><div class="pw-bar" id="pw-bar"></div></div>
+          <span class="pw-hint" id="pw-hint">הזן סיסמה</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="reg-phone-email">מספר טלפון (לאימות)</label>
+        <div class="phone-row">
+          <select class="form-input phone-prefix" id="reg-prefix-email" aria-label="קוד מדינה" dir="ltr">
+            <option value="+972">🇮🇱 +972</option>
+            <option value="+1">🇺🇸 +1</option>
+            <option value="+44">🇬🇧 +44</option>
+          </select>
+          <input type="tel" id="reg-phone-email" class="form-input phone-field" placeholder="050-0000000" autocomplete="tel" inputmode="tel" dir="ltr">
+        </div>
+      </div>
+      <button class="btn-primary" onclick="sendRegOtp('email')" id="btn-reg-email-next">המשך – שלח קוד SMS</button>
+    </div>
+
+    <!-- Step 1b: Phone registration -->
+    <div id="reg-step1-phone" class="auth-section" style="display:none">
+      <button type="button" class="back-btn" onclick="regBack(0)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        חזרה
+      </button>
+      <div class="form-group">
+        <label class="form-label" for="reg-name-phone">שם מלא</label>
+        <input type="text" id="reg-name-phone" class="form-input" placeholder="ישראל ישראלי" autocomplete="name" dir="rtl">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="reg-phone-only">מספר טלפון</label>
+        <div class="phone-row">
+          <select class="form-input phone-prefix" id="reg-prefix-phone" aria-label="קוד מדינה" dir="ltr">
+            <option value="+972">🇮🇱 +972</option>
+            <option value="+1">🇺🇸 +1</option>
+            <option value="+44">🇬🇧 +44</option>
+          </select>
+          <input type="tel" id="reg-phone-only" class="form-input phone-field" placeholder="050-0000000" autocomplete="tel" inputmode="tel" dir="ltr">
+        </div>
+      </div>
+      <button class="btn-primary" onclick="sendRegOtp('phone')" id="btn-reg-phone-next">המשך – שלח קוד SMS</button>
+    </div>
+
+    <!-- Step 2: OTP verification (shared for email & phone reg) -->
+    <div id="reg-step2" class="auth-section" style="display:none">
+      <button type="button" class="back-btn" id="reg-otp-back" onclick="regBack(1)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        חזרה
+      </button>
+      <div class="form-group">
+        <label class="form-label" style="text-align:center;display:block">קוד אימות נשלח ל-<strong id="reg-phone-display" style="color:var(--gold)"></strong></label>
+        <div class="otp-wrap" role="group" aria-label="קוד אימות">
+          <input type="number" class="otp-input" maxlength="1" aria-label="ספרה 1" id="otp-r-0" oninput="otpInput(this,0,'r')">
+          <input type="number" class="otp-input" maxlength="1" aria-label="ספרה 2" id="otp-r-1" oninput="otpInput(this,1,'r')">
+          <input type="number" class="otp-input" maxlength="1" aria-label="ספרה 3" id="otp-r-2" oninput="otpInput(this,2,'r')">
+          <input type="number" class="otp-input" maxlength="1" aria-label="ספרה 4" id="otp-r-3" oninput="otpInput(this,3,'r')">
+          <input type="number" class="otp-input" maxlength="1" aria-label="ספרה 5" id="otp-r-4" oninput="otpInput(this,4,'r')">
+          <input type="number" class="otp-input" maxlength="1" aria-label="ספרה 6" id="otp-r-5" oninput="otpInput(this,5,'r')">
+        </div>
+      </div>
+      <div class="resend-row">
+        <button class="resend-btn" id="resend-reg" onclick="resendOtp('reg')" disabled>שלח שוב</button>
+        <span class="countdown" id="countdown-reg">00:60</span>
+      </div>
+      <button class="btn-primary" onclick="verifyRegOtp()" id="btn-verify-reg" style="margin-top:16px">אמת וצור חשבון ✓</button>
+    </div>
+
+    <p class="terms-note" id="reg-terms">בהרשמה אתה מסכים ל<a href="/legal.html">תנאי השימוש</a> ול<a href="/privacy.html">מדיניות הפרטיות</a>. גיל מינימלי 18.</p>
+
+  </div><!-- /panel-register -->
+
+  <!-- ════════════════ FORGOT PASSWORD ════════════════ -->
+  <div id="panel-forgot" style="display:none">
+    <button type="button" class="back-btn" onclick="hideForgot()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      חזרה לכניסה
+    </button>
+    <p style="font-size:.84rem;color:var(--muted);margin-bottom:16px">הזן את האימייל שלך ונשלח לך קישור לאיפוס סיסמה.</p>
+    <div class="form-group">
+      <label class="form-label" for="forgot-email">אימייל</label>
+      <input type="email" id="forgot-email" class="form-input" placeholder="you@example.com" inputmode="email" dir="ltr">
+    </div>
+    <button class="btn-primary" onclick="sendForgot()">שלח קישור לאיפוס</button>
+  </div>
+
+</div><!-- /auth-card -->
+</main>
+
+<footer class="auth-footer" role="contentinfo">
+  <a href="/">← חזרה לאתר</a> &nbsp;·&nbsp;
+  <a href="/legal.html">תנאי שימוש</a> &nbsp;·&nbsp;
+  <a href="/privacy.html">פרטיות</a>
+</footer>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+// ══════════════════════════════════════════════════════
+// AUTH UI – mandeles.co.il | Firebase Authentication
+// ══════════════════════════════════════════════════════
+
+// ── Firebase Config ───────────────────────────────────
+const firebaseConfig = {
+  apiKey:            "AIzaSyAKG9m4DOZZZdjaCOjicx_XwpQweLG5ErA",
+  authDomain:        "mandeles-5f8b9.firebaseapp.com",
+  projectId:         "mandeles-5f8b9",
+  storageBucket:     "mandeles-5f8b9.firebasestorage.app",
+  messagingSenderId: "321858869797",
+  appId:             "1:321858869797:web:a4b970b94606cc4525bdcc"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth     = firebase.auth();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account', hl: 'he' });
+
+const API = 'http://localhost:5002';  // לפיתוח מקומי
+// בייצור: const API = '';
+
+// ── Helpers ──────────────────────────────────────────
+function showStatus(msg, type='error') {
+  const el = document.getElementById('auth-status');
+  el.textContent = DOMPurify ? DOMPurify.sanitize(msg, {ALLOWED_TAGS:[]}) : msg;
+  el.className = `auth-status show ${type}`;
+}
+function clearStatus() {
+  document.getElementById('auth-status').className = 'auth-status';
+}
+function setLoading(btnId, loading, text='') {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = loading;
+  if (loading) {
+    btn.dataset.orig = btn.textContent;
+    btn.innerHTML = (text || btn.dataset.orig) + '<span class="spinner" aria-hidden="true"></span>';
+  } else {
+    btn.textContent = btn.dataset.orig || text;
+  }
+}
+function formatPhone(prefix, number) {
+  const n = number.replace(/\D/g,'');
+  if (prefix === '+972') {
+    return prefix + (n.startsWith('0') ? n.slice(1) : n);
+  }
+  return prefix + n;
+}
+
+// ── Tab switching ─────────────────────────────────────
+window.switchTab = function switchTab(tab) {
+  clearStatus();
+  document.getElementById('panel-login').style.display    = tab==='login'    ? 'block' : 'none';
+  document.getElementById('panel-register').style.display = tab==='register' ? 'block' : 'none';
+  document.getElementById('panel-forgot').style.display   = 'none';
+  document.getElementById('tab-login').classList.toggle('active',    tab==='login');
+  document.getElementById('tab-register').classList.toggle('active', tab==='register');
+  document.getElementById('tab-login').setAttribute('aria-selected',    tab==='login');
+  document.getElementById('tab-register').setAttribute('aria-selected', tab==='register');
+}
+
+// ── Login method ──────────────────────────────────────
+window.setLoginMethod = function setLoginMethod(m) {
+  clearStatus();
+  document.getElementById('method-email').classList.toggle('active', m==='email');
+  document.getElementById('method-phone').classList.toggle('active', m==='phone');
+  document.getElementById('method-email').setAttribute('aria-pressed', m==='email');
+  document.getElementById('method-phone').setAttribute('aria-pressed', m==='phone');
+  const emailForm = document.getElementById('login-email-form');
+  const phoneForm = document.getElementById('login-phone-form');
+  emailForm.classList.toggle('active', m==='email');
+  phoneForm.classList.toggle('active', m==='phone');
+  emailForm.style.display = m==='email' ? 'block' : 'none';
+  phoneForm.style.display = m==='phone' ? 'block' : 'none';
+}
+
+// ── Password visibility ───────────────────────────────
+window.togglePw = function togglePw(id, btn) {
+  const inp = document.getElementById(id);
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  btn.textContent = show ? '🙈' : '👁';
+  btn.setAttribute('aria-label', show ? 'הסתר סיסמה' : 'הצג סיסמה');
+}
+
+// ── Password strength ─────────────────────────────────
+window.checkPwStrength = function checkPwStrength(pw) {
+  const bar  = document.getElementById('pw-bar');
+  const hint = document.getElementById('pw-hint');
+  let score = 0;
+  if (pw.length >= 8)  score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const levels = [
+    {w:'0%',   bg:'#e74c3c', t:'חלשה מאוד'},
+    {w:'25%',  bg:'#e74c3c', t:'חלשה'},
+    {w:'50%',  bg:'#e8a030', t:'בינונית'},
+    {w:'75%',  bg:'#c9a84c', t:'טובה'},
+    {w:'100%', bg:'#27ae60', t:'חזקה'},
+  ];
+  const l = levels[score] || levels[0];
+  bar.style.width = pw ? l.w : '0%';
+  bar.style.background = l.bg;
+  hint.textContent = pw ? l.t : 'הזן סיסמה';
+  hint.style.color = pw ? l.bg : '';
+}
+
+// ── OTP boxes ─────────────────────────────────────────
+window.otpInput = function otpInput(el, idx, pfx) {
+  const val = el.value.replace(/\D/g,'');
+  el.value = val ? val[val.length-1] : '';
+  el.classList.toggle('filled', !!el.value);
+  if (el.value && idx < 5) {
+    document.getElementById(`otp-${pfx}-${idx+1}`).focus();
+  }
+  if (idx === 5 && el.value) {
+    // auto-submit if all 6 filled
+    const code = Array.from({length:6},(_,i)=>document.getElementById(`otp-${pfx}-${i}`).value).join('');
+    if (code.length === 6) {
+      if (pfx === 'l') verifyOtp('login');
+      else             verifyRegOtp();
+    }
+  }
+}
+function getOtpCode(pfx) {
+  return Array.from({length:6},(_,i)=>document.getElementById(`otp-${pfx}-${i}`).value).join('');
+}
+function clearOtp(pfx) {
+  for (let i=0;i<6;i++) {
+    const el = document.getElementById(`otp-${pfx}-${i}`);
+    el.value=''; el.classList.remove('filled');
+  }
+}
+
+// ── Countdown timer ───────────────────────────────────
+let _countdownTimers = {};
+function startCountdown(key, sec=60) {
+  const el      = document.getElementById(`countdown-${key}`);
+  const resend  = document.getElementById(`resend-${key}`);
+  resend.disabled = true;
+  clearInterval(_countdownTimers[key]);
+  let s = sec;
+  function tick() {
+    const mm = String(Math.floor(s/60)).padStart(2,'0');
+    const ss = String(s%60).padStart(2,'0');
+    el.textContent = `${mm}:${ss}`;
+    if (s <= 0) {
+      clearInterval(_countdownTimers[key]);
+      resend.disabled = false;
+      el.textContent = '';
+    }
+    s--;
+  }
+  tick();
+  _countdownTimers[key] = setInterval(tick, 1000);
+}
+
+// ══════════════════════════════════════════════════════
+// API CALLS  (replace with real fetch calls to your backend)
+// ══════════════════════════════════════════════════════
+
+// ── Email login ───────────────────────────────────────
+window.loginEmail = async function loginEmail() {
+  clearStatus();
+  const email = document.getElementById('login-email').value.trim();
+  const pw    = document.getElementById('login-password').value;
+  if (!email || !pw) { showStatus('נא למלא אימייל וסיסמה'); return; }
+  setLoading('btn-login-email', true, 'כניסה...');
+  try {
+    const cred = await auth.signInWithEmailAndPassword(email, pw);
+    const token = await cred.user.getIdToken();
+    showStatus('✅ ברוך הבא! מעביר...', 'success');
+    localStorage.setItem('fb_token', token);
+    setTimeout(() => {
+      const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
+      window.location.href = redirect;
+    }, 800);
+  } catch(e) {
+    const msgs = {
+      'auth/user-not-found':   'אימייל לא רשום במערכת',
+      'auth/wrong-password':   'סיסמה שגויה',
+      'auth/invalid-email':    'אימייל לא תקין',
+      'auth/too-many-requests':'יותר מדי ניסיונות – נסה שוב מאוחר יותר',
+      'auth/user-disabled':    'החשבון נחסם – צור קשר עם התמיכה',
+    };
+    showStatus(msgs[e.code] || 'שגיאת כניסה: ' + e.message);
+  } finally {
+    setLoading('btn-login-email', false);
+  }
+}
+
+// ── Phone OTP – Firebase ──────────────────────────────
+let _currentPhone = '';
+let _confirmationResult = null;
+
+function setupRecaptcha() {
+  // נקה verifier קיים לפני יצירה חדשה
+  if (window._recaptchaVerifier) {
+    try {
+      window._recaptchaVerifier.clear();
+    } catch(e) {}
+    window._recaptchaVerifier = null;
+  }
+  window._recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+    size: 'invisible',
+    callback: () => {}
+  });
+}
+
+window.sendPhoneOtp = async function sendPhoneOtp(context) {
+  clearStatus();
+  const prefixId = context === 'login' ? 'login-prefix' : 'reg-prefix-phone';
+  const phoneId  = context === 'login' ? 'login-phone'  : 'reg-phone-only';
+  const btnId    = context === 'login' ? 'btn-send-otp-login' : 'btn-reg-phone-next';
+  const prefix   = document.getElementById(prefixId)?.value || '+972';
+  const rawPhone = document.getElementById(phoneId)?.value.trim();
+  if (!rawPhone) { showStatus('נא להזין מספר טלפון'); return; }
+  _currentPhone = formatPhone(prefix, rawPhone);
+  setLoading(btnId, true, 'שולח SMS...');
+  try {
+    setupRecaptcha();
+    _confirmationResult = await auth.signInWithPhoneNumber(_currentPhone, window._recaptchaVerifier);
+    if (context === 'login') {
+      document.getElementById('lp-phone-display').textContent = _currentPhone;
+      document.getElementById('lp-step1').style.display = 'none';
+      document.getElementById('lp-step2').style.display = 'block';
+      document.getElementById('otp-l-0').focus();
+      startCountdown('login');
+    } else {
+      document.getElementById('reg-phone-display').textContent = _currentPhone;
+      setRegStep(2);
+      showRegSection('reg-step2');
+      document.getElementById('otp-r-0').focus();
+      startCountdown('reg');
+    }
+    showStatus(`📱 קוד נשלח ל-${_currentPhone}`, 'success');
+  } catch(e) {
+    const msgs = {
+      'auth/invalid-phone-number': 'מספר טלפון לא תקין',
+      'auth/too-many-requests':    'יותר מדי ניסיונות – נסה שוב מאוחר יותר',
+      'auth/captcha-check-failed': 'אימות reCAPTCHA נכשל – נסה שוב',
+    };
+    showStatus(msgs[e.code] || 'שגיאה בשליחת SMS: ' + e.message);
+    if (window._recaptchaVerifier) {
+      try { window._recaptchaVerifier.clear(); } catch(e) {}
+      window._recaptchaVerifier = null;
+    }
+  } finally {
+    setLoading(btnId, false);
+  }
+}
+
+window.resendOtp = async function resendOtp(context) {
+  if (window._recaptchaVerifier) {
+    try { window._recaptchaVerifier.clear(); } catch(e) {}
+    window._recaptchaVerifier = null;
+  }
+  await sendPhoneOtp(context === 'login' ? 'login' : 'phone');
+}
+
+window.verifyOtp = async function verifyOtp(context) {
+  clearStatus();
+  const pfx  = context === 'login' ? 'l' : 'r';
+  const code = getOtpCode(pfx);
+  if (code.length < 6) { showStatus('נא להזין קוד 6 ספרות'); return; }
+  const btnId = context === 'login' ? 'btn-verify-login' : 'btn-verify-reg';
+  setLoading(btnId, true, 'מאמת...');
+  try {
+    const cred  = await _confirmationResult.confirm(code);
+    const token = await cred.user.getIdToken();
+    localStorage.setItem('fb_token', token);
+    showStatus('✅ אומת! מעביר...', 'success');
+    setTimeout(() => {
+      const redirect = new URLSearchParams(window.location.search).get('redirect') || '/new_stite.html';
+      window.location.href = redirect;
+    }, 800);
+  } catch(e) {
+    showStatus(e.code === 'auth/invalid-verification-code' ? 'קוד שגוי – נסה שוב' : 'שגיאת אימות');
+    clearOtp(pfx);
+    document.getElementById(`otp-${pfx}-0`).focus();
+  } finally {
+    setLoading(btnId, false);
+  }
+}
+
+window.backToPhone = function backToPhone(context) {
+  clearStatus(); clearOtp('l');
+  document.getElementById('lp-step1').style.display = 'block';
+  document.getElementById('lp-step2').style.display = 'none';
+  clearInterval(_countdownTimers['login']);
+  window._recaptchaVerifier = null;
+}
+
+// ── Google / Apple – Firebase ────────────────────────
+window.loginGoogle = async function loginGoogle() {
+  clearStatus();
+  try {
+    const cred  = await auth.signInWithPopup(googleProvider);
+    const token = await cred.user.getIdToken();
+    localStorage.setItem('fb_token', token);
+    showStatus('✅ ברוך הבא! מעביר...', 'success');
+    setTimeout(() => window.location.href = new URLSearchParams(window.location.search).get('redirect') || '/new_stite.html', 800);
+  } catch(e) {
+    if (e.code !== 'auth/popup-closed-by-user')
+      showStatus('שגיאת כניסה עם Google: ' + e.message);
+  }
+}
+window.registerGoogle = async function registerGoogle() { await loginGoogle(); }
+window.loginApple = function loginApple()    { showStatus('Apple Sign In יופעל בקרוב', 'loading'); }
+window.registerApple = function registerApple() { showStatus('Apple Sign In יופעל בקרוב', 'loading'); }
+
+// ── Forgot password ───────────────────────────────────
+window.showForgot = function showForgot() {
+  clearStatus();
+  document.getElementById('panel-login').style.display    = 'none';
+  document.getElementById('panel-register').style.display = 'none';
+  document.getElementById('panel-forgot').style.display   = 'block';
+}
+window.hideForgot = function hideForgot() {
+  clearStatus();
+  document.getElementById('panel-forgot').style.display = 'none';
+  switchTab('login');
+}
+window.sendForgot = async function sendForgot() {
+  clearStatus();
+  const email = document.getElementById('forgot-email').value.trim();
+  if (!email) { showStatus('נא להזין אימייל'); return; }
+  try {
+    await auth.sendPasswordResetEmail(email, {
+      url: window.location.origin + '/auth.html'
+    });
+    showStatus(`📧 קישור נשלח ל-${email} — בדוק את תיבת הדואר`, 'success');
+  } catch(e) {
+    const msgs = {
+      'auth/user-not-found': 'אימייל לא רשום במערכת',
+      'auth/invalid-email':  'אימייל לא תקין',
+    };
+    showStatus(msgs[e.code] || 'שגיאה: ' + e.message);
+  }
+}
+
+// ── Registration flow ─────────────────────────────────
+let _regMethod = '';
+let _regStep   = 0;
+
+function setRegStep(n) {
+  _regStep = n;
+  [0,1,2].forEach(i => {
+    const dot = document.getElementById(`dot-${i}`);
+    if (i < n) { dot.className='step-dot done'; }
+    else if (i===n) { dot.className='step-dot active'; }
+    else { dot.className='step-dot'; }
+  });
+}
+function showRegSection(id) {
+  document.querySelectorAll('#panel-register .auth-section').forEach(s => {
+    s.classList.remove('active');
+    s.style.display = 'none';
+  });
+  const el = document.getElementById(id);
+  if (el) {
+    el.classList.add('active');
+    el.style.display = 'block';
+  }
+}
+
+window.startEmailReg = function startEmailReg() {
+  _regMethod = 'email';
+  setRegStep(1);
+  showRegSection('reg-step1-email');
+  clearStatus();
+}
+window.startPhoneReg = function startPhoneReg() {
+  _regMethod = 'phone';
+  setRegStep(1);
+  showRegSection('reg-step1-phone');
+  clearStatus();
+}
+window.regBack = function regBack(toStep) {
+  clearStatus();
+  if (toStep === 0) {
+    setRegStep(0);
+    showRegSection('reg-step0');
+  } else if (toStep === 1) {
+    setRegStep(1);
+    clearOtp('r');
+    showRegSection(_regMethod==='email' ? 'reg-step1-email' : 'reg-step1-phone');
+  }
+}
+
+window.sendRegOtp = async function sendRegOtp(method) {
+  clearStatus();
+  _regMethod = method;
+  let phone;
+  if (method === 'email') {
+    const prefix = document.getElementById('reg-prefix-email').value;
+    phone = formatPhone(prefix, document.getElementById('reg-phone-email').value.trim());
+    const name  = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const pw    = document.getElementById('reg-password').value;
+    if (!name)               { showStatus('נא להזין שם מלא'); return; }
+    if (!email)              { showStatus('נא להזין אימייל'); return; }
+    if (!pw || pw.length<8)  { showStatus('סיסמה חייבת להכיל לפחות 8 תווים'); return; }
+    if (!phone||phone.length<7){ showStatus('נא להזין מספר טלפון תקני'); return; }
+  } else {
+    const prefix = document.getElementById('reg-prefix-phone').value;
+    phone = formatPhone(prefix, document.getElementById('reg-phone-only').value.trim());
+    const name = document.getElementById('reg-name-phone').value.trim();
+    if (!name)               { showStatus('נא להזין שם מלא'); return; }
+    if (!phone||phone.length<7){ showStatus('נא להזין מספר טלפון תקני'); return; }
+  }
+  _currentPhone = phone;
+  const btnId = method==='email' ? 'btn-reg-email-next' : 'btn-reg-phone-next';
+  setLoading(btnId, true, 'שולח SMS...');
+  try {
+    setupRecaptcha();
+    _confirmationResult = await auth.signInWithPhoneNumber(_currentPhone, window._recaptchaVerifier);
+    document.getElementById('reg-phone-display').textContent = phone;
+    setRegStep(2);
+    showRegSection('reg-step2');
+    document.getElementById('otp-r-0').focus();
+    startCountdown('reg');
+    showStatus(`📱 קוד נשלח ל-${phone}`, 'success');
+  } catch(e) {
+    const msgs = {
+      'auth/invalid-phone-number': 'מספר טלפון לא תקין',
+      'auth/too-many-requests':    'יותר מדי ניסיונות',
+    };
+    showStatus(msgs[e.code] || 'שגיאה: ' + e.message);
+    if (window._recaptchaVerifier) {
+      try { window._recaptchaVerifier.clear(); } catch(e) {}
+      window._recaptchaVerifier = null;
+    }
+  } finally {
+    setLoading(btnId, false);
+  }
+}
+
+window.verifyRegOtp = async function verifyRegOtp() {
+  clearStatus();
+  const code = getOtpCode('r');
+  if (code.length < 6) { showStatus('נא להזין קוד 6 ספרות'); return; }
+  setLoading('btn-verify-reg', true, 'יוצר חשבון...');
+  try {
+    // אמת OTP דרך Firebase
+    const cred = await _confirmationResult.confirm(code);
+    const user = cred.user;
+
+    // אם הרשמה עם אימייל — עדכן פרופיל
+    if (_regMethod === 'email') {
+      const name  = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const pw    = document.getElementById('reg-password').value;
+      // קשר אימייל+סיסמה לחשבון הטלפון
+      const emailCred = firebase.auth.EmailAuthProvider.credential(email, pw);
+      await user.linkWithCredential(emailCred).catch(()=>{});
+      await user.updateProfile({ displayName: name });
+    } else {
+      const name = document.getElementById('reg-name-phone').value.trim();
+      await user.updateProfile({ displayName: name });
+    }
+
+    const token = await user.getIdToken();
+    localStorage.setItem('fb_token', token);
+    showStatus('🎉 ברוך הבא ל-Mandeles! מעביר...', 'success');
+    setTimeout(() => window.location.href = new URLSearchParams(window.location.search).get('redirect') || '/', 1000);
+  } catch(e) {
+    const msgs = {
+      'auth/invalid-verification-code': 'קוד שגוי – נסה שוב',
+      'auth/email-already-in-use':      'אימייל כבר רשום – נסה להתחבר',
+      'auth/weak-password':             'סיסמה חלשה מדי',
+    };
+    showStatus(msgs[e.code] || 'שגיאה: ' + e.message);
+    clearOtp('r');
+  } finally {
+    setLoading('btn-verify-reg', false);
+  }
+}
+
+// ── OTP paste support (copy all 6 digits at once) ────
+document.querySelectorAll('.otp-input').forEach((inp, _, all) => {
+  inp.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'');
+    if (!pasted) return;
+    const pfx = inp.id.includes('otp-l') ? 'l' : 'r';
+    for (let i=0;i<6;i++) {
+      const el = document.getElementById(`otp-${pfx}-${i}`);
+      if (el) { el.value = pasted[i] || ''; el.classList.toggle('filled', !!el.value); }
+    }
+    const last = document.getElementById(`otp-${pfx}-5`);
+    if (last) last.focus();
+  });
+  inp.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' && !inp.value) {
+      const pfx = inp.id.includes('otp-l') ? 'l' : 'r';
+      const idx = parseInt(inp.id.slice(-1));
+      if (idx > 0) document.getElementById(`otp-${pfx}-${idx-1}`).focus();
+    }
+  });
+});
+
+// Enter key submit
+document.getElementById('login-email').addEventListener('keydown', e => { if(e.key==='Enter') loginEmail(); });
+document.getElementById('login-password').addEventListener('keydown', e => { if(e.key==='Enter') loginEmail(); });
+
+// ── בדוק אם כבר מחובר ────────────────────────────────
+auth.onAuthStateChanged((user) => {
+  if (user) {
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get('redirect');
+    // העבר רק אם יש redirect מפורש
+    if (redirect && redirect !== '/auth.html') {
+      window.location.href = redirect;
+      return;
+    }
+    // הצג מצב "מחובר" בדף
+    const name = user.displayName || user.phoneNumber || user.email || 'משתמש';
+    const card = document.querySelector('.auth-card');
+    if (card) {
+      card.innerHTML = `
+        <div class="auth-logo">
+          <a href="/">🎯 Mandeles<span style="color:var(--muted);font-size:.7rem;font-family:'Heebo',sans-serif;font-weight:400">.co.il</span></a>
+        </div>
+        <div style="text-align:center;padding:20px 0">
+          <div style="width:64px;height:64px;border-radius:50%;background:var(--gold);color:var(--navy);display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:900;margin:0 auto 16px">${name[0].toUpperCase()}</div>
+          <div style="font-size:1rem;font-weight:700;color:var(--cream);margin-bottom:6px">${name}</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-bottom:24px">מחובר למערכת ✅</div>
+          <a href="/new_stite.html" style="display:block;background:var(--gold);color:var(--navy);padding:12px;border-radius:10px;font-weight:800;text-decoration:none;margin-bottom:10px;font-size:.9rem">← חזור לאתר</a>
+          <button onclick="auth.signOut().then(()=>window.location.reload())" style="width:100%;padding:11px;background:transparent;border:1px solid var(--navy-b);border-radius:10px;color:var(--muted);font-family:'Heebo',sans-serif;font-size:.85rem;cursor:pointer">התנתק</button>
+        </div>`;
+    }
+  }
+});
+
+}); // end DOMContentLoaded
+</script>
+<div id="recaptcha-container"></div>
+</body>
+</html>

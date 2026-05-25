@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Mandeles – דף ראשי{% endblock %}
+{% block body %}
+<div class="home-wrap">
+  <header class="home-header">
+    <div class="home-brand">
+      <span class="home-logo">🎯 MANDELES</span>
+      <span class="home-tagline">מערכת לוטו וניהול · <span class="home-version home-version--header">v{{ app_version|default:APP_VERSION }}</span></span>
+    </div>
+    <nav class="home-nav">
+      {% if can_access_dashboard %}
+      <a href="{% url 'portal:dashboard' %}" class="admin-link admin-link--active" title="כניסה ללוח הניהול">
+        <span class="admin-link-icon">⚙️</span>
+        <span>דשבורד ניהול</span>
+      </a>
+      {% elif user.is_authenticated %}
+      <span class="admin-link admin-link--denied" title="אין כניסה – הרשאות מנהל בלבד" role="link" aria-disabled="true">
+        <span class="admin-link-icon">🔒</span>
+        <span>דשבורד ניהול</span>
+        <span class="admin-link-badge">אין כניסה</span>
+      </span>
+      {% else %}
+      <a href="{% url 'portal:login' %}" class="admin-link admin-link--guest" title="כניסה למנהלי מערכת">
+        <span class="admin-link-icon">⚙️</span>
+        <span>דשבורד ניהול</span>
+      </a>
+      {% endif %}
+    </nav>
+  </header>
+
+  <main class="home-main">
+    <h1>ברוכים הבאים</h1>
+    <p class="home-lead">האתר הראשי. מנהלי המערכת יכולים להיכנס ללוח הבקרה מהקישור למעלה.</p>
+    {% if user.is_authenticated and not can_access_dashboard %}
+    <div class="home-notice home-notice--denied">
+      <strong>🔒 אין כניסה</strong>
+      <p>חשבון <span dir="ltr">{{ user.email }}</span> אינו מורשה לדשבורד הניהול.</p>
+    </div>
+    {% endif %}
+  </main>
+
+  <footer class="home-footer">
+    <div class="home-version home-version--footer">v{{ app_version|default:APP_VERSION }}</div>
+    {% if can_access_dashboard %}
+    <a href="{% url 'portal:dashboard' %}" class="admin-link admin-link--active admin-link--footer">
+      ⚙️ דשבורד ניהול
+    </a>
+    {% elif user.is_authenticated %}
+    <span class="admin-link admin-link--denied admin-link--footer" title="אין כניסה">
+      🔒 דשבורד ניהול · <em>אין כניסה</em>
+    </span>
+    {% else %}
+    <a href="{% url 'portal:login' %}" class="admin-link admin-link--guest admin-link--footer">
+      ⚙️ דשבורד ניהול (מנהלים)
+    </a>
+    {% endif %}
+  </footer>
+</div>
+{% endblock %}

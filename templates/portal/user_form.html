@@ -1,0 +1,24 @@
+{% extends "portal/base_dashboard.html" %}
+{% block title %}{{ title }} – Mandeles{% endblock %}
+{% block topbar %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-title">{{ title }}</div>
+  <a href="{% url 'portal:customers' %}" class="btn btn-outline btn-sm">← חזרה לרשימה</a>
+</div>
+<div class="table-wrap" style="padding:24px;max-width:520px">
+  <form method="post">
+    {% csrf_token %}
+    {% for field in form %}
+    <div class="form-row">
+      <label class="form-label">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}<p style="color:var(--red);font-size:.75rem">{{ field.errors.0 }}</p>{% endif %}
+    </div>
+    {% endfor %}
+    <div class="form-actions" style="margin-top:18px">
+      <button type="submit" class="btn btn-gold">שמור משתמש</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

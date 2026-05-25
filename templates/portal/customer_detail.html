@@ -1,0 +1,187 @@
+{% extends "portal/base_dashboard.html" %}
+{% block title %}{{ customer.full_name|default:customer.email }} – Mandeles{% endblock %}
+{% block topbar %}כרטיס משתמש{% endblock %}
+{% block content %}
+<div class="user-header">
+  <div class="user-avatar">{{ customer.get_initials }}</div>
+  <div>
+    <div class="page-title">{{ customer.full_name|default:customer.email }}</div>
+    <div class="page-sub">
+      {{ customer.email }} ·
+      <span class="badge {% if customer.role == 'team' %}badge-gold{% else %}badge-blue{% endif %}">{{ customer.get_role_display }}</span>
+    </div>
+  </div>
+  <div style="margin-right:auto;display:flex;gap:8px;flex-wrap:wrap">
+    <a href="{% url 'portal:customers' %}" class="btn btn-outline btn-sm">← רשימה</a>
+    <form method="post" action="{% url 'portal:user_set_team' customer.pk %}" style="display:inline">{% csrf_token %}
+      <button type="submit" class="btn btn-outline btn-sm">
+        {% if customer.role == 'team' %}הסר מצוות{% else %}הגדר כחבר צוות{% endif %}
+      </button>
+    </form>
+    <form method="post" action="{% url 'portal:user_delete' customer.pk %}" style="display:inline"
+          onsubmit="return confirm('למחוק משתמש {{ customer.email }}?')">{% csrf_token %}
+      <button type="submit" class="btn btn-red btn-sm">מחק משתמש</button>
+    </form>
+  </div>
+</div>
+
+<div class="tabs">
+  <a class="tab-btn {% if tab == 'profile' %}active{% endif %}" href="?tab=profile">פרופיל</a>
+  <a class="tab-btn {% if tab == 'orders' %}active{% endif %}" href="?tab=orders">הזמנות</a>
+  <a class="tab-btn {% if tab == 'history' %}active{% endif %}" href="?tab=history">היסטוריה</a>
+  <a class="tab-btn {% if tab == 'credit' %}active{% endif %}" href="?tab=credit">אשראי</a>
+  <a class="tab-btn {% if tab == 'messages' %}active{% endif %}" href="?tab=messages">תא דואר</a>
+  <a class="tab-btn {% if tab == 'permissions' %}active{% endif %}" href="?tab=permissions">הרשאות</a>
+</div>
+
+{% if tab == 'profile' or not tab %}
+<div class="table-wrap" style="padding:20px">
+  <form method="post" action="{% url 'portal:customer_save_profile' customer.pk %}">
+    {% csrf_token %}
+    <div class="detail-grid">
+      <div class="form-row">
+        <label class="form-label">שם מלא</label>
+        <input class="form-control" name="full_name" value="{{ customer.full_name }}">
+      </div>
+      <div class="form-row">
+        <label class="form-label">טלפון</label>
+        <input class="form-control" name="phone" value="{{ customer.phone }}">
+      </div>
+      <div class="form-row">
+        <label class="form-label">אימייל</label>
+        <input class="form-control" value="{{ customer.email }}" disabled dir="ltr">
+      </div>
+      <div class="form-row">
+        <label class="form-label"><input type="checkbox" name="is_active" {% if customer.is_active %}checked{% endif %}> חשבון פעיל</label>
+      </div>
+    </div>
+    <hr style="border-color:var(--border);margin:16px 0">
+    <div class="detail-grid">
+      {% for field in profile_form %}
+      <div class="form-row">
+        <label class="form-label">{{ field.label }}</label>
+        {{ field }}
+      </div>
+      {% endfor %}
+    </div>
+    <button type="submit" class="btn btn-gold btn-sm" style="margin-top:12px">שמור פרופיל</button>
+  </form>
+</div>
+{% endif %}
+
+{% if tab == 'orders' %}
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>מספר</th><th>הגרלה</th><th>טפסים</th><th>סכום</th><th>סטטוס</th><th>תאריך</th></tr></thead>
+    <tbody>
+    {% for o in orders %}
+    <tr>
+      <td class="td-mono">{{ o.order_number }}</td>
+      <td>{{ o.draw_name }}</td>
+      <td class="td-mono">{{ o.forms_count }}</td>
+      <td class="td-mono">₪{{ o.amount_ils }}</td>
+      <td><span class="badge badge-blue">{{ o.get_status_display }}</span></td>
+      <td class="td-mono">{{ o.created_at|date:"d/m/Y H:i" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">אין הזמנות</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if tab == 'history' %}
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>זמן</th><th>אירוע</th><th>פרטים</th><th>על ידי</th></tr></thead>
+    <tbody>
+    {% for l in logs %}
+    <tr>
+      <td class="td-mono" style="font-size:.7rem">{{ l.created_at|date:"d/m/Y H:i" }}</td>
+      <td>{{ l.event }}</td>
+      <td style="color:var(--muted);font-size:.75rem">{{ l.details|default:"—" }}</td>
+      <td>{% if l.performed_by %}{{ l.performed_by.email }}{% else %}—{% endif %}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4" style="text-align:center;padding:24px;color:var(--muted)">אין היסטוריה</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if tab == 'credit' %}
+<div class="table-wrap" style="padding:20px">
+  <p style="font-size:.72rem;color:var(--muted);margin-bottom:14px">🔒 פרטי אשראי – לצפייה ועריכה למנהל בלבד</p>
+  <form method="post" action="{% url 'portal:customer_save_credit' customer.pk %}">
+    {% csrf_token %}
+    <div class="detail-grid">
+      {% for field in credit_form %}
+      <div class="form-row">
+        <label class="form-label">{{ field.label }}</label>
+        {{ field }}
+      </div>
+      {% endfor %}
+    </div>
+    <p style="margin-top:10px;font-family:var(--mono);color:var(--gold)">תצוגה: {{ credit.masked_card }}</p>
+    <button type="submit" class="btn btn-gold btn-sm" style="margin-top:12px">שמור אשראי</button>
+  </form>
+</div>
+{% endif %}
+
+{% if tab == 'messages' %}
+<div class="table-wrap" style="padding:16px;margin-bottom:16px">
+  <div class="page-sub" style="margin-bottom:12px">📬 שליחת הודעה לתא הדואר</div>
+  <form method="post" action="{% url 'portal:send_message' customer.pk %}">
+    {% csrf_token %}
+    <div class="form-row"><label class="form-label">ערוץ</label>{{ message_form.channel }}</div>
+    <div class="form-row"><label class="form-label">נושא</label>{{ message_form.subject }}</div>
+    <div class="form-row"><label class="form-label">תוכן</label>{{ message_form.body }}</div>
+    <button type="submit" class="btn btn-gold btn-sm">שלח לתא דואר</button>
+  </form>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>תאריך</th><th>ערוץ</th><th>נושא</th><th>תוכן</th><th>נקרא</th></tr></thead>
+    <tbody>
+    {% for m in messages_list %}
+    <tr>
+      <td class="td-mono" style="font-size:.7rem">{{ m.sent_at|date:"d/m/Y H:i" }}</td>
+      <td><span class="badge badge-gray">{{ m.get_channel_display }}</span></td>
+      <td><strong>{{ m.subject }}</strong></td>
+      <td style="color:var(--muted);font-size:.8rem">{{ m.body }}</td>
+      <td>{% if m.is_read %}✓{% else %}●{% endif %}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted)">תא הדואר ריק</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if tab == 'permissions' %}
+<div class="table-wrap" style="padding:14px;margin-bottom:12px;display:flex;gap:8px">
+  <form method="post" action="{% url 'portal:permissions_grant_all' customer.pk %}">{% csrf_token %}
+    <button type="submit" class="btn btn-green btn-sm">הפעל הכל</button>
+  </form>
+  <form method="post" action="{% url 'portal:permissions_revoke_all' customer.pk %}">{% csrf_token %}
+    <button type="submit" class="btn btn-red btn-sm">בטל הכל</button>
+  </form>
+</div>
+<div class="table-wrap">
+  {% for p in perm_rows %}
+  <div class="perm-row">
+    <span>{{ p.label }}</span>
+    <form method="post" action="{% url 'portal:toggle_permission' customer.pk %}">{% csrf_token %}
+      <input type="hidden" name="permission" value="{{ p.key }}">
+      <button type="submit" class="btn btn-sm {% if p.granted %}btn-gold{% else %}btn-outline{% endif %}">
+        {% if p.granted %}✓ מופעל{% else %}✗ כבוי{% endif %}
+      </button>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

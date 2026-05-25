@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-title">🎯 MANDELES</div>
+      <div class="sb-logo-sub">לוח בקרה ניהולי</div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-section">ראשי</div>
+      <a class="sb-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'portal:dashboard' %}"><span class="icon">📊</span> דשבורד</a>
+      <a class="sb-item {% if request.resolver_match.url_name == 'customers' or request.resolver_match.url_name == 'customer_detail' or request.resolver_match.url_name == 'user_create' %}active{% endif %}" href="{% url 'portal:customers' %}"><span class="icon">👥</span> משתמשים</a>
+      <a class="sb-item" href="{% url 'portal:user_create' %}"><span class="icon">➕</span> הוסף משתמש</a>
+      <a class="sb-item" href="/" target="_self"><span class="icon">🌐</span> חזרה לאתר</a>
+      <a class="sb-item {% if request.resolver_match.url_name == 'orders' %}active{% endif %}" href="{% url 'portal:orders' %}"><span class="icon">🖨️</span> הזמנות</a>
+      <div class="sb-section">מערכת</div>
+      <a class="sb-item {% if request.resolver_match.url_name == 'logs' %}active{% endif %}" href="{% url 'portal:logs' %}"><span class="icon">📜</span> היסטוריית פעולות</a>
+    </nav>
+    <div class="sb-bottom">
+      <div class="sb-admin-tag">{{ request.user.email }}</div>
+      <div style="margin-top:4px;font-size:.65rem">מחובר · ללא אימות מייל</div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="topbar">
+      <button class="menu-toggle" onclick="toggleSidebar()" aria-label="תפריט">☰</button>
+      <div class="topbar-title">{% block topbar %}ניהול{% endblock %}</div>
+      <a href="{% url 'portal:logout' %}" class="btn btn-red btn-sm">התנתק</a>
+    </div>
+    <div class="content">
+      {% if messages %}
+      <ul class="messages-django">
+        {% for message in messages %}
+        <li class="{{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</div>
+{% endblock %}
