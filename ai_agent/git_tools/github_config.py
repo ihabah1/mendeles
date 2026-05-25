@@ -29,6 +29,11 @@ def friendly_git_error(stderr: str) -> str | None:
             'Pull requests (Read and write) על repo ihabah1/mendeles, '
             'עדכן ב-Railway (בלי רווח בסוף), ואם Fine-grained – אשר SSO אם מופיע.'
         )
+    if 'terminal prompts disabled' in low or 'could not read username' in low:
+        return (
+            'Git לא קיבל credentials: ודא ש-GITHUB_TOKEN מוגדר ב-Railway '
+            '(לא ריק) ועשה Redeploy אחרי העדכון.'
+        )
     if (
         '401' in low
         or 'invalid credentials' in low

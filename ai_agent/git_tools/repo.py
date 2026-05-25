@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
+from urllib.parse import quote
 
 from django.conf import settings
 from django.utils import timezone
@@ -66,31 +67,24 @@ def _repo_slug() -> str:
         raise GitToolError(str(exc)) from exc
 
 
-def _plain_repo_url() -> str:
-    return f'https://github.com/{_repo_slug()}.git'
+def _auth_clone_url() -> str:
+    """Token ב-URL – עובד ב-Railway (header בלבד גורם ל-terminal prompts disabled)."""
+    token = quote(_github_token(), safe='')
+    return f'https://x-access-token:{token}@github.com/{_repo_slug()}.git'
 
 
 def _git_env(base: dict | None = None) -> dict:
-    """Bearer token ב-header (מומלץ ל-fine-grained PAT) – בלי credential helper."""
-    token = _github_token()
+    """מבטל credential helper – האימות דרך token ב-URL של origin/clone."""
     env = {**(base or os.environ)}
     env['GIT_TERMINAL_PROMPT'] = '0'
-    env['GIT_CONFIG_COUNT'] = '2'
+    env['GIT_CONFIG_COUNT'] = '1'
     env['GIT_CONFIG_KEY_0'] = 'credential.helper'
     env['GIT_CONFIG_VALUE_0'] = ''
-    env['GIT_CONFIG_KEY_1'] = 'http.https://github.com/.extraheader'
-    env['GIT_CONFIG_VALUE_1'] = f'AUTHORIZATION: bearer {token}'
     return env
 
 
-def _auth_clone_url() -> str:
-    """URL ללא token – האימות דרך http.extraheader ב-_git_env."""
-    return _plain_repo_url()
-
-
 def _ensure_origin_authenticated(work: Path, env: dict) -> None:
-    """מגדיר origin ל-URL נקי; האימות דרך Authorization header."""
-    _run([GIT_BIN, 'remote', 'set-url', 'origin', _plain_repo_url()], work, env=env)
+    _run([GIT_BIN, 'remote', 'set-url', 'origin', _auth_clone_url()], work, env=env)
 
 
 def _work_dir(request_id: int) -> Path:
