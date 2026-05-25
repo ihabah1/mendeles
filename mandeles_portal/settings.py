@@ -17,11 +17,41 @@ SECRET_KEY = os.getenv(
 
 DEBUG = os.getenv('DJANGO_DEBUG', 'true').lower() in ('1', 'true', 'yes')
 
-ALLOWED_HOSTS = [
-    h.strip()
-    for h in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-    if h.strip()
-]
+
+def _allowed_hosts():
+    hosts = set()
+    for host in os.getenv('ALLOWED_HOSTS', '').split(','):
+        host = host.strip()
+        if host:
+            hosts.add(host)
+    railway_domain = os.getenv('RAILWAY_PUBLIC_DOMAIN', '').strip()
+    if railway_domain:
+        hosts.add(railway_domain)
+    if DEBUG:
+        hosts.update(['localhost', '127.0.0.1', '[::1]'])
+    else:
+        hosts.add('.up.railway.app')
+    if not hosts:
+        hosts.update(['localhost', '127.0.0.1'])
+    return sorted(hosts)
+
+
+ALLOWED_HOSTS = _allowed_hosts()
+
+
+def _csrf_trusted_origins():
+    origins = set()
+    for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(','):
+        origin = origin.strip()
+        if origin:
+            origins.add(origin)
+    railway_domain = os.getenv('RAILWAY_PUBLIC_DOMAIN', '').strip()
+    if railway_domain:
+        origins.add(f'https://{railway_domain}')
+    return sorted(origins)
+
+
+CSRF_TRUSTED_ORIGINS = _csrf_trusted_origins()
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -129,11 +159,6 @@ STORAGES = {
 
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    CSRF_TRUSTED_ORIGINS = [
-        origin.strip()
-        for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
-        if origin.strip()
-    ]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
