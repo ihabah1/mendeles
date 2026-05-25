@@ -21,10 +21,12 @@ ZONES: dict[str, dict] = {
             'homepage', 'home page', 'לוטו', 'מנדל', 'אסטרטגיית',
         ),
         'files': (
+            'templates/web/lotto_home.html',
             'templates/web/home.html',
             'templates/web/partials/lotto_panel.html',
             'templates/web/base_public.html',
             'static/css/public_site.css',
+            'static/js/public_site.js',
         ),
     },
     'public_nav': {
@@ -32,6 +34,7 @@ ZONES: dict[str, dict] = {
         'keywords': (
             'סרגל', 'תפריט', 'ניווט', 'למעלה', 'header', 'nav', 'לוגו', 'logo',
             'version', 'גרסה', 'v2', 'מצב הדגמה', 'הדגמה', 'demo',
+            'יופי', 'שלום', 'ברכה', 'greeting', 'nav-greeting', 'שם משתמש', 'username',
         ),
         'files': ('templates/web/base_public.html',),
     },
@@ -83,6 +86,16 @@ _ACTION_REPLACE = re.compile(
     r'(?:שנה|החלף|עדכן|תשנה|תחליף|change|replace)\s+',
     re.IGNORECASE,
 )
+_INSTEAD_OF = re.compile(
+    r'במקום\s+(?:המילה|הטקסט|הכיתוב|מילה)?\s*'
+    r'(?:["\'«»]([^"\'«»]+)["\'«»]|([\u0590-\u05FFa-zA-Z0-9._-]+))\s+'
+    r'(?:שיופיע|יופיע|הצג|תציג|תראה|שיציג|להציג|שם\s+)',
+    re.IGNORECASE,
+)
+_SHOW_INSTEAD = re.compile(
+    r'(?:שיופיע|יופיע|הצג|תציג|תראה|שיציג|להציג)\s+(?:רק\s+)?(?:את\s+)?(?:ה)?(.+?)(?:\s+בסרגל|\s+בתפריט|\s+בדף|\.|$)',
+    re.IGNORECASE,
+)
 _QUOTED = re.compile(r'["\'«»]([^"\'«»]+)["\'«»]')
 _THE_WORD = re.compile(
     r'(?:את\s+)?(?:המילה|הטקסט|הכיתוב|המשפט|מילה)?\s*["\']?([^"\']+?)["\']?\s+'
@@ -91,6 +104,38 @@ _THE_WORD = re.compile(
 )
 _STRIP_TAGS = re.compile(r'<[^>]+>')
 _DJANGO_VAR = re.compile(r'\{\{[^}]+\}\}|\{%[^%]+%\}')
+
+# ביטויים בעברית → משתני Django בתבנית
+_DJANGO_PLACEHOLDERS: dict[str, str] = {
+    'שם משתמש': '{{ user.username }}',
+    'שם המשתמש': '{{ user.username }}',
+    'username': '{{ user.username }}',
+    'שם מלא': '{{ user.get_full_name|default:user.username }}',
+    'אימייל': '{{ user.email }}',
+    'מייל': '{{ user.email }}',
+}
+
+_INTENT_HINTS: dict[str, str] = {
+    'add_page': (
+        'כוונה: דף/עמוד חדש באתר.\n'
+        '- צור templates/web/<slug>.html שמרחיב base_public.html.\n'
+        '- הוסף קישור ב-templates/web/base_public.html (nav-links או תפריט).\n'
+        '- URL (/path/) דורש שורה ב-web/urls.py – AI לא יכול לערוך Python; '
+        'ציין בראש התבנית HTML comment עם הנתיב המבוקש.\n'
+    ),
+    'api_page': (
+        'כוונה: הצגת נתונים מ-API.\n'
+        '- fetch ב-static/js/public_site.js או בלוק {% block extra_js %} בתבנית.\n'
+        '- השתמש בנתיבי פרוקסי קיימים: /api/…, /engine/…, /auth/me (מחובר).\n'
+        '- הצג loading + שגיאה בעברית.\n'
+    ),
+    'user_page': (
+        'כוונה: תוכן לפי משתמש מחובר.\n'
+        '- בתבנית: {% if user %} … {% else %} … {% endif %}.\n'
+        '- שדות: {{ user.username }}, {{ user.email }}, is_admin.\n'
+        '- לנתוני ארנק/פרופיל: fetch ל-/auth/me או /classic/profile.html.\n'
+    ),
+}
 
 _INDEX_SKIP = frozenset({
     'templates/web/spa.html',
@@ -116,7 +161,10 @@ class ResolvedRequest:
     """תוצאת פרשנות בקשה."""
     original_prompt: str
     action: str  # remove | replace | change | unknown
+    intent: str = 'generic'  # replace_text | remove_text | add_page | api_page | user_page | generic
     search_terms: list[str] = field(default_factory=list)
+    replace_from: str = ''
+    replace_to: str = ''
     zones: list[str] = field(default_factory=list)
     target_files: list[str] = field(default_factory=list)
     matched_snippets: list[TextSnippet] = field(default_factory=list)
@@ -124,7 +172,10 @@ class ResolvedRequest:
     enriched_prompt: str = ''
 
     def to_log_line(self) -> str:
-        return self.interpretation_he or 'לא זוהתה כוונה מדויקת'
+        base = self.interpretation_he or 'לא זוהתה כוונה מדויקת'
+        if self.replace_from and self.replace_to:
+            return f'{base} → «{self.replace_from}» ל«{self.replace_to[:40]}»'
+        return base
 
 
 def _guess_zone_for_path(rel: str) -> str:
@@ -198,6 +249,80 @@ def build_site_index(base_dir: Path) -> list[TextSnippet]:
     return snippets
 
 
+def _django_placeholder(phrase: str) -> str:
+    p = phrase.strip().lower()
+    for key, val in _DJANGO_PLACEHOLDERS.items():
+        if key.lower() in p or p == key.lower():
+            return val
+    return ''
+
+
+def _extract_replace_pair(prompt: str, prompt_l: str) -> tuple[str, str]:
+    """מחלץ זוג החלפה: במקום X → Y (כולל שם משתמש)."""
+    old, new = '', ''
+
+    m = _INSTEAD_OF.search(prompt)
+    if m:
+        old = (m.group(1) or m.group(2) or '').strip().strip('"\'«»')
+        rest = prompt[m.end():]
+        m2 = _SHOW_INSTEAD.search(rest) or _SHOW_INSTEAD.search(prompt)
+        if m2:
+            new = m2.group(1).strip().strip('"\'«»')
+
+    if not old and 'יופי' in prompt:
+        old = 'יופי'
+    if not new and any(
+        w in prompt_l for w in ('שם משתמש', 'username', 'שם המשתמש')
+    ):
+        new = _django_placeholder('שם משתמש')
+
+    # «שנה את X ל-Y»
+    m3 = re.search(
+        r'(?:שנה|החלף)\s+את\s+["\'«»]?([^"\'«»]+)["\'«»]?\s+ל(?:־|\-)?["\'«»]?([^"\'«»]+)["\'«»]?',
+        prompt,
+        re.IGNORECASE,
+    )
+    if m3 and not old:
+        old, new = m3.group(1).strip(), m3.group(2).strip()
+
+    if new and not new.startswith('{{'):
+        ph = _django_placeholder(new)
+        if ph:
+            new = ph
+
+    return old, new
+
+
+def _detect_intent(prompt: str, prompt_l: str, action: str) -> str:
+    if any(
+        w in prompt_l
+        for w in (
+            'דף חדש', 'עמוד חדש', 'להוסיף דף', 'הוסף דף', 'דף שיציג',
+            'עמוד שיציג', 'צור דף', 'new page',
+        )
+    ):
+        if any(w in prompt_l for w in ('api', 'מכתובת', 'endpoint', 'fetch', 'קריאה')):
+            return 'api_page'
+        if any(w in prompt_l for w in ('משתמש', 'מחובר', 'אישי', 'פרופיל')):
+            return 'user_page'
+        return 'add_page'
+    if any(
+        w in prompt_l
+        for w in ('api', 'מכתובת', 'endpoint', '/api/', 'fetch', 'json')
+    ) and any(w in prompt_l for w in ('דף', 'עמוד', 'הצג', 'תציג', 'יופיע')):
+        return 'api_page'
+    if any(
+        w in prompt_l
+        for w in ('משתמש', 'משתמשים', 'מחובר', 'username', 'שם משתמש', 'נתיבים')
+    ) and action in ('replace', 'change'):
+        return 'user_page'
+    if action == 'replace' or 'במקום' in prompt:
+        return 'replace_text'
+    if action == 'remove':
+        return 'remove_text'
+    return 'generic'
+
+
 def _detect_zones(prompt_l: str) -> list[str]:
     found: list[str] = []
     for zone_id, meta in ZONES.items():
@@ -213,7 +338,12 @@ def _detect_zones(prompt_l: str) -> list[str]:
 def _detect_action(prompt: str) -> str:
     if _ACTION_REMOVE.search(prompt):
         return 'remove'
-    if _ACTION_REPLACE.search(prompt):
+    if _ACTION_REPLACE.search(prompt) or 'במקום' in prompt:
+        return 'replace'
+    if any(
+        w in prompt
+        for w in ('שיופיע', 'יופיע', 'הצג', 'תציג', 'תראה')
+    ) and any(w in prompt for w in ('במקום', 'יופי', 'שם משתמש', 'username')):
         return 'replace'
     if any(w in prompt for w in ('שנה', 'החלף', 'עדכן', 'גדול', 'קטן', 'צבע')):
         return 'change'
@@ -248,6 +378,16 @@ def _extract_search_terms(prompt: str, prompt_l: str) -> list[str]:
 
     if 'מצב הדגמה' in prompt or 'הדגמה' in prompt:
         terms.append('מצב הדגמה')
+
+    if 'יופי' in prompt:
+        terms.append('יופי')
+        terms.append('nav-greeting')
+
+    old, new = _extract_replace_pair(prompt, prompt_l)
+    if old:
+        terms.append(old)
+    if new and not new.startswith('{{'):
+        terms.append(new)
 
     # ניקוי מונחים מזוהמים (למשל "version מהדף הראשי")
     cleaned: list[str] = []
@@ -315,7 +455,15 @@ def resolve_request(prompt: str, base_dir: Path) -> ResolvedRequest:
     prompt = (prompt or '').strip()
     prompt_l = prompt.lower()
     action = _detect_action(prompt)
+    replace_from, replace_to = _extract_replace_pair(prompt, prompt_l)
+    if replace_from and action == 'unknown':
+        action = 'replace'
+    intent = _detect_intent(prompt, prompt_l, action)
     zones = _detect_zones(prompt_l)
+    if intent in ('add_page', 'api_page', 'user_page'):
+        for z in ('public_home', 'public_nav'):
+            if z not in zones:
+                zones.append(z)
     terms = _extract_search_terms(prompt, prompt_l)
 
     index = build_site_index(base_dir)
@@ -327,8 +475,18 @@ def resolve_request(prompt: str, base_dir: Path) -> ResolvedRequest:
 
     if action == 'remove':
         interp = f'הסרת תוכן ({term_str}) מ{zone_labels}'
+    elif action == 'replace' and replace_from:
+        interp = f'החלפת «{replace_from}» ב{zone_labels}'
+        if replace_to:
+            interp += f' → {replace_to[:50]}'
     elif action == 'replace':
         interp = f'החלפת תוכן ({term_str}) ב{zone_labels}'
+    elif intent == 'add_page':
+        interp = f'הוספת דף חדש – {zone_labels}'
+    elif intent == 'api_page':
+        interp = f'דף/אזור עם נתוני API – {zone_labels}'
+    elif intent == 'user_page':
+        interp = f'תוכן לפי משתמש – {zone_labels}'
     else:
         interp = f'שינוי ב{zone_labels}' + (f' – חיפוש: {term_str}' if terms else '')
 
@@ -359,15 +517,25 @@ def resolve_request(prompt: str, base_dir: Path) -> ResolvedRequest:
     )
     if snippet_block:
         enriched += '\nמיקומים שזוהו באינדוקס:\n' + '\n'.join(snippet_block) + '\n'
+    if replace_from:
+        enriched += f'\nהחלפה מבוקשת: הסר/החלף «{replace_from}»'
+        if replace_to:
+            enriched += f' → השאר/הצג: {replace_to}\n'
+    if intent in _INTENT_HINTS:
+        enriched += '\n' + _INTENT_HINTS[intent]
     enriched += (
         '\nהוראה: בצע את השינוי בקבצים המומלצים בלבד. '
         'העתק old/new מדויק מהשורות בקובץ. אל תערוך templates/portal/home.html.\n'
+        'סרגל משתמש מחובר: templates/web/base_public.html שורת nav-greeting.\n'
     )
 
     return ResolvedRequest(
         original_prompt=prompt,
         action=action,
+        intent=intent,
         search_terms=terms,
+        replace_from=replace_from,
+        replace_to=replace_to,
         zones=zones,
         target_files=target_files,
         matched_snippets=matched,
@@ -376,20 +544,81 @@ def resolve_request(prompt: str, base_dir: Path) -> ResolvedRequest:
     )
 
 
+def _apply_replace_to_content(
+    original: str,
+    resolved: ResolvedRequest,
+) -> tuple[str, bool]:
+    """מחיל החלפה ישירה על תוכן קובץ."""
+    modified = original
+    changed = False
+    old = resolved.replace_from
+    new = resolved.replace_to
+
+    # ברכת «יופי» → רק שם משתמש (Django)
+    if old == 'יופי' or (
+        'יופי' in (old or '') and new and 'user.username' in new
+    ):
+        patterns = (
+            (
+                r'(<span\s+class="nav-greeting">)\s*יופי\s*(\{\{\s*user\.username\s*\}\})\s*(</span>)',
+                r'\1\2\3',
+            ),
+            (r'יופי\s+(\{\{\s*user\.username\s*\}\})', r'\1'),
+            (r'>יופי\s+(\{\{)', r'>\1'),
+        )
+        for pat, repl in patterns:
+            new_mod = re.sub(pat, repl, modified, count=1, flags=re.IGNORECASE)
+            if new_mod != modified:
+                modified = new_mod
+                changed = True
+
+    if old and new and old in modified:
+        modified = modified.replace(old, new, 1)
+        changed = True
+    elif old and new:
+        for line in original.splitlines():
+            if old in line:
+                modified = modified.replace(line, line.replace(old, new, 1), 1)
+                changed = True
+                break
+
+    if new and not changed and 'nav-greeting' in modified and 'user.username' in new:
+        for line in original.splitlines():
+            if 'nav-greeting' in line and 'יופי' in line:
+                nl = re.sub(r'\s*יופי\s*', ' ', line, count=1)
+                nl = nl.replace('  ', ' ')
+                if nl != line:
+                    modified = modified.replace(line, nl, 1)
+                    changed = True
+                break
+
+    return modified, changed
+
+
 def try_direct_edit(prompt: str, base_dir: Path, resolved: ResolvedRequest) -> str | None:
     """
-    עריכה ישירה ללא Gemini כשהבקשה חד-משמעית (הסרת מחרוזת).
+    עריכה ישירה ללא Gemini כשהבקשה חד-משמעית (הסרה / החלפה).
     מחזיר unified diff או None.
     """
     from .diff_validator import validate_diff_syntax
     from .diff_builder import _unified_diff_for_file
 
-    if resolved.action != 'remove' or not resolved.search_terms:
+    do_remove = resolved.action == 'remove' and resolved.search_terms
+    do_replace = (
+        resolved.action == 'replace'
+        and (resolved.replace_from or resolved.replace_to)
+    ) or (
+        resolved.intent in ('replace_text', 'user_page')
+        and (resolved.replace_from or 'יופי' in resolved.search_terms)
+    )
+    if not do_remove and not do_replace:
         return None
 
     files_to_try = [f for f in resolved.target_files if _should_index(f)][:4]
     if not files_to_try and resolved.matched_snippets:
         files_to_try = list(dict.fromkeys(s.file for s in resolved.matched_snippets))
+    if do_replace and 'templates/web/base_public.html' not in files_to_try:
+        files_to_try.insert(0, 'templates/web/base_public.html')
 
     for rel in files_to_try:
         full = base_dir / rel
@@ -399,34 +628,35 @@ def try_direct_edit(prompt: str, base_dir: Path, resolved: ResolvedRequest) -> s
         modified = original
         changed = False
 
-        for term in resolved.search_terms:
-            tl = term.lower()
-            if tl == 'version':
-                # הסרת תצוגת גרסה בסרגל
-                modified = re.sub(
-                    r'\s*v\{\{\s*app_version\s*\}\}',
-                    '',
-                    modified,
-                    flags=re.IGNORECASE,
-                )
-                modified = re.sub(
-                    r'<meta\s+name="app-version"[^>]*>\s*',
-                    '',
-                    modified,
-                    flags=re.IGNORECASE,
-                )
-                if modified != original:
+        if do_replace:
+            modified, changed = _apply_replace_to_content(original, resolved)
+
+        if do_remove:
+            for term in resolved.search_terms:
+                tl = term.lower()
+                if tl == 'version':
+                    modified = re.sub(
+                        r'\s*v\{\{\s*app_version\s*\}\}',
+                        '',
+                        modified,
+                        flags=re.IGNORECASE,
+                    )
+                    modified = re.sub(
+                        r'<meta\s+name="app-version"[^>]*>\s*',
+                        '',
+                        modified,
+                        flags=re.IGNORECASE,
+                    )
+                    changed = changed or modified != original
+                if term in modified:
+                    modified = modified.replace(term, '', 1)
                     changed = True
-            if term in modified:
-                modified = modified.replace(term, '', 1)
-                changed = True
-            # גרסה עם רווחים סביב
-            for line in original.splitlines():
-                if term.lower() in line.lower() and term in line:
-                    new_line = line.replace(term, '').replace('  ', ' ')
-                    if new_line != line:
-                        modified = modified.replace(line, new_line, 1)
-                        changed = True
+                for line in original.splitlines():
+                    if term.lower() in line.lower() and term in line:
+                        new_line = line.replace(term, '').replace('  ', ' ')
+                        if new_line != line:
+                            modified = modified.replace(line, new_line, 1)
+                            changed = True
 
         if changed and modified != original:
             diff = _unified_diff_for_file(rel, original, modified)

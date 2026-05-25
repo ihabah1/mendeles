@@ -182,7 +182,9 @@ def generate_diff(
         detail = str(exc).strip()
         hint = (
             'לא הצלחנו לייצר diff. נסח בשפה פשוטה, למשל: '
-            '«תוריד את המילה version מהדף הראשי» או «הגדל כותרת בדשבורד ניהול». '
+            '«במקום המילה יופי שיופיע שם משתמש», '
+            '«תוריד את המילה version מהדף הראשי», '
+            '«הוסף דף שמציג /api/stats». '
             'אפשר גם לציין נתיב: templates/web/base_public.html'
         )
         if detail and detail not in hint:

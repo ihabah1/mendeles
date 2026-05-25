@@ -46,6 +46,11 @@ def select_files_for_prompt(
             'טוטו',
             'רכוש גישה',
             'אסטרטגיית',
+            'יופי',
+            'שם משתמש',
+            'nav-greeting',
+            'דף חדש',
+            'api',
         )
     ):
         explicit.extend([
