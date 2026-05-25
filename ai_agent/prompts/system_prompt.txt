@@ -6,9 +6,11 @@ diff --git a/PATH b/PATH
 --- a/PATH
 +++ b/PATH
 @@ -LINE,COUNT +LINE,COUNT @@
- context lines with space prefix
+ context lines with space prefix (at least one unchanged line with leading space)
 -removed lines with minus prefix
 +added lines with plus prefix
+
+CRITICAL: Every file MUST have @@ -X,Y +A,B @@ hunk headers. Without @@ the patch fails.
 
 RULES:
 - Output ONLY the unified git diff. Zero explanations before or after.
