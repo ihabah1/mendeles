@@ -113,6 +113,17 @@ class CreditEditForm(forms.ModelForm):
         }
 
 
+class AIChangeRequestForm(forms.Form):
+    prompt = forms.CharField(
+        label='בקשת שינוי (שפה טבעית)',
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 6,
+            'placeholder': 'לדוגמה: הגדל את גודל הפונט של כותרת ה-hero בדף הבית',
+        }),
+    )
+
+
 class MessageForm(forms.Form):
     subject = forms.CharField(max_length=200, widget=forms.TextInput(attrs={'class': 'form-control'}))
     body = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 4}))

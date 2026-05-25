@@ -75,7 +75,7 @@ python manage.py setup_portal
 
 ראה [ai_agent/README.md](ai_agent/README.md) – נדרשים `AI_AGENT_ENABLED`, `GEMINI_API_KEY`, `GITHUB_TOKEN`.
 
-כניסה: `/django-admin/` → **בקשות שינוי AI**
+כניסה: `/manage/ai/new/` (דשבורד ניהול) או `/django-admin/` (אדמין מסורתי)
 
 ## בניית Frontend מחדש
 

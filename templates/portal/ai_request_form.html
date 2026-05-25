@@ -1,0 +1,27 @@
+{% extends "portal/base_dashboard.html" %}
+{% block title %}בקשת שינוי AI – Mandeles{% endblock %}
+{% block topbar %}בקשת שינוי חדשה{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">בקשת שינוי AI</div>
+    <div class="page-sub">תאר בשפה חופשית מה לשנות בעיצוב / תבניות האתר</div>
+  </div>
+  <a href="{% url 'portal:ai_requests' %}" class="btn btn-outline">← חזרה לרשימה</a>
+</div>
+<div class="card-panel" style="max-width:720px">
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-row" style="margin-bottom:16px">
+      <label class="form-label" for="id_prompt">{{ form.prompt.label }}</label>
+      {{ form.prompt }}
+      {% if form.prompt.errors %}<div class="alert alert-error" style="margin-top:8px">{{ form.prompt.errors.0 }}</div>{% endif %}
+    </div>
+    <p style="font-size:.75rem;color:var(--muted);margin-bottom:16px;line-height:1.5">
+      דוגמאות: "הגדל את כותרת ה-hero", "שנה את צבע הכפתור הראשי לכחול", "הוסף ריווח בין הסטטיסטיקות".
+      אחרי השמירה תוכל לייצר diff ולאשר יצירת Pull Request.
+    </p>
+    <button type="submit" class="btn btn-gold">שמור והמשך</button>
+  </form>
+</div>
+{% endblock %}

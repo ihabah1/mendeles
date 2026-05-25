@@ -1,0 +1,66 @@
+{% extends "portal/base_dashboard.html" %}
+{% block title %}בקשה #{{ req.id }} – AI{% endblock %}
+{% block topbar %}בקשת שינוי #{{ req.id }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">{{ req.prompt|truncatechars:80 }}</div>
+    <div class="page-sub">
+      סטטוס: <strong>{{ req.get_status_display }}</strong>
+      {% if req.created_by %} · {{ req.created_by.email }}{% endif %}
+      · {{ req.created_at|date:"Y-m-d H:i" }}
+    </div>
+  </div>
+  <a href="{% url 'portal:ai_requests' %}" class="btn btn-outline">← רשימה</a>
+</div>
+
+{% if req.error_message %}
+<div class="alert alert-error">{{ req.error_message }}</div>
+{% endif %}
+
+<div class="card-panel" style="margin-bottom:16px">
+  <div class="form-label" style="margin-bottom:8px">הבקשה המלאה</div>
+  <p style="white-space:pre-wrap;line-height:1.6">{{ req.prompt }}</p>
+</div>
+
+<div class="ai-actions" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+  {% if can_generate %}
+  <form method="post" action="{% url 'portal:ai_request_generate' req.pk %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-gold">ייצר diff (Gemini)</button>
+  </form>
+  {% endif %}
+  {% if can_approve %}
+  <form method="post" action="{% url 'portal:ai_request_approve' req.pk %}" onsubmit="return confirm('לאשר את ה-diff וליצור Pull Request?');">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-green">אשר ויצור PR</button>
+  </form>
+  {% endif %}
+  {% if can_reject %}
+  <form method="post" action="{% url 'portal:ai_request_reject' req.pk %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-red">דחה</button>
+  </form>
+  {% endif %}
+</div>
+
+{% if req.pr_url %}
+<div class="alert alert-success">
+  <a href="{{ req.pr_url }}" target="_blank" rel="noopener" style="color:var(--green);font-weight:700">פתח Pull Request #{{ req.pr_number }}</a>
+  {% if req.branch_name %} · ענף: <code>{{ req.branch_name }}</code>{% endif %}
+</div>
+{% endif %}
+
+{% if req.files_touched %}
+<p style="font-size:.78rem;color:var(--muted);margin-bottom:10px">קבצים: {{ req.files_touched|join:", " }}</p>
+{% endif %}
+
+{% if req.result %}
+<div class="card-panel">
+  <div class="form-label" style="margin-bottom:10px">תצוגת diff (לפני אישור)</div>
+  <pre class="diff-preview">{{ req.result }}</pre>
+</div>
+{% elif req.status == 'draft' or req.status == 'failed' %}
+<p style="color:var(--muted);font-size:.85rem">לחץ "ייצר diff" כדי ליצור את השינוי המוצע.</p>
+{% endif %}
+{% endblock %}

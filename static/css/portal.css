@@ -114,6 +114,8 @@ tr:hover td{background:rgba(201,168,76,.03)}
 .login-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:32px;width:100%;max-width:400px}
 .login-card h1{font-size:1.2rem;color:var(--gold);margin-bottom:6px;font-family:var(--mono)}
 .login-card p{color:var(--muted);font-size:.78rem;margin-bottom:22px}
+.card-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:18px 20px;margin-bottom:16px}
+.diff-preview{background:#0d1117;color:#e6edf3;padding:14px;border-radius:var(--r);font-family:var(--mono);font-size:11px;line-height:1.45;max-height:480px;overflow:auto;direction:ltr;text-align:left;white-space:pre;word-break:break-all;border:1px solid var(--border)}
 .menu-toggle{display:none;background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer}
 @media(max-width:768px){
   .sidebar{transform:translateX(100%)}

@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.urls import path
 
-from . import views
+from . import ai_views, views
 
 app_name = 'portal'
 
@@ -26,4 +26,10 @@ urlpatterns = [
     path(f'{_prefix}/orders/', views.orders_list, name='orders'),
     path(f'{_prefix}/logs/', views.activity_logs, name='logs'),
     path(f'{_prefix}/api/stats/', views.api_stats, name='api_stats'),
+    path(f'{_prefix}/ai/', ai_views.ai_requests_list, name='ai_requests'),
+    path(f'{_prefix}/ai/new/', ai_views.ai_request_create, name='ai_request_create'),
+    path(f'{_prefix}/ai/<int:pk>/', ai_views.ai_request_detail, name='ai_request_detail'),
+    path(f'{_prefix}/ai/<int:pk>/generate/', ai_views.ai_request_generate, name='ai_request_generate'),
+    path(f'{_prefix}/ai/<int:pk>/approve/', ai_views.ai_request_approve, name='ai_request_approve'),
+    path(f'{_prefix}/ai/<int:pk>/reject/', ai_views.ai_request_reject, name='ai_request_reject'),
 ]
