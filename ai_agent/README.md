@@ -19,15 +19,24 @@
 | `GEMINI_MODEL` | לא | ברירת מחדל `gemini-2.5-flash` |
 | `AI_AGENT_WORK_DIR` | לא | תיקיית clone זמנית |
 
-## הרשאות GitHub Token
+## הרשאות GitHub Token (חובה ל-push + PR)
 
-צור **Fine-grained** או **Classic** token עם:
+### Fine-grained (מומלץ)
 
-- `contents: read and write`
-- `pull_requests: read and write`
-- `metadata: read`
+1. GitHub → Settings → Developer settings → **Fine-grained tokens** → Generate
+2. Repository access: **Only** `ihabah1/mendeles`
+3. Permissions:
+   - **Contents**: Read and write
+   - **Pull requests**: Read and write
+   - **Metadata**: Read-only
+4. אם יש SSO – לחץ **Configure SSO** → Authorize
+5. העתק ל-Railway כ-`GITHUB_TOKEN` (בלי רווח/שורה חדשה בסוף)
 
-מומלץ token ייעודי לסביבה אחת (Railway), לא token אישי רחב.
+### Classic (חלופה)
+
+Scope **`repo`** (Full control of private repositories).
+
+שגיאה `403 Permission denied` = ה-token ללא הרשאת **כתיבה** ל-repo – צור token חדש עם ההרשאות למעלה.
 
 ## Railway
 

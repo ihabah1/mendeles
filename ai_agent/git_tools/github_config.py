@@ -19,6 +19,21 @@ def normalize_github_repo(repo: str) -> str:
     return r
 
 
+def friendly_git_error(stderr: str) -> str | None:
+    """הודעה בעברית לשגיאות נפוצות."""
+    low = (stderr or '').lower()
+    if '403' in low or ('permission' in low and 'denied' in low):
+        return (
+            'GitHub דחה push (403): ל-GITHUB_TOKEN חסרות הרשאות כתיבה. '
+            'צור Personal Access Token חדש עם: Contents (Read and write) + '
+            'Pull requests (Read and write) על repo ihabah1/mendeles, '
+            'עדכן ב-Railway (בלי רווח בסוף), ואם Fine-grained – אשר SSO אם מופיע.'
+        )
+    if '401' in low or 'bad credentials' in low:
+        return 'GitHub דחה התחברות (401): GITHUB_TOKEN לא תקין או פג תוקף – החלף ב-Railway.'
+    return None
+
+
 def redact_git_message(text: str) -> str:
     if not text:
         return ''
