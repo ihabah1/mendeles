@@ -11,7 +11,7 @@ nav{background:var(--navy-m);border-bottom:1px solid var(--navy-b);position:stic
 .nav-logo{font-family:'Frank Ruhl Libre',serif;font-size:1.05rem;color:var(--gold);font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0}
 .nav-logo span{color:var(--muted);font-size:.72rem;font-family:'Heebo',sans-serif;font-weight:400;margin-right:3px}
 .main-tabs{display:flex;gap:4px;background:var(--navy);border-radius:10px;padding:4px;flex-shrink:0}
-.main-tab{padding:7px 16px;border:none;border-radius:7px;font-family:'Heebo',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;background:transparent;color:var(--muted);transition:background .15s,color .15s;white-space:nowrap;text-decoration:none;display:inline-block}
+.main-tab{padding:7px 16px;border:none;border-radius:7px;font-family:'Heebo',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;background:transparent;color:var(--muted);transition:background .15s,color .15s;white-space:nowrap;text-decoration:none;display:inline-block}
 .main-tab.active{background:var(--gold);color:var(--navy)}
 .main-tab:hover:not(.active){color:var(--text)}
 .nav-links{display:flex;gap:3px;list-style:none}
