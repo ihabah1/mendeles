@@ -15,6 +15,12 @@ class AIChangeRequest(models.Model):
         FAILED = 'failed', 'נכשל'
 
     prompt = models.TextField('בקשה בשפה טבעית')
+    reference_images = models.JSONField(
+        'תמונות מצורפות',
+        default=list,
+        blank=True,
+        help_text='שמות קבצים בתיקיית data/ai_requests/<id>/',
+    )
     status = models.CharField(
         max_length=20,
         choices=Status.choices,

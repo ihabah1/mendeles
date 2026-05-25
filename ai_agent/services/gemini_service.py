@@ -50,11 +50,17 @@ def _build_user_prompt(
     files: list[tuple[str, str]],
     *,
     index_context: str = '',
+    image_paths: list[Path] | None = None,
 ) -> str:
     parts = []
     if index_context.strip():
         parts.append(index_context.strip())
         parts.append('')
+    if image_paths:
+        parts.append(
+            'REFERENCE IMAGES: The user attached screenshot(s) of the site. '
+            'Match layout, colors, and elements visible in the images.\n',
+        )
     parts.append(f'USER REQUEST:\n{request_prompt.strip()}\n')
     parts.append('ALLOWED PROJECT FILES (read-only context):\n')
     for rel, content in files[:10]:
@@ -87,14 +93,34 @@ def _parse_gemini_response(raw: str, root: Path, log: Callable[[str], None]) -> 
         raise first_err
 
 
-def _call_gemini(model, user_prompt: str) -> str:
-    response = model.generate_content(
-        user_prompt,
-        generation_config={
-            'temperature': 0.0,
-            'max_output_tokens': 8192,
-        },
-    )
+def _call_gemini(
+    model,
+    user_prompt: str,
+    image_paths: list[Path] | None = None,
+) -> str:
+    generation_config = {
+        'temperature': 0.0,
+        'max_output_tokens': 8192,
+    }
+    if image_paths:
+        parts: list = []
+        for path in image_paths:
+            from .image_attachments import _mime_for_path
+
+            parts.append({
+                'mime_type': _mime_for_path(path),
+                'data': path.read_bytes(),
+            })
+        parts.append(user_prompt)
+        response = model.generate_content(
+            parts,
+            generation_config=generation_config,
+        )
+    else:
+        response = model.generate_content(
+            user_prompt,
+            generation_config=generation_config,
+        )
     return (response.text or '').strip()
 
 
@@ -102,6 +128,7 @@ def generate_diff(
     prompt: str,
     base_dir: Path | None = None,
     log_callback: Callable[[str], None] | None = None,
+    image_paths: list[Path] | None = None,
 ) -> str:
     def log(msg: str):
         if log_callback:
@@ -136,7 +163,9 @@ def generate_diff(
     if resolved.target_files:
         log(f'קבצים מומלצים: {", ".join(resolved.target_files[:4])}')
 
-    direct = try_direct_edit(prompt, root, resolved)
+    if image_paths:
+        log(f'מצורפות {len(image_paths)} תמונות לבקשה (Gemini Vision)')
+    direct = try_direct_edit(prompt, root, resolved) if not image_paths else None
     if direct:
         log('שינוי ישיר מהאינדוקס (ללא Gemini)')
         return direct
@@ -154,9 +183,12 @@ def generate_diff(
     )
 
     user_prompt = _build_user_prompt(
-        prompt, files, index_context=resolved.enriched_prompt,
+        prompt,
+        files,
+        index_context=resolved.enriched_prompt,
+        image_paths=image_paths,
     )
-    raw = _call_gemini(model, user_prompt)
+    raw = _call_gemini(model, user_prompt, image_paths=image_paths)
     log('תשובה התקבלה מ-Gemini – מעבד diff…')
 
     last_error: Exception | None = None
@@ -167,6 +199,7 @@ def generate_diff(
                 raw = _call_gemini(
                     model,
                     user_prompt + '\n\n' + extra + f'\n\nPrevious output:\n{raw[:3000]}',
+                    image_paths=image_paths,
                 )
                 log('תשובה שנייה התקבלה – מעבד diff…')
             return _parse_gemini_response(raw, root, log)

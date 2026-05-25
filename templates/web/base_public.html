@@ -16,10 +16,6 @@
 <nav role="navigation" aria-label="ניווט ראשי">
   <div class="nav-inner">
     <a href="/" class="nav-logo">🎯 Mandeles<span>.co.il</span></a>
-    <div class="main-tabs" role="tablist" aria-label="בחר מוצר">
-      <a href="/" class="main-tab {% if active_product == 'lotto' %}active{% endif %}" id="tab-lotto" role="tab" aria-selected="{% if active_product == 'lotto' %}true{% else %}false{% endif %}">🎱 לוטו</a>
-      <a href="/toto/" class="main-tab {% if active_product == 'toto' %}active{% endif %}" id="tab-toto" role="tab" aria-selected="{% if active_product == 'toto' %}true{% else %}false{% endif %}">⚽ טוטו</a>
-    </div>
     <div id="engine-status" style="display:flex;align-items:center;gap:6px;flex-shrink:0" aria-live="polite" aria-label="סטטוס מנוע">
       <span id="engine-dot" style="width:8px;height:8px;border-radius:50%;background:#e8a030;flex-shrink:0;transition:background .3s;display:none" aria-hidden="true"></span> {# This line is unchanged, but needed for context #}
       <span id="engine-lbl" style="font-size:.68rem;color:var(--muted);white-space:nowrap;display:none"></span>

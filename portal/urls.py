@@ -34,4 +34,9 @@ urlpatterns = [
     path(f'{_prefix}/ai/<int:pk>/approve/', ai_views.ai_request_approve, name='ai_request_approve'),
     path(f'{_prefix}/ai/<int:pk>/merge/', ai_views.ai_request_merge, name='ai_request_merge'),
     path(f'{_prefix}/ai/<int:pk>/reject/', ai_views.ai_request_reject, name='ai_request_reject'),
+    path(
+        f'{_prefix}/ai/<int:pk>/image/<path:filename>',
+        ai_views.ai_request_image,
+        name='ai_request_image',
+    ),
 ]

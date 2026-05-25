@@ -1,7 +1,7 @@
 """בקשות שינוי AI בדשבורד /manage/."""
 from django.conf import settings
 from django.contrib import messages
-from django.http import Http404, JsonResponse
+from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
@@ -82,6 +82,15 @@ def ai_request_create(request):
             status=AIChangeRequest.Status.DRAFT,
             created_by=request.user,
         )
+        uploads = request.FILES.getlist('images')
+        if uploads:
+            from ai_agent.services.image_attachments import save_uploaded_images
+
+            saved = save_uploaded_images(obj.pk, uploads)
+            if saved:
+                obj.reference_images = saved
+                obj.save(update_fields=['reference_images'])
+                messages.info(request, f'צורפו {len(saved)} תמונות לבקשה')
         messages.success(request, 'הבקשה נשמרה – לחץ "ייצר diff" ליצירת השינוי')
         return redirect('portal:ai_request_detail', pk=obj.pk)
     preview = ''
@@ -247,6 +256,21 @@ def ai_request_merge(request, pk):
         messages.error(request, str(exc))
 
     return redirect('portal:ai_request_detail', pk=pk)
+
+
+@admin_required
+@require_GET
+def ai_request_image(request, pk, filename):
+    _require_ai_enabled()
+    obj = get_object_or_404(AIChangeRequest, pk=pk)
+    if filename not in (obj.reference_images or []):
+        raise Http404
+    from ai_agent.services.image_attachments import _mime_for_path, request_images_dir
+
+    path = request_images_dir(pk) / filename
+    if not path.is_file():
+        raise Http404
+    return FileResponse(path.open('rb'), content_type=_mime_for_path(path))
 
 
 @admin_required

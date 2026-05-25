@@ -40,7 +40,14 @@ def generate_diff_for_request(request: AIChangeRequest) -> AIChangeRequest:
 
     try:
         log('טוען קבצים מותרים (templates/, static/)…')
-        diff = generate_diff(request.prompt, log_callback=log)
+        from .image_attachments import image_paths_for_request
+
+        imgs = image_paths_for_request(request.pk, request.reference_images)
+        diff = generate_diff(
+            request.prompt,
+            log_callback=log,
+            image_paths=imgs or None,
+        )
         from .path_guard import extract_paths_from_diff
 
         log('מאמת מבנה diff ונתיבים…')

@@ -36,6 +36,20 @@
   <p style="white-space:pre-wrap;line-height:1.6">{{ req.prompt }}</p>
 </div>
 
+{% if req.reference_images %}
+<div class="card-panel" style="margin-bottom:16px">
+  <div class="form-label" style="margin-bottom:10px">תמונות מצורפות ({{ req.reference_images|length }})</div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    {% for name in req.reference_images %}
+    <a href="{% url 'portal:ai_request_image' req.pk name %}" target="_blank" rel="noopener">
+      <img src="{% url 'portal:ai_request_image' req.pk name %}" alt="{{ name }}"
+        style="max-height:140px;border-radius:8px;border:1px solid var(--navy-b)">
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
 <div class="card-panel ai-log-panel" id="ai-log-panel" style="{% if not req.processing_log and not is_generating and not is_pr_creating %}display:none{% endif %}">
   <div class="form-label" style="margin-bottom:8px;display:flex;align-items:center;gap:8px">
     <span>לוג עיבוד</span>

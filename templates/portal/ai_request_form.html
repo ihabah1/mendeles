@@ -10,12 +10,19 @@
   <a href="{% url 'portal:ai_requests' %}" class="btn btn-outline">← חזרה לרשימה</a>
 </div>
 <div class="card-panel" style="max-width:720px">
-  <form method="post">
+  <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <div class="form-row" style="margin-bottom:16px">
       <label class="form-label" for="id_prompt">{{ form.prompt.label }}</label>
       {{ form.prompt }}
       {% if form.prompt.errors %}<div class="alert alert-error" style="margin-top:8px">{{ form.prompt.errors.0 }}</div>{% endif %}
+    </div>
+    <div class="form-row" style="margin-bottom:16px">
+      <label class="form-label" for="id_images">תמונות (אופציונלי)</label>
+      <input type="file" name="images" id="id_images" accept="image/png,image/jpeg,image/webp,image/gif" multiple
+        class="form-control" style="padding:8px;background:var(--navy);border:1.5px solid var(--navy-b);border-radius:8px;color:var(--text)">
+      <p style="font-size:.72rem;color:var(--muted);margin-top:6px">עד 5 תמונות (PNG/JPG/WebP, עד 5MB כל אחת) — צילום מסך של האזור לשינוי</p>
+      <div id="img-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"></div>
     </div>
     <div style="background:var(--navy-c);border:1px solid var(--navy-b);border-radius:10px;padding:14px;margin-bottom:16px;font-size:.78rem;color:var(--muted);line-height:1.65">
       <strong style="color:var(--gold)">דוגמאות (פשוט — בלי שמות קבצים):</strong>
@@ -39,4 +46,18 @@
   <pre style="margin-top:12px;font-size:.7rem;color:var(--muted);white-space:pre-wrap;max-height:280px;overflow:auto">{{ site_index_preview }}</pre>
 </details>
 {% endif %}
+<script>
+document.getElementById('id_images')?.addEventListener('change', function (e) {
+  const box = document.getElementById('img-preview');
+  if (!box) return;
+  box.innerHTML = '';
+  Array.from(e.target.files || []).slice(0, 5).forEach(function (file) {
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
+    img.style.cssText = 'max-height:72px;border-radius:6px;border:1px solid var(--navy-b)';
+    img.alt = file.name;
+    box.appendChild(img);
+  });
+});
+</script>
 {% endblock %}

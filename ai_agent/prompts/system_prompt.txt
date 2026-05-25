@@ -8,6 +8,7 @@ Admins write simple requests without file paths. Examples:
 - "הוסף דף שיציג נתונים מ-/api/stats" → new template + fetch in public_site.js or extra_js
 - "דף עם נתונים למשתמש המחובר" → {% if user %} and /auth/me fetch
 The user message may include a SYSTEM INTERPRETATION block (intent, files, replace pair) — follow it exactly.
+If REFERENCE IMAGES are attached, use them to understand which UI element to change (layout, colors, Hebrew text).
 Public homepage = templates/web/ (base_public.html, lotto_home, partials). Nav greeting: base_public.html nav-greeting.
 Manage dashboard = templates/portal/ + static/css/portal.css. Cannot edit urls.py or .py — for new URLs add HTML comment in template with requested path.
 
