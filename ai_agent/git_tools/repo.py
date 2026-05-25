@@ -58,19 +58,20 @@ def _github_token() -> str:
     return token
 
 
-def _auth_clone_url() -> str:
-    token = _github_token()
-    token = clean_env_value(getattr(settings, 'GITHUB_TOKEN', '') or '')
+def _repo_slug() -> str:
     repo_raw = getattr(settings, 'GITHUB_REPO', 'ihabah1/mendeles')
     try:
-        repo = normalize_github_repo(repo_raw)
+        return normalize_github_repo(repo_raw)
     except ValueError as exc:
         raise GitToolError(str(exc)) from exc
-    return f'https://x-access-token:{token}@github.com/{repo}.git'
+
+
+def _plain_repo_url() -> str:
+    return f'https://github.com/{_repo_slug()}.git'
 
 
 def _git_env(base: dict | None = None) -> dict:
-    """מבטל credential helper ומוסיף Authorization לכל פקודת git ל-GitHub."""
+    """Bearer token ב-header (מומלץ ל-fine-grained PAT) – בלי credential helper."""
     token = _github_token()
     env = {**(base or os.environ)}
     env['GIT_TERMINAL_PROMPT'] = '0'
@@ -82,9 +83,14 @@ def _git_env(base: dict | None = None) -> dict:
     return env
 
 
+def _auth_clone_url() -> str:
+    """URL ללא token – האימות דרך http.extraheader ב-_git_env."""
+    return _plain_repo_url()
+
+
 def _ensure_origin_authenticated(work: Path, env: dict) -> None:
-    """מגדיר מחדש origin עם ה-token – אחרת fetch/push עלולים לרוץ בלי הרשאות."""
-    _run([GIT_BIN, 'remote', 'set-url', 'origin', _auth_clone_url()], work, env=env)
+    """מגדיר origin ל-URL נקי; האימות דרך Authorization header."""
+    _run([GIT_BIN, 'remote', 'set-url', 'origin', _plain_repo_url()], work, env=env)
 
 
 def _work_dir(request_id: int) -> Path:

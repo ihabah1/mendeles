@@ -29,8 +29,17 @@ def friendly_git_error(stderr: str) -> str | None:
             'Pull requests (Read and write) על repo ihabah1/mendeles, '
             'עדכן ב-Railway (בלי רווח בסוף), ואם Fine-grained – אשר SSO אם מופיע.'
         )
-    if '401' in low or 'bad credentials' in low:
-        return 'GitHub דחה התחברות (401): GITHUB_TOKEN לא תקין או פג תוקף – החלף ב-Railway.'
+    if (
+        '401' in low
+        or 'invalid credentials' in low
+        or 'authentication failed' in low
+        or 'bad credentials' in low
+    ):
+        return (
+            'GitHub דחה התחברות: GITHUB_TOKEN ב-Railway לא תקין, פג תוקף, '
+            'או בוטל. צור token חדש (Contents + Pull requests: Read and write), '
+            'הדבק רק ב-Railway → Variables → GITHUB_TOKEN, ועשה Redeploy.'
+        )
     return None
 
 
