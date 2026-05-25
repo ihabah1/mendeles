@@ -34,3 +34,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Nested clone (use project root, not mendeles/ subfolder)
+mendeles/
