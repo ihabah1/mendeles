@@ -7,7 +7,6 @@ UNUSED_TEMPLATE_PATHS = frozenset({
 })
 
 LIVE_SITE_PREFIXES = ('templates/web/', 'static/css/public_site.css', 'static/js/public_site.js')
-LIVE_SITE_LEGACY_REACT = ('static/frontend/',)
 MANAGE_PREFIXES = ('templates/portal/', 'static/css/portal')
 
 
@@ -15,10 +14,7 @@ def classify_publish_scope(files: list[str]) -> str:
     paths = [p.replace('\\', '/') for p in (files or []) if p]
     if not paths:
         return 'unknown'
-    live = any(
-        p.startswith(LIVE_SITE_PREFIXES) or p.startswith(LIVE_SITE_LEGACY_REACT)
-        for p in paths
-    )
+    live = any(p.startswith(LIVE_SITE_PREFIXES) for p in paths)
     manage = any(
         p.startswith(MANAGE_PREFIXES) or p in UNUSED_TEMPLATE_PATHS
         for p in paths
@@ -46,7 +42,7 @@ def scope_warning(scope: str, files: list[str]) -> str | None:
     if unused:
         return (
             f'הקבצים {", ".join(unused)} אינם מחוברים לאתר – '
-            'השינוי לא יופיע ב-/ (React). ערוך static/frontend/ או תבניות portal פעילות.'
+            'השינוי לא יופיע ב-/ (אתר Django). ערוך templates/web/ או תבניות portal פעילות.'
         )
     if scope == 'manage':
         return (

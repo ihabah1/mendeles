@@ -9,7 +9,7 @@ urlpatterns = [
     re_path(r'^auth/(?P<path>.*)$', views.proxy_auth),
     re_path(r'^lotto/(?P<path>.*)$', views.proxy_lotto),
     re_path(r'^engine/(?P<path>.*)$', views.proxy_engine),
-    # API לוטו (server.py) – נתיבים מפורשים כדי לא לחסום /api/auth/ של React
+    # API לוטו (server.py) – נתיבים מפורשים (לפני catch-all של Django)
     path('api/health', views.proxy_lotto_api, {'path': 'health'}),
     path('api/check', views.proxy_lotto_api, {'path': 'check'}),
     path('api/stats', views.proxy_lotto_api, {'path': 'stats'}),

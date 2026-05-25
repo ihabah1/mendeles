@@ -5,7 +5,7 @@
 <div class="page-header">
   <div>
     <div class="page-title">Django + שירותי לוטו</div>
-    <div class="page-sub">React וניהול משתמשים ב-Django · לוטו/ארנק/טוטו ב-Flask (מקומי)</div>
+    <div class="page-sub">אתר וניהול ב-Django · מנוע/ארנק/טוטו ב-Flask (מקומי, אופציונלי)</div>
   </div>
 </div>
 
@@ -15,18 +15,18 @@
     פרוקסי: <code>LEGACY_SERVICES_ENABLED={{ enabled|yesno:"true,false" }}</code>
   </p>
   <table>
-    <thead><tr><th>שירות</th><th>סטטוס</th><th>פורט ברירת מחדל</th></tr></thead>
+    <thead><tr><th>שירות</th><th>סטטוס</th><th>פורט</th></tr></thead>
     <tbody>
       <tr><td>מנוע טוטו (engine)</td><td>{% if health.engine.ok %}<span class="badge badge-green">פעיל</span>{% else %}<span class="badge badge-red">כבוי</span>{% endif %}</td><td>5001</td></tr>
       <tr><td>התחברות לקוחות (auth)</td><td>{% if health.auth.ok %}<span class="badge badge-green">פעיל</span>{% else %}<span class="badge badge-red">כבוי</span>{% endif %}</td><td>5002</td></tr>
       <tr><td>ארנק / הזמנות (wallet)</td><td>{% if health.wallet.ok %}<span class="badge badge-green">פעיל</span>{% else %}<span class="badge badge-red">כבוי</span>{% endif %}</td><td>5003</td></tr>
-      <tr><td>API לוטו פרימיום (api)</td><td>{% if health.lotto_api.ok %}<span class="badge badge-green">פעיל</span>{% else %}<span class="badge badge-red">כבוי</span>{% endif %}</td><td>5000</td></tr>
-      <tr><td><strong>Django (אתר+ניהול)</strong></td><td><span class="badge badge-green">פעיל</span></td><td>8000</td></tr>
+      <tr><td>API לוטו (api)</td><td>{% if health.lotto_api.ok %}<span class="badge badge-green">פעיל</span>{% else %}<span class="badge badge-red">כבוי</span>{% endif %}</td><td>5000</td></tr>
+      <tr><td><strong>Django (אתר + ניהול)</strong></td><td><span class="badge badge-green">פעיל</span></td><td>8000</td></tr>
     </tbody>
   </table>
   {% if not health.auth.ok %}
   <p style="margin-top:12px;font-size:.8rem;color:var(--muted)">
-    להפעלת שירותי לוטו: <code>.\run.ps1 -Legacy</code> או <code>python start_all.py</code> (בטרמינל נפרד), ואז רענן.
+    להפעלת מנוע טוטו/ארנק: <code>.\run.ps1 -Legacy</code> או <code>python start_all.py</code>
   </p>
   {% endif %}
 </div>
@@ -34,19 +34,16 @@
 <div class="card-panel" style="margin-bottom:16px">
   <div class="form-label">כתובות</div>
   <ul style="font-size:.85rem;line-height:1.8;list-style:none">
-    <li>אתר React (ראשי): <a href="/" style="color:var(--green)">/</a></li>
-    <li>דשבורד ניהול Django: <a href="/manage/" style="color:var(--gold)">/manage/</a></li>
-    <li>ממשק לוטו קלאסי: <a href="/classic/new_stite.html" style="color:var(--blue)">/classic/new_stite.html</a></li>
-    <li>התחברות קלאסית (JWT): <a href="/classic/auth.html">/classic/auth.html</a></li>
-    <li>פרופיל + ארנק: <a href="/classic/profile.html">/classic/profile.html</a></li>
-    <li>אדמין לוטו (HTML): <a href="/classic/admin.html">/classic/admin.html</a></li>
+    <li>אתר ראשי (Django): <a href="/" style="color:var(--green)">/</a></li>
+    <li>דשבורד ניהול: <a href="/manage/" style="color:var(--gold)">/manage/</a></li>
+    <li>טופס לוטו (HTML): <a href="/classic/lotto_form.html">/classic/lotto_form.html</a></li>
+    <li>פרופיל + ארנק (HTML): <a href="/classic/profile.html">/classic/profile.html</a></li>
     <li>שינויים AI: <a href="{% url 'portal:ai_requests' %}">היסטוריית שינויים</a></li>
-    <li>היסטוריית פעולות: <a href="{% url 'portal:logs' %}">/manage/logs/</a></li>
   </ul>
 </div>
 
 <div class="alert alert-success" style="font-size:.82rem;line-height:1.5">
-  <strong>הערה:</strong> משתמשי האתר הראשי (React) משתמשים ב-<code>/api/auth/</code> (Django).
-  ממשק קלאסי משתמש ב-<code>/auth/</code> (Flask) – שני מסדי נתונים נפרדים עד מיגרציה מלאה.
+  <strong>הערה:</strong> האתר הראשי והתחברות משתמשים ב-Django (<code>/api/auth/</code>).
+  שירותי Flask נדרשים רק לטוטו חי, ארנק והדפסת טפסים.
 </div>
 {% endblock %}

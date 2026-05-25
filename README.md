@@ -7,11 +7,10 @@
 | כתובת | מה מוצג |
 |--------|---------|
 | `http://127.0.0.1:8000/` | **אתר ראשי Django** – תבניות `templates/web/` (לוטו וטוטו) |
-| `http://127.0.0.1:8000/app/` | React ישן (גיבוי בלבד) |
 | `http://127.0.0.1:8000/manage/login/` | **כניסת מנהל** לדשבורד ניהול |
 | `http://127.0.0.1:8000/manage/` | דשבורד ניהול (לקוחות, הזמנות, אשראי…) |
 | `http://127.0.0.1:8000/django-admin/` | Django Admin מסורתי (אופציונלי) |
-| `http://127.0.0.1:8000/classic/new_stite.html` | ממשק לוטו קלאסי (HTML + Flask API) |
+| `http://127.0.0.1:8000/classic/new_stite.html` | מופנה ל־`/` (Django) |
 | `http://127.0.0.1:8000/manage/integration/` | סטטוס אינטגרציה Django ↔ לוטו |
 
 ### הרצה עם שירותי לוטו (ארנק / מנוע / API)
@@ -57,7 +56,7 @@ python manage.py setup_portal
 
 ## גרסה
 
-`v2.2.8` – בלוגו, בכותרת הדף ובפוטר של אתר React.
+`v2.2.8` – בלוגו ובכותרת האתר (Django `templates/web/`).
 
 **מנהל קבוע:** `admin@admin.com` / `admin` (נוצר אוטומטית ב־`setup_portal` ובאתחול).
 
@@ -91,10 +90,7 @@ python manage.py setup_portal
 
 כניסה: `/manage/ai/new/` (דשבורד ניהול) או `/django-admin/` (אדמין מסורתי)
 
-## בניית Frontend מחדש
+## עריכת האתר
 
-```powershell
-cd c:\Users\ihaba\Downloads\mandeles-react-test5\mandeles-react
-npm run build
-robocopy ..\static\frontend ..\..\250526\static\frontend /E
-```
+האתר הראשי הוא **Django בלבד** (`templates/web/`, `static/css/public_site.css`).
+React (`static/frontend/`) הוסר – שינויים דרך `/manage/ai/` או עריכה ישירה של התבניות.

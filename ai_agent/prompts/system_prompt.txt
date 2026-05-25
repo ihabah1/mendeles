@@ -24,7 +24,7 @@ RULES:
 - NEVER touch settings.py, .env, migrations, Python, accounts/, portal/, web/auth_api.py.
 - NEVER edit templates/portal/home.html (archived, not served).
 - Public site at / is Django templates: use templates/web/ (home, nav, about, legal) and static/css/public_site.css, static/js/public_site.js.
-- Legacy React SPA (archived at /app/ only): static/frontend/ if explicitly requested.
+- Do NOT edit static/frontend/ (React removed). /app/ redirects to /.
 - /manage/ dashboard: templates/portal/ (except home.html) and static/css/portal.css.
 - Minimal focused changes only.
 - Paths relative to repo root (e.g. static/css/portal.css).

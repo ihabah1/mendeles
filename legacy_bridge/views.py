@@ -1,63 +1,65 @@
-"""הגשת דפי HTML קלאסיים + דף סטטוס אינטגרציה."""
+"""פרוקסי API לוטו + הפניות דפי HTML ישנים ל-Django."""
 from __future__ import annotations
 
 import re
 from pathlib import Path
 
 from django.conf import settings
-from portal.decorators import admin_required
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.views.decorators.http import require_GET
+from portal.decorators import admin_required
 
 from .proxy import check_backends_health, legacy_services_enabled, proxy_request
 
 BASE_DIR = Path(settings.BASE_DIR)
 
-CLASSIC_PAGES = {
-    '': 'new_stite.html',
-    'index.html': 'index.html',
-    'new_stite.html': 'new_stite.html',
-    'auth.html': 'auth.html',
+# דפים שהועברו ל-Django – הפניה קבועה
+_CLASSIC_REDIRECTS = {
+    '': '/',
+    'index.html': '/',
+    'new_stite.html': '/',
+    'auth.html': '/login/',
+}
+
+# דפים תפעוליים שעדיין HTML סטטי (ללא React) – מוגשים בלי באנר
+_CLASSIC_STATIC_PAGES = {
     'profile.html': 'profile.html',
     'lotto_form.html': 'lotto_form.html',
     'admin.html': 'admin.html',
 }
 
-# קישורים יחסיים בדפי HTML → נתיבי Django
 _LINK_REWRITES = (
-    (r'href="/auth\.html', 'href="/classic/auth.html'),
+    (r'href="/auth\.html', 'href="/login/'),
     (r'href="/profile\.html', 'href="/classic/profile.html'),
-    (r'href="/new_stite\.html', 'href="/classic/new_stite.html'),
+    (r'href="/new_stite\.html', 'href="/'),
     (r'href="/lotto_form\.html', 'href="/classic/lotto_form.html'),
     (r'href="/admin\.html', 'href="/classic/admin.html'),
-    (r"window\.location\.href\s*=\s*'/auth\.html", "window.location.href='/classic/auth.html"),
-    (r"window\.location\.href\s*=\s*'/profile\.html", "window.location.href='/classic/profile.html"),
-    (r"window\.location\.href\s*=\s*'/new_stite\.html", "window.location.href='/classic/new_stite.html"),
+    (r"window\.location\.href\s*=\s*'/auth\.html", "window.location.href='/login/'"),
+    (r"window\.location\.href\s*=\s*'/profile\.html", "window.location.href='/classic/profile.html'"),
+    (r"window\.location\.href\s*=\s*'/new_stite\.html", "window.location.href='/'"),
     (r"redirect='/profile\.html'", "redirect='/classic/profile.html'"),
-    (r"redirect='/auth\.html'", "redirect='/classic/auth.html'"),
+    (r"redirect='/auth\.html'", "redirect='/login/'"),
 )
 
 
 def _rewrite_classic_html(content: str) -> str:
     for pattern, repl in _LINK_REWRITES:
         content = re.sub(pattern, repl, content)
-    banner = (
-        '<div id="django-legacy-banner" style="background:#1a3a2a;border-bottom:1px solid #1db87a;'
-        'padding:8px 16px;font-size:.78rem;text-align:center">'
-        '<a href="/" style="color:#1db87a;font-weight:700">אתר React</a> · '
-        '<a href="/manage/" style="color:#c9a84c">דשבורד Django</a> · '
-        '<span style="color:#8aaabe">ממשק קלאסי (לוטו/ארנק)</span></div>'
-    )
-    if '<body' in content:
-        content = re.sub(r'(<body[^>]*>)', r'\1' + banner, content, count=1)
     return content
 
 
 @require_GET
 def classic_page(request, page: str = ''):
-    """דפי HTML ישנים תחת /classic/ – API נשאר ב-/auth, /lotto, /api/…"""
-    name = CLASSIC_PAGES.get(page)
+    """דפי HTML ישנים: רובם מופנים ל-Django; תפעוליים נשארים תחת /classic/."""
+    if page in _CLASSIC_REDIRECTS:
+        target = _CLASSIC_REDIRECTS[page]
+        qs = request.META.get('QUERY_STRING', '')
+        if qs:
+            target = f'{target}?{qs}' if '?' not in target else f'{target}&{qs}'
+        return redirect(target, permanent=True)
+
+    name = _CLASSIC_STATIC_PAGES.get(page)
     if not name:
         raise Http404
     path = BASE_DIR / name
@@ -72,11 +74,10 @@ def classic_page(request, page: str = ''):
 
 @require_GET
 def integration_status(request):
-    """סטטוס שירותי Flask לדשבורד."""
     return JsonResponse({
         'enabled': legacy_services_enabled(),
         'backends': check_backends_health(),
-        'classic_ui': '/classic/new_stite.html',
+        'site': '/',
         'django': {
             'site': '/',
             'manage': '/manage/',
@@ -88,7 +89,6 @@ def integration_status(request):
 @admin_required
 @require_GET
 def integration_page(request):
-    """דף ניהול: איך המערכות מחוברות."""
     from django.shortcuts import render
 
     health = check_backends_health()
@@ -99,7 +99,6 @@ def integration_page(request):
 
 
 def admin_browser_entry(request):
-    """GET /admin/ (דפדפן) → דשבורד Django; API נשאר ב-proxy."""
     return redirect('/manage/customers/')
 
 
@@ -120,4 +119,4 @@ def proxy_engine(request, path=''):
 
 
 def proxy_lotto_api(request, path=''):
-    return proxy_request(request, 'lotto_api', '/api/')
+    return proxy_request(request, 'lotto_api', '/api/' + path)

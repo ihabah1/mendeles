@@ -9,7 +9,11 @@ ALLOWED_PREFIXES = ('templates/', 'static/')
 # לא מחובר ל-URL – שינוי כאן לא יופיע באתר
 BLOCKED_TEMPLATE_PATHS = frozenset({
     'templates/portal/home.html',
+    'templates/web/spa.html',
 })
+
+# React – לא בשימוש (האתר ב-templates/web/)
+BLOCKED_PATH_PREFIXES = ('static/frontend/',)
 
 FORBIDDEN_EXACT = frozenset({
     '.env',
@@ -74,6 +78,11 @@ def is_path_allowed(path: str) -> tuple[bool, str]:
             f'{rel} אינו בשימוש באתר (ארכיון). '
             'לשינוי באתר הראשי: templates/web/. לדשבורד: templates/portal/ או static/css/portal.css'
         )
+    for prefix in BLOCKED_PATH_PREFIXES:
+        if lower.startswith(prefix):
+            return False, (
+                f'{rel} – React הוסר. ערוך templates/web/ או static/css/public_site.css'
+            )
     if not any(lower.startswith(prefix) for prefix in ALLOWED_PREFIXES):
         return False, f'מותר לערוך רק תחת templates/ או static/: {rel}'
     if '..' in rel.split('/'):
