@@ -21,15 +21,16 @@ def _unified_diff_for_file(rel_path: str, old_text: str, new_text: str) -> str:
         old_lines[-1] += '\n'
     if new_lines and not new_lines[-1].endswith('\n'):
         new_lines[-1] += '\n'
-    lines = difflib.unified_diff(
-        old_lines,
-        new_lines,
-        fromfile=f'a/{rel_path}',
-        tofile=f'b/{rel_path}',
-        lineterm='',
+    body = ''.join(
+        difflib.unified_diff(
+            old_lines,
+            new_lines,
+            fromfile=f'a/{rel_path}',
+            tofile=f'b/{rel_path}',
+            lineterm='\n',
+        )
     )
-    body = '\n'.join(lines)
-    if not body.endswith('\n'):
+    if body and not body.endswith('\n'):
         body += '\n'
     return f'diff --git a/{rel_path} b/{rel_path}\n{body}'
 

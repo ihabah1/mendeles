@@ -9,7 +9,7 @@ MAX_DIFF_BYTES = 512_000
 MAX_FILES = 20
 
 DIFF_FILE_HEADER = re.compile(r'^diff --git a/.+ b/.+', re.MULTILINE)
-HUNK_HEADER = re.compile(r'^@@ -\d+(?:,\d+)? \+\d+(?:,\d+)? @@')
+HUNK_HEADER = re.compile(r'^@@ -\d+(?:,\d+)? \+\d+(?:,\d+)? @@', re.MULTILINE)
 DIFF_GIT_LINE = re.compile(r'^diff --git a/(.+?) b/(.+?)\s*$', re.MULTILINE)
 
 

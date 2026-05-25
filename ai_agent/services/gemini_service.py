@@ -140,7 +140,11 @@ def generate_diff(
     try:
         return generate_diff_via_structured_edits(prompt, root, log_callback=log)
     except (DiffValidationError, json.JSONDecodeError, ValueError) as exc:
-        raise GeminiServiceError(
+        detail = str(exc).strip()
+        hint = (
             'לא הצלחנו לייצר diff. נסח בקשה עם קובץ מדויק, למשל: '
-            'ב-static/css/portal.css שנה את .page-title ל-font-size: 1.4rem',
-        ) from (last_error or exc)
+            'ב-static/css/portal.css שנה את .page-title ל-font-size: 1.4rem'
+        )
+        if detail and detail not in hint:
+            hint = f'{hint} ({detail})'
+        raise GeminiServiceError(hint) from (last_error or exc)
