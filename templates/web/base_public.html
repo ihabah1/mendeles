@@ -25,9 +25,8 @@
       <span id="engine-lbl" style="font-size:.68rem;color:var(--muted);white-space:nowrap;display:none"></span>
     </div>
     {% if user %}
-      <a href="/account/" class="nav-greeting" id="nav-user-name" title="החשבון שלי">{{ user.display_name }}</a>
+      {% include 'web/partials/nav_user_menu.html' %}
       <span class="wallet-badge" id="nav-wallet" style="display:none"></span>
-      <a href="/account/" class="nav-login-btn" id="user-avatar" aria-label="החשבון שלי" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--gold);color:var(--navy);font-weight:800;font-size:.85rem;text-decoration:none">{{ user.display_name|slice:":1"|upper }}</a>
     {% else %}
       <a href="/login/" class="nav-login-btn" id="nav-login-btn">כניסה / הרשמה</a>
     {% endif %}
@@ -40,8 +39,9 @@
       <li><a href="/legal/">תנאים</a></li>
       <li><a href="/accessibility/">נגישות</a></li>
       {% if user %}
-        <li><a href="/account/">החשבון שלי</a></li>
-        <li><a href="#" onclick="logoutUser();return false">יציאה</a></li>
+        <li><a href="/account/">עדכן פרטים</a></li>
+        <li><a href="/classic/profile.html">פרופיל</a></li>
+        <li><a href="#" onclick="logoutUser();return false">התנתק</a></li>
       {% endif %}
     </ul>
   </div>
@@ -68,6 +68,24 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" crossorigin="anonymous"></script>
 <script src="{% static 'js/public_site.js' %}?v={{ app_version }}"></script>
 <script>
+function initUserAccountMenu() {
+  const btn = document.getElementById('nav-account-toggle');
+  const menu = document.getElementById('nav-account-menu');
+  if (!btn || !menu) return;
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    const open = btn.getAttribute('aria-expanded') === 'true';
+    btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+    menu.hidden = open;
+  });
+  document.addEventListener('click', function () {
+    btn.setAttribute('aria-expanded', 'false');
+    menu.hidden = true;
+  });
+  menu.addEventListener('click', function (e) { e.stopPropagation(); });
+}
+document.addEventListener('DOMContentLoaded', initUserAccountMenu);
+
 async function logoutUser() {
   try {
     const r = await fetch('/api/auth/csrf/', { credentials: 'same-origin' });

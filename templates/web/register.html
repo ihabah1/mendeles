@@ -1,16 +1,28 @@
 {% extends 'web/base_public.html' %}
 {% block content %}
-<div class="page-wrap" style="max-width:420px">
+<div class="page-wrap" style="max-width:440px">
   <div class="card">
     <h1 style="font-family:'Frank Ruhl Libre',serif;color:var(--cream);margin-bottom:8px;text-align:center">הרשמה</h1>
+    <p style="text-align:center;color:var(--muted);font-size:.82rem;margin-bottom:16px">צור חשבון חדש ב-Mandeles</p>
     <form id="reg-form" style="display:flex;flex-direction:column;gap:10px">
+      <label style="font-size:.8rem;color:var(--muted)">שם משתמש (יוזר)</label>
+      <input type="text" id="reg-username" required minlength="3" maxlength="50" pattern="[a-zA-Z0-9_\u0590-\u05FF]+" autocomplete="username"
+        style="background:var(--navy);border:1.5px solid var(--navy-b);border-radius:8px;padding:10px;color:var(--text);font-family:Heebo,sans-serif" dir="ltr">
       <label style="font-size:.8rem;color:var(--muted)">שם פרטי</label>
       <input type="text" id="reg-first-name" required minlength="2" maxlength="60" autocomplete="given-name"
         style="background:var(--navy);border:1.5px solid var(--navy-b);border-radius:8px;padding:10px;color:var(--text);font-family:Heebo,sans-serif">
-      <label style="font-size:.8rem;color:var(--muted)">אימייל</label>
-      <input type="email" id="reg-email" required autocomplete="email" style="background:var(--navy);border:1.5px solid var(--navy-b);border-radius:8px;padding:10px;color:var(--text);font-family:Heebo,sans-serif">
+      <label style="font-size:.8rem;color:var(--muted)">שם משפחה</label>
+      <input type="text" id="reg-last-name" required minlength="2" maxlength="60" autocomplete="family-name"
+        style="background:var(--navy);border:1.5px solid var(--navy-b);border-radius:8px;padding:10px;color:var(--text);font-family:Heebo,sans-serif">
+      <label style="font-size:.8rem;color:var(--muted)">טלפון</label>
+      <input type="tel" id="reg-phone" required maxlength="20" autocomplete="tel"
+        style="background:var(--navy);border:1.5px solid var(--navy-b);border-radius:8px;padding:10px;color:var(--text);font-family:Heebo,sans-serif" dir="ltr">
       <label style="font-size:.8rem;color:var(--muted)">סיסמה (לפחות 6 תווים)</label>
-      <input type="password" id="reg-pw" required minlength="6" autocomplete="new-password" style="background:var(--navy);border:1.5px solid var(--navy-b);border-radius:8px;padding:10px;color:var(--text);font-family:Heebo,sans-serif">
+      <input type="password" id="reg-pw" required minlength="6" autocomplete="new-password"
+        style="background:var(--navy);border:1.5px solid var(--navy-b);border-radius:8px;padding:10px;color:var(--text);font-family:Heebo,sans-serif">
+      <label style="font-size:.8rem;color:var(--muted)">סיסמה שנית</label>
+      <input type="password" id="reg-pw2" required minlength="6" autocomplete="new-password"
+        style="background:var(--navy);border:1.5px solid var(--navy-b);border-radius:8px;padding:10px;color:var(--text);font-family:Heebo,sans-serif">
       <button type="submit" class="btn btn-primary btn-block">צור חשבון</button>
     </form>
     <p id="reg-msg" style="margin-top:12px;font-size:.82rem;text-align:center;display:none"></p>
@@ -22,13 +34,21 @@
 <script>
 async function getCsrf() {
   const r = await fetch('/api/auth/csrf/', { credentials: 'same-origin' });
-  const d = await r.json();
-  return d.csrfToken;
+  return (await r.json()).csrfToken;
 }
 document.getElementById('reg-form').addEventListener('submit', async function (e) {
   e.preventDefault();
   const msg = document.getElementById('reg-msg');
+  const pw = document.getElementById('reg-pw').value;
+  const pw2 = document.getElementById('reg-pw2').value;
+  if (pw !== pw2) {
+    msg.style.display = 'block';
+    msg.style.color = 'var(--loss)';
+    msg.textContent = 'הסיסמאות אינן תואמות';
+    return;
+  }
   msg.style.display = 'block';
+  msg.style.color = 'var(--muted)';
   msg.textContent = 'יוצר חשבון...';
   try {
     const csrf = await getCsrf();
@@ -37,9 +57,12 @@ document.getElementById('reg-form').addEventListener('submit', async function (e
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
       body: JSON.stringify({
+        username: document.getElementById('reg-username').value.trim().toLowerCase(),
         first_name: document.getElementById('reg-first-name').value.trim(),
-        email: document.getElementById('reg-email').value.trim(),
-        password: document.getElementById('reg-pw').value,
+        last_name: document.getElementById('reg-last-name').value.trim(),
+        phone: document.getElementById('reg-phone').value.trim(),
+        password: pw,
+        password_confirm: pw2,
       }),
     });
     const data = await res.json();

@@ -28,7 +28,9 @@ class User(AbstractBaseUser, PermissionsMixin):
         CUSTOMER = 'customer', 'לקוח'
 
     email = models.EmailField('אימייל', unique=True)
+    username = models.CharField('שם משתמש', max_length=50, unique=True, blank=True, null=True)
     first_name = models.CharField('שם פרטי', max_length=60, blank=True)
+    last_name = models.CharField('שם משפחה', max_length=60, blank=True)
     full_name = models.CharField('שם מלא', max_length=120, blank=True)
     phone = models.CharField('טלפון', max_length=20, blank=True)
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.CUSTOMER)
@@ -51,12 +53,20 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def display_name(self) -> str:
-        """שם לתצוגה בסרגל ובאתר."""
+        """שם לתצוגה בסרגל (שלום …)."""
         if self.first_name and self.first_name.strip():
             return self.first_name.strip()
+        if self.username and self.username.strip():
+            return self.username.strip()
         if self.full_name and self.full_name.strip():
             return self.full_name.strip().split()[0]
         return self.email.split('@')[0]
+
+    def sync_full_name(self) -> None:
+        parts = [self.first_name.strip(), self.last_name.strip()]
+        joined = ' '.join(p for p in parts if p)
+        if joined:
+            self.full_name = joined[:120]
 
     @property
     def is_admin(self):

@@ -1,0 +1,14 @@
+<div class="nav-user-menu" id="nav-user-menu">
+  <span class="nav-greeting" id="nav-user-greeting">שלום <strong id="nav-user-name">{{ user.display_name }}</strong></span>
+  <div class="nav-account-dropdown">
+    <button type="button" class="nav-account-btn" id="nav-account-toggle" aria-expanded="false" aria-controls="nav-account-menu" aria-haspopup="menu">
+      חשבון <span class="nav-caret" aria-hidden="true">▾</span>
+    </button>
+    <ul class="nav-account-menu" id="nav-account-menu" role="menu" hidden>
+      <li role="none"><a href="/account/" role="menuitem">עדכן פרטים</a></li>
+      <li role="none"><a href="/classic/profile.html" role="menuitem">פרופיל</a></li>
+      <li role="none"><a href="/account/" role="menuitem">עדכן פרטי חשבון</a></li>
+      <li role="none"><button type="button" role="menuitem" class="nav-account-logout" onclick="logoutUser()">התנתק</button></li>
+    </ul>
+  </div>
+</div>

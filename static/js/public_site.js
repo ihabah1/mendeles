@@ -499,26 +499,36 @@ function _hideGuestOnlyUI(){
   document.querySelectorAll('[data-hide-when-logged-in]').forEach(el=>{ el.style.display='none'; });
 }
 
-function _syncNavUserName(name){
+function _userMenuHtml(name){
+  const label = _esc(name || 'משתמש');
+  return `<div class="nav-user-menu" id="nav-user-menu">
+    <span class="nav-greeting" id="nav-user-greeting">שלום <strong id="nav-user-name">${label}</strong></span>
+    <div class="nav-account-dropdown">
+      <button type="button" class="nav-account-btn" id="nav-account-toggle" aria-expanded="false" aria-controls="nav-account-menu" aria-haspopup="menu">
+        חשבון <span class="nav-caret" aria-hidden="true">▾</span>
+      </button>
+      <ul class="nav-account-menu" id="nav-account-menu" role="menu" hidden>
+        <li role="none"><a href="/account/" role="menuitem">עדכן פרטים</a></li>
+        <li role="none"><a href="/classic/profile.html" role="menuitem">פרופיל</a></li>
+        <li role="none"><a href="/account/" role="menuitem">עדכן פרטי חשבון</a></li>
+        <li role="none"><button type="button" role="menuitem" class="nav-account-logout" onclick="logoutUser()">התנתק</button></li>
+      </ul>
+    </div>
+  </div>`;
+}
+
+function _mountUserNav(name){
   const label = name || 'משתמש';
-  let el = document.getElementById('nav-user-name');
-  if(!el){
-    const loginBtn = document.getElementById('nav-login-btn');
-    if(loginBtn){
-      const a = document.createElement('a');
-      a.href = '/account/';
-      a.className = 'nav-greeting';
-      a.id = 'nav-user-name';
-      a.title = 'החשבון שלי';
-      a.textContent = label;
-      loginBtn.replaceWith(a);
-      el = a;
-    }
-  } else {
-    el.textContent = label;
+  const loginBtn = document.getElementById('nav-login-btn');
+  if(loginBtn){
+    loginBtn.outerHTML = _userMenuHtml(label);
+    if(typeof initUserAccountMenu === 'function') initUserAccountMenu();
+    return;
   }
-  const av = document.getElementById('user-avatar');
-  if(av && av.tagName === 'A') av.textContent = label.charAt(0).toUpperCase();
+  const el = document.getElementById('nav-user-name');
+  if(el) el.textContent = label;
+  const greet = document.getElementById('nav-user-greeting');
+  if(greet) greet.innerHTML = 'שלום <strong id="nav-user-name">' + _esc(label) + '</strong>';
 }
 
 async function checkDjangoSession(){
@@ -527,8 +537,8 @@ async function checkDjangoSession(){
     if(!r.ok) return false;
     const d = await r.json();
     if(!d.user) return false;
-    const name = d.user.display_name || d.user.first_name || d.user.email || 'משתמש';
-    _syncNavUserName(name);
+    const name = d.user.display_name || d.user.first_name || d.user.username || 'משתמש';
+    _mountUserNav(name);
     _hideGuestOnlyUI();
     document.body.dataset.loggedIn = '1';
     document.body.dataset.userName = name;
@@ -538,14 +548,14 @@ async function checkDjangoSession(){
 
 function _applyLoggedInUI(name, token, isDemoMode){
   _hideGuestOnlyUI();
-  _syncNavUserName(name);
+  _mountUserNav(name);
   const loginBtn=document.getElementById('nav-login-btn');
-  if(!loginBtn) return;
-  loginBtn.outerHTML=`
-    ${isDemoMode?`<span style="font-size:.65rem;background:rgba(232,160,48,.15);border:1px solid rgba(232,160,48,.3);color:#e8c870;border-radius:5px;padding:3px 7px;flex-shrink:0">🧪 DEMO</span>`:''}
-    <span class="wallet-badge" onclick="goToWallet()" title="ארנק">💳 ₪<span id="wallet-bal">${isDemoMode?DEMO_USER.balance.toFixed(2):'...'}</span></span>
-    <button id="user-avatar" onclick="goToProfile()" aria-label="פרופיל">${_esc(name[0].toUpperCase())}</button>`;
-  if(!isDemoMode) loadWalletBalance(token);
+  const menu=document.getElementById('nav-user-menu');
+  if(!loginBtn && menu){
+    const extra=isDemoMode?`<span style="font-size:.65rem;background:rgba(232,160,48,.15);border:1px solid rgba(232,160,48,.3);color:#e8c870;border-radius:5px;padding:3px 7px;flex-shrink:0;margin-inline-start:6px">🧪 DEMO</span>`:'';
+    menu.insertAdjacentHTML('afterend',`${extra}<span class="wallet-badge" onclick="goToWallet()" title="ארנק">💳 ₪<span id="wallet-bal">${isDemoMode?DEMO_USER.balance.toFixed(2):'...'}</span></span>`);
+  }
+  if(!isDemoMode && token) loadWalletBalance(token);
 }
 
 function checkAuth(){
@@ -736,6 +746,7 @@ async function loadSiteStats(){
 
   if(document.body.dataset.loggedIn === '1'){
     _hideGuestOnlyUI();
+    if(typeof initUserAccountMenu === 'function') initUserAccountMenu();
   } else {
     checkDjangoSession().then(function(ok){ if(!ok) checkAuth(); });
   }

@@ -2,20 +2,24 @@
 {% block content %}
 <div class="page-wrap" style="max-width:480px">
   <div class="card">
-    <h1 style="font-family:'Frank Ruhl Libre',serif;color:var(--cream);margin-bottom:4px;text-align:center">החשבון שלי</h1>
-    <p style="text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:18px">עדכון פרטים אישיים</p>
+    <h1 style="font-family:'Frank Ruhl Libre',serif;color:var(--cream);margin-bottom:4px;text-align:center">עדכון פרטי חשבון</h1>
+    <p style="text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:18px">שלום {{ user.display_name }} — עדכן את הפרטים שלך</p>
     <form id="account-form" style="display:flex;flex-direction:column;gap:10px">
+      <label style="font-size:.8rem;color:var(--muted)">שם משתמש (יוזר)</label>
+      <input type="text" id="acc-username" required minlength="3" maxlength="50" autocomplete="username"
+        value="{{ user.username|default:'' }}" dir="ltr"
+        style="background:var(--navy);border:1.5px solid var(--navy-b);border-radius:8px;padding:10px;color:var(--text);font-family:Heebo,sans-serif">
       <label style="font-size:.8rem;color:var(--muted)">שם פרטי</label>
       <input type="text" id="acc-first-name" required minlength="2" maxlength="60" autocomplete="given-name"
-        value="{{ user.first_name|default:user.full_name }}"
+        value="{{ user.first_name }}"
         style="background:var(--navy);border:1.5px solid var(--navy-b);border-radius:8px;padding:10px;color:var(--text);font-family:Heebo,sans-serif">
-      <label style="font-size:.8rem;color:var(--muted)">שם מלא (אופציונלי)</label>
-      <input type="text" id="acc-full-name" maxlength="120" autocomplete="name"
-        value="{{ user.full_name }}"
+      <label style="font-size:.8rem;color:var(--muted)">שם משפחה</label>
+      <input type="text" id="acc-last-name" required minlength="2" maxlength="60" autocomplete="family-name"
+        value="{{ user.last_name }}"
         style="background:var(--navy);border:1.5px solid var(--navy-b);border-radius:8px;padding:10px;color:var(--text);font-family:Heebo,sans-serif">
       <label style="font-size:.8rem;color:var(--muted)">טלפון</label>
       <input type="tel" id="acc-phone" maxlength="20" autocomplete="tel"
-        value="{{ user.phone }}"
+        value="{{ user.phone }}" dir="ltr"
         style="background:var(--navy);border:1.5px solid var(--navy-b);border-radius:8px;padding:10px;color:var(--text);font-family:Heebo,sans-serif">
       <label style="font-size:.8rem;color:var(--muted)">אימייל (לא ניתן לשינוי)</label>
       <input type="email" id="acc-email" disabled value="{{ user.email }}"
@@ -24,7 +28,7 @@
     </form>
     <p id="acc-msg" style="margin-top:12px;font-size:.82rem;text-align:center;display:none"></p>
     <p style="margin-top:16px;text-align:center;font-size:.8rem">
-      <a href="/classic/profile.html" style="color:var(--gold)">ארנק ומנוי (ממשק מורחב)</a>
+      <a href="/classic/profile.html" style="color:var(--gold)">פרופיל · ארנק ומנוי</a>
       · <a href="/" style="color:var(--muted)">חזרה לאתר</a>
     </p>
   </div>
@@ -49,8 +53,9 @@ document.getElementById('account-form').addEventListener('submit', async functio
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
       body: JSON.stringify({
+        username: document.getElementById('acc-username').value.trim().toLowerCase(),
         first_name: document.getElementById('acc-first-name').value.trim(),
-        full_name: document.getElementById('acc-full-name').value.trim(),
+        last_name: document.getElementById('acc-last-name').value.trim(),
         phone: document.getElementById('acc-phone').value.trim(),
       }),
     });
@@ -65,6 +70,8 @@ document.getElementById('account-form').addEventListener('submit', async functio
     const name = data.user.display_name || data.user.first_name;
     const nav = document.getElementById('nav-user-name');
     if (nav) nav.textContent = name;
+    const greet = document.getElementById('nav-user-greeting');
+    if (greet) greet.innerHTML = 'שלום <strong id="nav-user-name">' + name + '</strong>';
     document.body.dataset.userName = name;
   } catch (err) {
     msg.style.color = 'var(--loss)';
