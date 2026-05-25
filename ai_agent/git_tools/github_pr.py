@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from django.conf import settings
 
+from ai_agent.git_tools.github_config import clean_env_value, normalize_github_repo
+
 
 class GitHubPRError(RuntimeError):
     pass
@@ -14,9 +16,12 @@ def create_pull_request(
     title: str,
     body: str,
 ) -> tuple[int, str]:
-    token = getattr(settings, 'GITHUB_TOKEN', '') or ''
-    repo_name = getattr(settings, 'GITHUB_REPO', 'ihabah1/mendeles')
-    base = getattr(settings, 'GITHUB_DEFAULT_BRANCH', 'main')
+    token = clean_env_value(getattr(settings, 'GITHUB_TOKEN', '') or '')
+    try:
+        repo_name = normalize_github_repo(getattr(settings, 'GITHUB_REPO', 'ihabah1/mendeles'))
+    except ValueError as exc:
+        raise GitHubPRError(str(exc)) from exc
+    base = clean_env_value(getattr(settings, 'GITHUB_DEFAULT_BRANCH', 'main') or 'main')
 
     if not token:
         raise GitHubPRError('GITHUB_TOKEN לא מוגדר')

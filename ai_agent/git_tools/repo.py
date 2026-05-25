@@ -11,6 +11,7 @@ from pathlib import Path
 from django.conf import settings
 from django.utils import timezone
 
+from ai_agent.git_tools.github_config import clean_env_value, normalize_github_repo, redact_git_message
 from ai_agent.services.path_guard import extract_paths_from_diff, normalize_repo_path, validate_diff_paths
 
 GIT_BIN = 'git'
@@ -31,15 +32,22 @@ def _run(cmd: list[str], cwd: Path, env: dict | None = None) -> str:
         check=False,
     )
     if result.returncode != 0:
-        raise GitToolError(
-            f"git failed ({' '.join(cmd)}): {result.stderr or result.stdout}",
+        err = redact_git_message(result.stderr or result.stdout or '')
+        cmd_safe = ' '.join(
+            '***' if arg.startswith('https://') and '@github.com' in arg else arg
+            for arg in cmd
         )
+        raise GitToolError(f'git failed ({cmd_safe}): {err}')
     return result.stdout
 
 
 def _auth_clone_url() -> str:
-    token = getattr(settings, 'GITHUB_TOKEN', '') or ''
-    repo = getattr(settings, 'GITHUB_REPO', 'ihabah1/mendeles')
+    token = clean_env_value(getattr(settings, 'GITHUB_TOKEN', '') or '')
+    repo_raw = getattr(settings, 'GITHUB_REPO', 'ihabah1/mendeles')
+    try:
+        repo = normalize_github_repo(repo_raw)
+    except ValueError as exc:
+        raise GitToolError(str(exc)) from exc
     if not token:
         raise GitToolError('GITHUB_TOKEN לא מוגדר')
     return f'https://x-access-token:{token}@github.com/{repo}.git'

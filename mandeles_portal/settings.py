@@ -192,7 +192,14 @@ ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'admin@admin.com')
 AI_AGENT_ENABLED = os.getenv('AI_AGENT_ENABLED', 'false').lower() in ('1', 'true', 'yes')
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
 GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash')
-GITHUB_TOKEN = os.getenv('GITHUB_TOKEN', '')
-GITHUB_REPO = os.getenv('GITHUB_REPO', 'ihabah1/mendeles')
-GITHUB_DEFAULT_BRANCH = os.getenv('GITHUB_DEFAULT_BRANCH', 'main')
+def _env_clean(key: str, default: str = '') -> str:
+    return (os.getenv(key, default) or default).strip().replace('\r', '').replace('\n', '')
+
+
+GITHUB_TOKEN = _env_clean('GITHUB_TOKEN')
+_github_repo_raw = _env_clean('GITHUB_REPO', 'ihabah1/mendeles')
+if _github_repo_raw.endswith('.git'):
+    _github_repo_raw = _github_repo_raw[:-4].rstrip('/')
+GITHUB_REPO = _github_repo_raw
+GITHUB_DEFAULT_BRANCH = _env_clean('GITHUB_DEFAULT_BRANCH', 'main')
 AI_AGENT_WORK_DIR = os.getenv('AI_AGENT_WORK_DIR', '/tmp/ai-agent-repos')
