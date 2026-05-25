@@ -25,7 +25,7 @@
       <span id="engine-lbl" style="font-size:.68rem;color:var(--muted);white-space:nowrap;display:none"></span>
     </div>
     {% if user %}
-      <span class="nav-greeting">יופי {{ user.username }}</span>
+      <span class="nav-greeting">{{ user.username }}</span>
       <span class="wallet-badge" id="nav-wallet" style="display:none"></span>
       <button type="button" id="user-avatar" aria-label="פרופיל" style="display:none"></button>
     {% else %}
