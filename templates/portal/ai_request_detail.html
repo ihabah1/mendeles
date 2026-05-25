@@ -14,16 +14,6 @@
   <a href="{% url 'portal:ai_requests' %}" class="btn btn-outline">← רשימה</a>
 </div>
 
-<div class="ai-countdown-overlay" id="ai-countdown-overlay" style="display:none" aria-live="polite">
-  <div class="ai-countdown-card">
-    <div class="ai-countdown-clock ai-hourglass" id="ai-hourglass">⏳</div>
-    <div class="ai-countdown-label">Git מתעדכן · המתן</div>
-    <div class="ai-countdown-seconds" id="ai-countdown-seconds">02:00</div>
-    <div class="ai-countdown-sub">שעון חול 2 דקות · PR ב-GitHub · Railway ימשוך deploy</div>
-    <div class="ai-countdown-pr" id="ai-countdown-pr"></div>
-  </div>
-</div>
-
 {% if req.error_message %}
 <div class="alert alert-error" id="ai-error-banner">{{ req.error_message }}</div>
 {% endif %}
@@ -83,6 +73,9 @@
   <a href="{{ req.pr_url }}" target="_blank" rel="noopener" style="color:var(--green);font-weight:700">פתח Pull Request #{{ req.pr_number }}</a>
   {% if req.branch_name %} · ענף: <code>{{ req.branch_name }}</code>{% endif %}
 </div>
+<div class="alert alert-success" id="ai-deploy-hint" style="margin-bottom:16px;font-size:.85rem">
+  ה-PR נוצר ב-GitHub (ענף נפרד). <strong>Railway יבנה רק אחרי Merge ל-main</strong> – עד אז האתר לא משתנה.
+</div>
 {% endif %}
 
 {% if req.files_touched %}
@@ -105,9 +98,6 @@
   const spinner = document.getElementById('ai-log-spinner');
   const statusLabel = document.getElementById('ai-status-label');
   const hint = document.getElementById('ai-hint');
-  const overlay = document.getElementById('ai-countdown-overlay');
-  const countdownEl = document.getElementById('ai-countdown-seconds');
-  const countdownPr = document.getElementById('ai-countdown-pr');
 
   function getCookie(name) {
     const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
@@ -136,10 +126,29 @@
     if (spinner) spinner.style.display = 'none';
   }
 
-  function formatCountdown(secs) {
-    var m = Math.floor(secs / 60);
-    var s = secs % 60;
-    return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+  function showPrSuccess(prUrl, prNumber) {
+    unlockApproveFlow();
+    var actions = document.getElementById('ai-actions');
+    if (!actions || !actions.parentNode) return;
+    var banner = document.getElementById('ai-pr-banner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.className = 'alert alert-success';
+      banner.id = 'ai-pr-banner';
+      banner.style.marginBottom = '16px';
+      actions.parentNode.insertBefore(banner, actions);
+    }
+    banner.innerHTML = '<a href="' + prUrl + '" target="_blank" rel="noopener" style="color:var(--green);font-weight:700">פתח Pull Request #' + (prNumber || '') + '</a>';
+    var deployHint = document.getElementById('ai-deploy-hint');
+    if (!deployHint) {
+      deployHint = document.createElement('div');
+      deployHint.className = 'alert alert-success';
+      deployHint.id = 'ai-deploy-hint';
+      deployHint.style.marginBottom = '16px';
+      deployHint.style.fontSize = '.85rem';
+      actions.parentNode.insertBefore(deployHint, actions);
+    }
+    deployHint.innerHTML = 'ה-PR נוצר ב-GitHub (ענף נפרד). <strong>Railway יבנה רק אחרי Merge ל-main</strong> – עד אז האתר לא משתנה.';
   }
 
   function renderLogs(logs) {
@@ -156,37 +165,6 @@
   function pollStatus(statusUrl) {
     return fetch(statusUrl, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
       .then(function (r) { return r.json(); });
-  }
-
-  function startDeployCountdown(seconds, prUrl, prNumber, onDone) {
-    if (!overlay || !countdownEl) {
-      if (onDone) onDone();
-      return;
-    }
-    var left = seconds;
-    countdownEl.textContent = formatCountdown(left);
-    if (countdownPr && prUrl) {
-      countdownPr.innerHTML = '<a href="' + prUrl + '" target="_blank" rel="noopener">PR #' + (prNumber || '') + '</a>';
-    }
-    overlay.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-    lockApproveFlow();
-
-    var tick = setInterval(function () {
-      left -= 1;
-      countdownEl.textContent = formatCountdown(Math.max(0, left));
-      if (left <= 0) {
-        clearInterval(tick);
-        overlay.style.display = 'none';
-        document.body.style.overflow = '';
-        unlockApproveFlow();
-        if (onDone) {
-          onDone();
-        } else {
-          window.location.reload();
-        }
-      }
-    }, 1000);
   }
 
   function startStatusPolling(statusUrl, onUpdate) {
@@ -279,31 +257,7 @@
           }
           btnApprove.style.display = 'none';
           if (res.data.pr_url) {
-            var banner = document.getElementById('ai-pr-banner');
-            if (!banner) {
-              banner = document.createElement('div');
-              banner.className = 'alert alert-success';
-              banner.id = 'ai-pr-banner';
-              banner.style.marginBottom = '16px';
-              banner.innerHTML = '<a href="' + res.data.pr_url + '" target="_blank" rel="noopener" style="color:var(--green);font-weight:700">פתח Pull Request #' + (res.data.pr_number || '') + '</a>';
-              var actions = document.getElementById('ai-actions');
-              if (actions && actions.parentNode) actions.parentNode.insertBefore(banner, actions);
-            }
-          }
-          if (res.data.start_countdown) {
-            startDeployCountdown(
-              res.data.countdown_seconds || 120,
-              res.data.pr_url,
-              res.data.pr_number,
-              function () {
-                var done = document.createElement('div');
-                done.className = 'alert alert-success';
-                done.style.marginBottom = '16px';
-                done.textContent = 'הנעילה שוחררה – אם מיזגת את ה-PR, השינויים יופיעו באתר לאחר deploy ב-Railway.';
-                var actions = document.getElementById('ai-actions');
-                if (actions && actions.parentNode) actions.parentNode.insertBefore(done, actions);
-              }
-            );
+            showPrSuccess(res.data.pr_url, res.data.pr_number);
           } else {
             unlockApproveFlow();
             window.location.reload();
@@ -327,7 +281,7 @@
     if (data.status === 'pr_created') {
       clearInterval(prPoll);
       if (prBtn) prBtn.style.display = 'none';
-      startDeployCountdown(120, data.pr_url, data.pr_number);
+      showPrSuccess(data.pr_url, data.pr_number);
     } else if (data.status === 'failed') {
       clearInterval(prPoll);
       unlockApproveFlow();
@@ -336,9 +290,6 @@
   });
   {% endif %}
 
-  {% if show_deploy_countdown %}
-  startDeployCountdown({{ deploy_countdown_seconds }}, '{{ req.pr_url|escapejs }}', {{ req.pr_number|default:"0" }});
-  {% endif %}
 })();
 </script>
 {% endblock %}

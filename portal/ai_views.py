@@ -87,10 +87,6 @@ def ai_request_detail(request, pk):
         return redirect('portal:ai_requests')
     is_generating = obj.status == AIChangeRequest.Status.GENERATING
     is_pr_creating = obj.status == AIChangeRequest.Status.PR_CREATING
-    show_deploy_countdown = (
-        request.GET.get('deploy_countdown') == '1'
-        and obj.status == AIChangeRequest.Status.PR_CREATED
-    )
     return render(request, 'portal/ai_request_detail.html', {
         'req': obj,
         'can_generate': obj.status in (
@@ -104,8 +100,6 @@ def ai_request_detail(request, pk):
         ) and not is_generating and not is_pr_creating,
         'is_generating': is_generating,
         'is_pr_creating': is_pr_creating,
-        'show_deploy_countdown': show_deploy_countdown,
-        'deploy_countdown_seconds': 120,
         'status_url': reverse('portal:ai_request_status', kwargs={'pk': pk}),
         'generate_url': reverse('portal:ai_request_generate', kwargs={'pk': pk}),
         'approve_url': reverse('portal:ai_request_approve', kwargs={'pk': pk}),
@@ -167,14 +161,9 @@ def ai_request_approve(request, pk):
         approve_and_create_pr(obj)
         obj.refresh_from_db()
         if ajax:
-            return JsonResponse({
-                **_status_payload(obj),
-                'start_countdown': True,
-                'countdown_seconds': 120,
-            })
+            return JsonResponse(_status_payload(obj))
         messages.success(request, f'PR נוצר: {obj.pr_url}')
-        url = reverse('portal:ai_request_detail', kwargs={'pk': pk})
-        return redirect(f'{url}?deploy_countdown=1')
+        return redirect('portal:ai_request_detail', pk=pk)
     except Exception as exc:
         obj.refresh_from_db()
         if ajax:
