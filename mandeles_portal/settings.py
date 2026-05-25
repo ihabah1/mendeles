@@ -74,6 +74,7 @@ INSTALLED_APPS = [
 
 # שירותי Flask מקומיים (לוטו / ארנק / טוטו) – פרוקסי דרך Django
 LEGACY_SERVICES_ENABLED = os.getenv('LEGACY_SERVICES_ENABLED', 'true').lower() in ('1', 'true', 'yes')
+LEGACY_AUTO_START = os.getenv('LEGACY_AUTO_START', 'true').lower() in ('1', 'true', 'yes')
 LEGACY_ENGINE_URL = os.getenv('LEGACY_ENGINE_URL', 'http://127.0.0.1:5001')
 LEGACY_AUTH_URL = os.getenv('LEGACY_AUTH_URL', 'http://127.0.0.1:5002')
 LEGACY_WALLET_URL = os.getenv('LEGACY_WALLET_URL', 'http://127.0.0.1:5003')

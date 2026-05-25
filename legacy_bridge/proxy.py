@@ -84,11 +84,7 @@ def proxy_request(request, backend_key: str, path_prefix: str) -> HttpResponse:
 
 
 def check_backends_health() -> dict:
-    out = {}
-    for name, base in _backend_urls().items():
-        try:
-            r = requests.get(f'{base.rstrip("/")}/health', timeout=2)
-            out[name] = {'ok': r.ok, 'code': r.status_code}
-        except Exception as exc:
-            out[name] = {'ok': False, 'error': str(exc)}
-    return out
+    """תאימות לאחור – משתמש ב-health_status המלא."""
+    from .health_status import check_backends_health as _full_check
+
+    return _full_check()

@@ -10,7 +10,11 @@ from django.shortcuts import redirect
 from django.views.decorators.http import require_GET
 from portal.decorators import admin_required
 
-from .proxy import check_backends_health, legacy_services_enabled, proxy_request
+from .health_status import (
+    check_backends_health,
+    integration_dashboard_context,
+)
+from .proxy import legacy_services_enabled, proxy_request
 
 BASE_DIR = Path(settings.BASE_DIR)
 
@@ -91,11 +95,8 @@ def integration_status(request):
 def integration_page(request):
     from django.shortcuts import render
 
-    health = check_backends_health()
-    return render(request, 'legacy_bridge/integration.html', {
-        'enabled': legacy_services_enabled(),
-        'health': health,
-    })
+    ctx = integration_dashboard_context()
+    return render(request, 'legacy_bridge/integration.html', ctx)
 
 
 def admin_browser_entry(request):

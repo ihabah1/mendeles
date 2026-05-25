@@ -11,6 +11,12 @@ python manage.py setup_portal
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
+if [ "${LEGACY_AUTO_START:-true}" != "false" ] && [ "${LEGACY_SERVICES_ENABLED:-true}" != "false" ]; then
+  echo "Starting legacy lotto services in background..."
+  python scripts/start_legacy_background.py || true
+  sleep 6
+fi
+
 echo "Starting gunicorn on port ${PORT:-8000}..."
 exec gunicorn mandeles_portal.wsgi:application \
   --bind "0.0.0.0:${PORT:-8000}" \
