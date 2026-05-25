@@ -10,6 +10,19 @@
 | `http://127.0.0.1:8000/manage/login/` | **כניסת מנהל** לדשבורד ניהול |
 | `http://127.0.0.1:8000/manage/` | דשבורד ניהול (לקוחות, הזמנות, אשראי…) |
 | `http://127.0.0.1:8000/django-admin/` | Django Admin מסורתי (אופציונלי) |
+| `http://127.0.0.1:8000/classic/new_stite.html` | ממשק לוטו קלאסי (HTML + Flask API) |
+| `http://127.0.0.1:8000/manage/integration/` | סטטוס אינטגרציה Django ↔ לוטו |
+
+### הרצה עם שירותי לוטו (ארנק / מנוע / API)
+
+```powershell
+.\run.ps1 -Legacy
+```
+
+או בטרמינל נפרד: `python start_all.py` ואז `python manage.py runserver 8000`.
+
+- **React + `/api/auth/`** → משתמשי Django (`accounts.User`)
+- **`/auth/`, `/lotto/`** → ממשק קלאסי (Flask, `data/auth.db`)
 
 ### מה **לא** דף ראשי
 

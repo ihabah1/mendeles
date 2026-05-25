@@ -69,7 +69,16 @@ INSTALLED_APPS = [
     'portal',
     'web',
     'ai_agent',
+    'legacy_bridge',
 ]
+
+# שירותי Flask מקומיים (לוטו / ארנק / טוטו) – פרוקסי דרך Django
+LEGACY_SERVICES_ENABLED = os.getenv('LEGACY_SERVICES_ENABLED', 'true').lower() in ('1', 'true', 'yes')
+LEGACY_ENGINE_URL = os.getenv('LEGACY_ENGINE_URL', 'http://127.0.0.1:5001')
+LEGACY_AUTH_URL = os.getenv('LEGACY_AUTH_URL', 'http://127.0.0.1:5002')
+LEGACY_WALLET_URL = os.getenv('LEGACY_WALLET_URL', 'http://127.0.0.1:5003')
+LEGACY_LOTTO_API_URL = os.getenv('LEGACY_LOTTO_API_URL', 'http://127.0.0.1:5000')
+LEGACY_PROXY_TIMEOUT = int(os.getenv('LEGACY_PROXY_TIMEOUT', '120'))
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

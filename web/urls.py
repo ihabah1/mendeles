@@ -10,7 +10,6 @@ urlpatterns = [
     path('api/auth/register/', auth_api.register_view, name='auth-register'),
     path('api/auth/login/', auth_api.login_view, name='auth-login'),
     path('api/auth/logout/', auth_api.logout_view, name='auth-logout'),
-    path('admin/', RedirectView.as_view(url='/manage/customers/', permanent=False)),
     path('dashboard/', RedirectView.as_view(url='/manage/customers/', permanent=False)),
     path('777/', RedirectView.as_view(url='/', permanent=False)),
     path('', views.spa, name='spa-home'),

@@ -7,8 +7,9 @@ from django.urls import include, path
 urlpatterns = [
     path('django-admin/', admin.site.urls),
     path('', include('portal.urls')),
-    path('accounts/', include('accounts.urls')),
+    path('', include('legacy_bridge.urls')),
     path('', include('web.urls')),
+    path('accounts/', include('accounts.urls')),
 ]
 
 if settings.DEBUG:
