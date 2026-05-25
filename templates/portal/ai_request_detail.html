@@ -163,7 +163,7 @@
         if (actions && actions.parentNode) {
           actions.parentNode.insertBefore(done, actions);
         }
-        window.location.reload();
+        window.location.href = '{% url "portal:ai_requests" %}';
       }
     }, 1000);
   }
@@ -224,7 +224,7 @@
         if (statusLabel) statusLabel.textContent = data.status_label || '';
         if (data.done) {
           clearInterval(recoverPoll);
-          window.location.reload();
+          window.location.href = '{% url "portal:ai_requests" %}';
         }
       });
     }, 1000);
@@ -254,7 +254,7 @@
               res.data.pr_number
             );
           } else {
-            window.location.reload();
+            window.location.href = '{% url "portal:ai_requests" %}';
           }
         })
         .catch(function (err) {
@@ -276,7 +276,7 @@
         startDeployCountdown(90, data.pr_url, data.pr_number);
       } else if (data.done && data.status === 'failed') {
         clearInterval(prPoll);
-        window.location.reload();
+        window.location.href = '{% url "portal:ai_requests" %}';
       }
     });
   }, 1000);

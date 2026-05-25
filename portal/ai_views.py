@@ -77,7 +77,13 @@ def ai_request_create(request):
 @admin_required
 def ai_request_detail(request, pk):
     _require_ai_enabled()
-    obj = get_object_or_404(AIChangeRequest, pk=pk)
+    obj = AIChangeRequest.objects.filter(pk=pk).first()
+    if not obj:
+        messages.warning(
+            request,
+            f'בקשה #{pk} לא נמצאה. ייתכן שהמסד אופס (SQLite ב-Railway). צור בקשה חדשה.',
+        )
+        return redirect('portal:ai_requests')
     is_generating = obj.status == AIChangeRequest.Status.GENERATING
     is_pr_creating = obj.status == AIChangeRequest.Status.PR_CREATING
     show_deploy_countdown = (
