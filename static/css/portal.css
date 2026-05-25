@@ -116,6 +116,13 @@ tr:hover td{background:rgba(201,168,76,.03)}
 .login-card p{color:var(--muted);font-size:.78rem;margin-bottom:22px}
 .card-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:18px 20px;margin-bottom:16px}
 .diff-preview{background:#0d1117;color:#e6edf3;padding:14px;border-radius:var(--r);font-family:var(--mono);font-size:11px;line-height:1.45;max-height:480px;overflow:auto;direction:ltr;text-align:left;white-space:pre;word-break:break-all;border:1px solid var(--border)}
+.ai-log-list{list-style:none;max-height:220px;overflow-y:auto;font-family:var(--mono);font-size:.72rem;line-height:1.6;background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px}
+.ai-log-list li{padding:4px 0;border-bottom:1px solid rgba(30,48,72,.4)}
+.ai-log-list li:last-child{border-bottom:none}
+.ai-log-ts{color:var(--gold);margin-left:8px}
+.ai-log-spinner{font-size:.85rem;animation:ai-pulse 1s ease-in-out infinite}
+@keyframes ai-pulse{50%{opacity:.4}}
+button.btn:disabled{opacity:.65;cursor:not-allowed!important}
 .menu-toggle{display:none;background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer}
 @media(max-width:768px){
   .sidebar{transform:translateX(100%)}

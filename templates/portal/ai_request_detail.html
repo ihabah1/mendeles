@@ -6,7 +6,7 @@
   <div>
     <div class="page-title">{{ req.prompt|truncatechars:80 }}</div>
     <div class="page-sub">
-      סטטוס: <strong>{{ req.get_status_display }}</strong>
+      סטטוס: <strong id="ai-status-label">{{ req.get_status_display }}</strong>
       {% if req.created_by %} · {{ req.created_by.email }}{% endif %}
       · {{ req.created_at|date:"Y-m-d H:i" }}
     </div>
@@ -15,7 +15,7 @@
 </div>
 
 {% if req.error_message %}
-<div class="alert alert-error">{{ req.error_message }}</div>
+<div class="alert alert-error" id="ai-error-banner">{{ req.error_message }}</div>
 {% endif %}
 
 <div class="card-panel" style="margin-bottom:16px">
@@ -23,23 +23,43 @@
   <p style="white-space:pre-wrap;line-height:1.6">{{ req.prompt }}</p>
 </div>
 
-<div class="ai-actions" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+<div class="card-panel ai-log-panel" id="ai-log-panel" style="{% if not req.processing_log and not is_generating %}display:none{% endif %}">
+  <div class="form-label" style="margin-bottom:8px;display:flex;align-items:center;gap:8px">
+    <span>לוג עיבוד</span>
+    <span class="ai-log-spinner" id="ai-log-spinner" style="{% if not is_generating %}display:none{% endif %}">⏳</span>
+  </div>
+  <ul class="ai-log-list" id="ai-log-list">
+    {% for line in req.processing_log %}
+    <li><span class="ai-log-ts">{{ line.ts }}</span> {{ line.msg }}</li>
+    {% endfor %}
+  </ul>
+</div>
+
+<div class="ai-actions" id="ai-actions" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
   {% if can_generate %}
-  <form method="post" action="{% url 'portal:ai_request_generate' req.pk %}">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-gold">ייצר diff (Gemini)</button>
-  </form>
+  <button type="button" class="btn btn-gold" id="btn-generate-diff"
+    data-url="{{ generate_url }}"
+    data-status-url="{{ status_url }}">
+    ייצר diff (Gemini)
+  </button>
+  {% endif %}
+  {% if is_generating %}
+  <button type="button" class="btn btn-gold" id="btn-generate-diff" disabled
+    data-url="{{ generate_url }}"
+    data-status-url="{{ status_url }}">
+    מייצר diff…
+  </button>
   {% endif %}
   {% if can_approve %}
   <form method="post" action="{% url 'portal:ai_request_approve' req.pk %}" onsubmit="return confirm('לאשר את ה-diff וליצור Pull Request?');">
     {% csrf_token %}
-    <button type="submit" class="btn btn-green">אשר ויצור PR</button>
+    <button type="submit" class="btn btn-green ai-action-btn">אשר ויצור PR</button>
   </form>
   {% endif %}
   {% if can_reject %}
   <form method="post" action="{% url 'portal:ai_request_reject' req.pk %}">
     {% csrf_token %}
-    <button type="submit" class="btn btn-red">דחה</button>
+    <button type="submit" class="btn btn-red ai-action-btn">דחה</button>
   </form>
   {% endif %}
 </div>
@@ -61,6 +81,109 @@
   <pre class="diff-preview">{{ req.result }}</pre>
 </div>
 {% elif req.status == 'draft' or req.status == 'failed' %}
-<p style="color:var(--muted);font-size:.85rem">לחץ "ייצר diff" כדי ליצור את השינוי המוצע.</p>
+<p style="color:var(--muted);font-size:.85rem" id="ai-hint">לחץ "ייצר diff" כדי ליצור את השינוי המוצע.</p>
 {% endif %}
+
+<script>
+(function () {
+  const btn = document.getElementById('btn-generate-diff');
+  const logPanel = document.getElementById('ai-log-panel');
+  const logList = document.getElementById('ai-log-list');
+  const spinner = document.getElementById('ai-log-spinner');
+  const statusLabel = document.getElementById('ai-status-label');
+  const hint = document.getElementById('ai-hint');
+  if (!btn || !logList) return;
+
+  function getCookie(name) {
+    const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    return m ? decodeURIComponent(m[2]) : '';
+  }
+
+  function setBusy(busy) {
+    btn.disabled = busy;
+    btn.textContent = busy ? 'מייצר diff… (נא להמתין)' : 'ייצר diff (Gemini)';
+    btn.style.opacity = busy ? '0.7' : '1';
+    btn.style.cursor = busy ? 'wait' : 'pointer';
+    if (spinner) spinner.style.display = busy ? 'inline' : 'none';
+    if (logPanel) logPanel.style.display = 'block';
+    document.querySelectorAll('.ai-action-btn').forEach(function (b) { b.disabled = busy; });
+  }
+
+  function renderLogs(logs) {
+    logList.innerHTML = '';
+    (logs || []).forEach(function (line) {
+      const li = document.createElement('li');
+      li.innerHTML = '<span class="ai-log-ts">' + (line.ts || '') + '</span> ' + (line.msg || '');
+      logList.appendChild(li);
+    });
+    logList.scrollTop = logList.scrollHeight;
+  }
+
+  function pollStatus(statusUrl) {
+    return fetch(statusUrl, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+      .then(function (r) { return r.json(); });
+  }
+
+  function runGenerate() {
+    const generateUrl = btn.dataset.url;
+    const statusUrl = btn.dataset.statusUrl;
+    setBusy(true);
+    if (hint) hint.style.display = 'none';
+
+    const pollId = setInterval(function () {
+      pollStatus(statusUrl).then(function (data) {
+        renderLogs(data.logs);
+        if (statusLabel) statusLabel.textContent = data.status_label || data.status;
+      }).catch(function () {});
+    }, 800);
+
+    fetch(generateUrl, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'X-CSRFToken': getCookie('csrftoken'),
+        'X-Requested-With': 'XMLHttpRequest',
+        Accept: 'application/json',
+      },
+    })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+      .then(function (res) {
+        clearInterval(pollId);
+        renderLogs(res.data.logs);
+        if (statusLabel) statusLabel.textContent = res.data.status_label || '';
+        if (res.data.ok && res.data.redirect) {
+          window.location.href = res.data.redirect;
+          return;
+        }
+        setBusy(false);
+        if (!res.ok && res.data.error) {
+          alert(res.data.error);
+        } else if (res.data.redirect) {
+          window.location.href = res.data.redirect;
+        }
+      })
+      .catch(function (err) {
+        clearInterval(pollId);
+        setBusy(false);
+        alert('שגיאת רשת: ' + err);
+      });
+  }
+
+  btn.addEventListener('click', runGenerate);
+
+  {% if is_generating %}
+  setBusy(true);
+  const recoverPoll = setInterval(function () {
+    pollStatus(btn.dataset.statusUrl).then(function (data) {
+      renderLogs(data.logs);
+      if (statusLabel) statusLabel.textContent = data.status_label || '';
+      if (data.done) {
+        clearInterval(recoverPoll);
+        window.location.reload();
+      }
+    });
+  }, 1000);
+  {% endif %}
+})();
+</script>
 {% endblock %}

@@ -23,15 +23,15 @@ class AIChangeRequestAdmin(admin.ModelAdmin):
     search_fields = ('prompt', 'branch_name', 'error_message')
     readonly_fields = (
         'status', 'result', 'error_message', 'branch_name',
-        'pr_url', 'pr_number', 'files_touched', 'created_by',
-        'created_at', 'updated_at', 'diff_preview',
+        'pr_url', 'pr_number', 'files_touched', 'processing_log',
+        'created_by', 'created_at', 'updated_at', 'diff_preview',
     )
     fieldsets = (
         ('בקשה', {
             'fields': ('prompt', 'status', 'created_by', 'created_at', 'updated_at'),
         }),
         ('תוצאה', {
-            'fields': ('diff_preview', 'result', 'files_touched', 'error_message'),
+            'fields': ('diff_preview', 'result', 'files_touched', 'processing_log', 'error_message'),
         }),
         ('Git / PR', {
             'fields': ('branch_name', 'pr_number', 'pr_url'),

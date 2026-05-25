@@ -26,6 +26,7 @@ class AIChangeRequest(models.Model):
     pr_url = models.URLField('קישור PR', blank=True)
     pr_number = models.PositiveIntegerField(null=True, blank=True)
     files_touched = models.JSONField(default=list, blank=True)
+    processing_log = models.JSONField('לוג עיבוד', default=list, blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -45,3 +46,18 @@ class AIChangeRequest(models.Model):
     def __str__(self):
         preview = (self.prompt or '')[:60]
         return f'#{self.pk} {preview} ({self.get_status_display()})'
+
+    def clear_log(self):
+        self.processing_log = []
+        self.save(update_fields=['processing_log', 'updated_at'])
+
+    def append_log(self, message: str):
+        from django.utils import timezone
+
+        logs = list(self.processing_log or [])
+        logs.append({
+            'ts': timezone.localtime().strftime('%H:%M:%S'),
+            'msg': message,
+        })
+        self.processing_log = logs
+        self.save(update_fields=['processing_log', 'updated_at'])

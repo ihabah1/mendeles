@@ -1,6 +1,7 @@
 """יצירת unified diff באמצעות Gemini API."""
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 
 from django.conf import settings
@@ -27,7 +28,15 @@ def _build_user_prompt(request_prompt: str, files: list[tuple[str, str]]) -> str
     return '\n'.join(parts)
 
 
-def generate_diff(prompt: str, base_dir: Path | None = None) -> str:
+def generate_diff(
+    prompt: str,
+    base_dir: Path | None = None,
+    log_callback: Callable[[str], None] | None = None,
+) -> str:
+    def log(msg: str):
+        if log_callback:
+            log_callback(msg)
+
     api_key = getattr(settings, 'GEMINI_API_KEY', '') or ''
     if not api_key:
         raise GeminiServiceError('GEMINI_API_KEY לא מוגדר')
@@ -42,7 +51,9 @@ def generate_diff(prompt: str, base_dir: Path | None = None) -> str:
     if not files:
         raise GeminiServiceError('לא נמצאו קבצים מותרים בפרויקט')
 
+    log(f'נקראו {len(files)} קבצים לקונטקסט')
     model_name = getattr(settings, 'GEMINI_MODEL', 'gemini-2.5-flash')
+    log(f'שולח בקשה ל-Gemini ({model_name})…')
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel(
         model_name=model_name,
@@ -56,6 +67,7 @@ def generate_diff(prompt: str, base_dir: Path | None = None) -> str:
             'max_output_tokens': 8192,
         },
     )
+    log('תשובה התקבלה מ-Gemini – מעבד diff…')
 
     raw = (response.text or '').strip()
     if not raw:

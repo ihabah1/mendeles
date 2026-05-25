@@ -19,8 +19,8 @@ def _branch_name(request: AIChangeRequest) -> str:
     return f'ai-agent/{request.pk or "new"}-{ts}-{slug or "change"}'[:80]
 
 
-@transaction.atomic
 def generate_diff_for_request(request: AIChangeRequest) -> AIChangeRequest:
+    """ללא transaction.atomic – שומר לוג ל-DB בזמן אמת ל-polling."""
     if request.status not in (
         AIChangeRequest.Status.DRAFT,
         AIChangeRequest.Status.FAILED,
@@ -28,21 +28,33 @@ def generate_diff_for_request(request: AIChangeRequest) -> AIChangeRequest:
     ):
         raise ValueError('לא ניתן לייצר diff בסטטוס הנוכחי')
 
+    request.clear_log()
+    request.append_log('מתחיל עיבוד בקשה…')
     request.status = AIChangeRequest.Status.GENERATING
     request.error_message = ''
     request.save(update_fields=['status', 'error_message', 'updated_at'])
 
+    def log(msg: str):
+        request.append_log(msg)
+
     try:
-        diff = generate_diff(request.prompt)
+        log('טוען קבצים מותרים (templates/, static/)…')
+        diff = generate_diff(request.prompt, log_callback=log)
         from .path_guard import extract_paths_from_diff
 
+        log('מאמת מבנה diff ונתיבים…')
+        paths = extract_paths_from_diff(diff)
+        log(f'נמצאו {len(paths)} קבצים: {", ".join(paths[:5])}{"…" if len(paths) > 5 else ""}')
+
         request.result = diff
-        request.files_touched = extract_paths_from_diff(diff)
+        request.files_touched = paths
         request.status = AIChangeRequest.Status.DIFF_READY
         request.error_message = ''
+        request.append_log('הושלם – diff מוכן לבדיקה')
     except (GeminiServiceError, ValueError) as exc:
         request.status = AIChangeRequest.Status.FAILED
         request.error_message = str(exc)
+        request.append_log(f'שגיאה: {exc}')
         request.save(update_fields=['status', 'error_message', 'updated_at'])
         raise
 
@@ -57,18 +69,23 @@ def approve_and_create_pr(request: AIChangeRequest) -> AIChangeRequest:
     if not request.result.strip():
         raise ValueError('אין diff ליישום')
 
+    request.clear_log()
+    request.append_log('מאשר בקשה…')
     request.status = AIChangeRequest.Status.APPROVED
     request.save(update_fields=['status', 'updated_at'])
 
     request.status = AIChangeRequest.Status.PR_CREATING
+    request.append_log('מכין ענף Git…')
     request.save(update_fields=['status', 'updated_at'])
 
     branch = request.branch_name or _branch_name(request)
     request.branch_name = branch
 
     try:
+        request.append_log(f'מיישם diff על ענף {branch}…')
         touched = apply_diff_and_push(request.pk, request.result, branch)
         request.files_touched = touched
+        request.append_log('דוחף ל-GitHub…')
 
         pr_number, pr_url = create_pull_request(
             branch_name=branch,
@@ -84,9 +101,11 @@ def approve_and_create_pr(request: AIChangeRequest) -> AIChangeRequest:
         request.pr_url = pr_url
         request.status = AIChangeRequest.Status.PR_CREATED
         request.error_message = ''
+        request.append_log(f'PR #{pr_number} נוצר בהצלחה')
     except (GitToolError, GitHubPRError, ValueError) as exc:
         request.status = AIChangeRequest.Status.FAILED
         request.error_message = str(exc)
+        request.append_log(f'שגיאה: {exc}')
         request.save(update_fields=['status', 'error_message', 'branch_name', 'updated_at'])
         raise
 

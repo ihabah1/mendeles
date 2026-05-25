@@ -29,6 +29,7 @@ urlpatterns = [
     path(f'{_prefix}/ai/', ai_views.ai_requests_list, name='ai_requests'),
     path(f'{_prefix}/ai/new/', ai_views.ai_request_create, name='ai_request_create'),
     path(f'{_prefix}/ai/<int:pk>/', ai_views.ai_request_detail, name='ai_request_detail'),
+    path(f'{_prefix}/ai/<int:pk>/status/', ai_views.ai_request_status, name='ai_request_status'),
     path(f'{_prefix}/ai/<int:pk>/generate/', ai_views.ai_request_generate, name='ai_request_generate'),
     path(f'{_prefix}/ai/<int:pk>/approve/', ai_views.ai_request_approve, name='ai_request_approve'),
     path(f'{_prefix}/ai/<int:pk>/reject/', ai_views.ai_request_reject, name='ai_request_reject'),

@@ -1,9 +1,10 @@
 """בקשות שינוי AI בדשבורד /manage/."""
 from django.conf import settings
 from django.contrib import messages
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_POST
+from django.urls import reverse
+from django.views.decorators.http import require_GET, require_POST
 
 from portal.decorators import admin_required
 from portal.forms import AIChangeRequestForm
@@ -23,6 +24,30 @@ def _ai_available() -> bool:
 def _require_ai_enabled():
     if not _ai_available():
         raise Http404
+
+
+def _wants_json(request) -> bool:
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return True
+    accept = request.headers.get('Accept', '')
+    return 'application/json' in accept
+
+
+def _status_payload(obj: AIChangeRequest) -> dict:
+    return {
+        'id': obj.pk,
+        'status': obj.status,
+        'status_label': obj.get_status_display(),
+        'logs': obj.processing_log or [],
+        'error': obj.error_message or '',
+        'generating': obj.status == AIChangeRequest.Status.GENERATING,
+        'done': obj.status in (
+            AIChangeRequest.Status.DIFF_READY,
+            AIChangeRequest.Status.FAILED,
+            AIChangeRequest.Status.PR_CREATED,
+        ),
+        'ok': obj.status == AIChangeRequest.Status.DIFF_READY,
+    }
 
 
 @admin_required
@@ -51,18 +76,30 @@ def ai_request_create(request):
 def ai_request_detail(request, pk):
     _require_ai_enabled()
     obj = get_object_or_404(AIChangeRequest, pk=pk)
+    is_generating = obj.status == AIChangeRequest.Status.GENERATING
     return render(request, 'portal/ai_request_detail.html', {
         'req': obj,
         'can_generate': obj.status in (
             AIChangeRequest.Status.DRAFT,
             AIChangeRequest.Status.FAILED,
-        ),
+        ) and not is_generating,
         'can_approve': obj.status == AIChangeRequest.Status.DIFF_READY and bool(obj.result),
         'can_reject': obj.status in (
             AIChangeRequest.Status.DIFF_READY,
             AIChangeRequest.Status.DRAFT,
-        ),
+        ) and not is_generating,
+        'is_generating': is_generating,
+        'status_url': reverse('portal:ai_request_status', kwargs={'pk': pk}),
+        'generate_url': reverse('portal:ai_request_generate', kwargs={'pk': pk}),
     })
+
+
+@admin_required
+@require_GET
+def ai_request_status(request, pk):
+    _require_ai_enabled()
+    obj = get_object_or_404(AIChangeRequest, pk=pk)
+    return JsonResponse(_status_payload(obj))
 
 
 @admin_required
@@ -70,11 +107,29 @@ def ai_request_detail(request, pk):
 def ai_request_generate(request, pk):
     _require_ai_enabled()
     obj = get_object_or_404(AIChangeRequest, pk=pk)
+    ajax = _wants_json(request)
+
+    if obj.status == AIChangeRequest.Status.GENERATING:
+        if ajax:
+            return JsonResponse({**_status_payload(obj), 'message': 'כבר בתהליך'})
+        messages.warning(request, 'הבקשה כבר בעיבוד')
+        return redirect('portal:ai_request_detail', pk=pk)
+
     try:
         generate_diff_for_request(obj)
+        obj.refresh_from_db()
+        if ajax:
+            return JsonResponse({
+                **_status_payload(obj),
+                'redirect': reverse('portal:ai_request_detail', kwargs={'pk': pk}),
+            })
         messages.success(request, 'ה-diff נוצר – בדוק לפני אישור PR')
     except Exception as exc:
+        obj.refresh_from_db()
+        if ajax:
+            return JsonResponse({**_status_payload(obj), 'ok': False}, status=400)
         messages.error(request, str(exc))
+
     return redirect('portal:ai_request_detail', pk=pk)
 
 

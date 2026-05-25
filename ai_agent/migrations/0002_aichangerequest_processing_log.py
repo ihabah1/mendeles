@@ -1,0 +1,16 @@
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('ai_agent', '0001_initial'),
+    ]
+
+    operations = [
+        migrations.AddField(
+            model_name='aichangerequest',
+            name='processing_log',
+            field=models.JSONField(blank=True, default=list, verbose_name='לוג עיבוד'),
+        ),
+    ]
