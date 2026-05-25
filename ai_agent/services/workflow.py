@@ -83,8 +83,17 @@ def approve_and_create_pr(request: AIChangeRequest) -> AIChangeRequest:
 
     try:
         request.append_log(f'מוריד/מעדכן clone מ-GitHub (ענף {branch})…')
-        request.append_log('מיישם patch על הקבצים…')
-        touched = apply_diff_and_push(request.pk, request.result, branch)
+        request.append_log('מיישם patch על הקבצים (git apply / גיבוי Python)…')
+        try:
+            touched = apply_diff_and_push(request.pk, request.result, branch)
+        except GitToolError as exc:
+            msg = str(exc)
+            if 'patch failed' in msg or 'does not apply' in msg:
+                raise GitToolError(
+                    'ה-diff לא תואם לקבצים ב-GitHub. לחץ "ייצר diff" מחדש '
+                    '(המערכת קוראת עכשיו מ-origin/main).',
+                ) from exc
+            raise
         request.files_touched = touched
         request.append_log(f'commit + push ל-origin/{branch} הושלם')
         request.append_log('יוצר Pull Request ב-GitHub…')

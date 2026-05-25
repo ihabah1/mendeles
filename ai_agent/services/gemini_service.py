@@ -103,6 +103,14 @@ def generate_diff(
         raise GeminiServiceError('חבילת google-generativeai לא מותקנת') from exc
 
     root = base_dir or settings.BASE_DIR
+    if getattr(settings, 'GITHUB_TOKEN', ''):
+        try:
+            from ai_agent.git_tools.repo import ensure_github_context_clone
+
+            root = ensure_github_context_clone()
+            log('קורא קבצים מ-GitHub (origin/main) ליצירת diff מדויק…')
+        except Exception as exc:
+            log(f'GitHub clone לקונטקסט: {exc} – משתמש בקבצי השרת')
     files = list_allowed_files(root)
     if not files:
         raise GeminiServiceError('לא נמצאו קבצים מותרים בפרויקט')

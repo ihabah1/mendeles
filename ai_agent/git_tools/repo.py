@@ -12,6 +12,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from ai_agent.git_tools.github_config import clean_env_value, normalize_github_repo, redact_git_message
+from ai_agent.git_tools.patch_apply import apply_unified_diff_to_repo
 from ai_agent.services.path_guard import extract_paths_from_diff, normalize_repo_path, validate_diff_paths
 
 GIT_BIN = 'git'
@@ -59,6 +60,11 @@ def _work_dir(request_id: int) -> Path:
     return base / f'req-{request_id}'
 
 
+def ensure_github_context_clone() -> Path:
+    """Clone מעודכן של origin/main – לקונטקסט Gemini וליישום patch."""
+    return _ensure_clone(_work_dir(0))
+
+
 def _ensure_clone(work: Path) -> Path:
     if (work / '.git').is_dir():
         _run([GIT_BIN, 'fetch', 'origin'], work)
@@ -81,12 +87,24 @@ def _apply_diff_with_patch(repo: Path, diff_text: str) -> list[str]:
         fh.write(diff_text)
         patch_path = fh.name
     try:
-        _run([GIT_BIN, 'apply', '--verbose', '--whitespace=nowarn', patch_path], repo)
+        _run(
+            [GIT_BIN, 'apply', '--verbose', '--whitespace=nowarn', '--ignore-space-change', patch_path],
+            repo,
+        )
+        return paths
     except GitToolError:
-        _run([GIT_BIN, 'apply', '--verbose', '--3way', patch_path], repo)
+        try:
+            _run([GIT_BIN, 'apply', '--verbose', '--3way', patch_path], repo)
+            return paths
+        except GitToolError:
+            pass
     finally:
         Path(patch_path).unlink(missing_ok=True)
-    return paths
+
+    try:
+        return apply_unified_diff_to_repo(repo, diff_text)
+    except ValueError as exc:
+        raise GitToolError(str(exc)) from exc
 
 
 def apply_diff_and_push(request_id: int, diff_text: str, branch_name: str) -> list[str]:
