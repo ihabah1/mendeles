@@ -5,18 +5,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
   <title>{{ page_title }}</title>
-  <meta name="app-version" content="{{ app_version }}">
   <meta name="description" content="mandeles.co.il – ניתוח לוטו וטוטו חכם. סטטיסטיקה מתקדמת, המלצות 1X2, צמצומי טורים.">
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&family=Frank+Ruhl+Libre:wght@700;900&display=swap" rel="stylesheet" crossorigin="anonymous">
   <link rel="icon" type="image/svg+xml" href="{% static 'frontend/favicon.svg' %}">
-  <link rel="stylesheet" href="{% static 'css/public_site.css' %}?v={{ app_version }}">
+  <link rel="stylesheet" href="{% static 'css/public_site.css' %}?v={{ app_ }}">
   {% block extra_head %}{% endblock %}
 </head>
 <body data-active-product="{{ active_product|default:'lotto' }}">
 <a href="#main-content" class="skip-link">דלג לתוכן הראשי</a>
 <nav role="navigation" aria-label="ניווט ראשי">
   <div class="nav-inner">
-    <a href="/" class="nav-logo">🎯 Mandeles<span>.co.il v{{ app_version }}</span></a>
+    <a href="/" class="nav-logo">🎯 Mandeles<span>.co.il</span></a>
     <div class="main-tabs" role="tablist" aria-label="בחר מוצר">
       <a href="/" class="main-tab {% if active_product == 'lotto' %}active{% endif %}" id="tab-lotto" role="tab" aria-selected="{% if active_product == 'lotto' %}true{% else %}false{% endif %}">🎱 לוטו</a>
       <a href="/toto/" class="main-tab {% if active_product == 'toto' %}active{% endif %}" id="tab-toto" role="tab" aria-selected="{% if active_product == 'toto' %}true{% else %}false{% endif %}">⚽ טוטו</a>
@@ -65,7 +64,7 @@
 {% include 'web/partials/a11y_widget.html' %}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" crossorigin="anonymous"></script>
-<script src="{% static 'js/public_site.js' %}?v={{ app_version }}"></script>
+<script src="{% static 'js/public_site.js' %}?v={{ app_ }}"></script>
 <script>
 async function logoutUser() {
   try {
