@@ -6,8 +6,21 @@ from pathlib import Path
 
 from django.conf import settings
 
-from .diff_validator import DiffValidationError, normalize_diff_output, validate_diff_syntax
+from .diff_validator import DiffValidationError, extract_unified_diff, validate_diff_syntax
 from .path_guard import list_allowed_files
+
+REPAIR_PROMPT = """
+Your previous response was NOT a valid unified git diff.
+Reply again with ONLY a unified git diff. Start with the line: diff --git
+No markdown. No explanation. Use this exact structure:
+
+diff --git a/static/css/portal.css b/static/css/portal.css
+--- a/static/css/portal.css
++++ b/static/css/portal.css
+@@ -1,1 +1,1 @@
+-old value
++new value
+"""
 
 
 class GeminiServiceError(RuntimeError):
@@ -22,10 +35,45 @@ def _load_system_prompt() -> str:
 def _build_user_prompt(request_prompt: str, files: list[tuple[str, str]]) -> str:
     parts = [f'USER REQUEST:\n{request_prompt.strip()}\n']
     parts.append('ALLOWED PROJECT FILES (read-only context):\n')
-    for rel, content in files:
+    for rel, content in files[:12]:
         parts.append(f'--- FILE: {rel} ---\n{content}\n')
-    parts.append('Respond with unified git diff only.')
+    if len(files) > 12:
+        parts.append(f'... and {len(files) - 12} more files')
+    parts.append(
+        '\nOUTPUT: unified git diff only. First line must be: diff --git a/... b/...\n',
+    )
     return '\n'.join(parts)
+
+
+def _parse_gemini_response(raw: str, log: Callable[[str], None]) -> str:
+    if not raw.strip():
+        raise GeminiServiceError('Gemini החזיר תשובה ריקה')
+    if 'BLOCKED:' in raw and '.ai-blocked' in raw:
+        raise GeminiServiceError('הבקשה לא ניתנת לביצוע בתיקיות המותרות')
+
+    try:
+        extracted = extract_unified_diff(raw)
+        return validate_diff_syntax(extracted)
+    except DiffValidationError as first_err:
+        log(f'ניסיון תיקון פורמט: {first_err}')
+        try:
+            if '--- ' in raw and '@@' in raw:
+                wrapped = extract_unified_diff(raw)
+                return validate_diff_syntax(wrapped)
+        except DiffValidationError:
+            pass
+        raise first_err
+
+
+def _call_gemini(model, user_prompt: str) -> str:
+    response = model.generate_content(
+        user_prompt,
+        generation_config={
+            'temperature': 0.0,
+            'max_output_tokens': 8192,
+        },
+    )
+    return (response.text or '').strip()
 
 
 def generate_diff(
@@ -60,23 +108,22 @@ def generate_diff(
         system_instruction=_load_system_prompt(),
     )
 
-    response = model.generate_content(
-        _build_user_prompt(prompt, files),
-        generation_config={
-            'temperature': 0.1,
-            'max_output_tokens': 8192,
-        },
-    )
+    user_prompt = _build_user_prompt(prompt, files)
+    raw = _call_gemini(model, user_prompt)
     log('תשובה התקבלה מ-Gemini – מעבד diff…')
 
-    raw = (response.text or '').strip()
-    if not raw:
-        raise GeminiServiceError('Gemini החזיר תשובה ריקה')
-    if 'BLOCKED:' in raw and 'templates/.ai-blocked' in raw:
-        raise GeminiServiceError('הבקשה לא ניתנת לביצוע בתיקיות המותרות')
-
     try:
-        normalized = normalize_diff_output(raw)
-        return validate_diff_syntax(normalized)
-    except DiffValidationError as exc:
-        raise GeminiServiceError(str(exc)) from exc
+        return _parse_gemini_response(raw, log)
+    except DiffValidationError:
+        log('ניסיון שני ל-Gemini (תיקון פורמט)…')
+        raw2 = _call_gemini(
+            model,
+            user_prompt + '\n\n' + REPAIR_PROMPT + f'\n\nPrevious bad output:\n{raw[:2000]}',
+        )
+        log('תשובה שנייה התקבלה – מעבד diff…')
+        try:
+            return _parse_gemini_response(raw2, log)
+        except DiffValidationError as exc:
+            raise GeminiServiceError(
+                'Gemini לא החזיר diff תקין. נסח מחדש את הבקשה (למשל: שנה ב-static/css/portal.css את …)',
+            ) from exc
