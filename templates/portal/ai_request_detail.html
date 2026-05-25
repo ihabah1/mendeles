@@ -224,7 +224,7 @@
         if (statusLabel) statusLabel.textContent = data.status_label || '';
         if (data.done) {
           clearInterval(recoverPoll);
-          window.location.href = '{% url "portal:ai_requests" %}';
+          window.location.reload();
         }
       });
     }, 1000);
@@ -254,7 +254,7 @@
               res.data.pr_number
             );
           } else {
-            window.location.href = '{% url "portal:ai_requests" %}';
+            window.location.reload();
           }
         })
         .catch(function (err) {
