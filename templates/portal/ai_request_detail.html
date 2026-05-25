@@ -14,6 +14,8 @@
   <a href="{% url 'portal:ai_requests' %}" class="btn btn-outline">← רשימה</a>
 </div>
 
+<div class="ai-git-toast" id="ai-git-toast" role="status" aria-live="polite" style="display:none"></div>
+
 {% if req.error_message %}
 <div class="alert alert-error" id="ai-error-banner">{{ req.error_message }}</div>
 {% endif %}
@@ -60,6 +62,16 @@
   {% if is_pr_creating %}
   <button type="button" class="btn btn-green" disabled>יוצר PR ב-Git…</button>
   {% endif %}
+  {% if can_merge %}
+  <button type="button" class="btn btn-green" id="btn-merge-pr"
+    data-url="{{ merge_url }}"
+    data-status-url="{{ status_url }}">
+    מזג ל-main (Merge PR)
+  </button>
+  {% endif %}
+  {% if is_merged %}
+  <button type="button" class="btn btn-green" disabled>✓ מוזג ל-main</button>
+  {% endif %}
   {% if can_reject %}
   <form method="post" action="{% url 'portal:ai_request_reject' req.pk %}">
     {% csrf_token %}
@@ -73,9 +85,15 @@
   <a href="{{ req.pr_url }}" target="_blank" rel="noopener" style="color:var(--green);font-weight:700">פתח Pull Request #{{ req.pr_number }}</a>
   {% if req.branch_name %} · ענף: <code>{{ req.branch_name }}</code>{% endif %}
 </div>
+{% if can_merge %}
 <div class="alert alert-success" id="ai-deploy-hint" style="margin-bottom:16px;font-size:.85rem">
-  ה-PR נוצר ב-GitHub (ענף נפרד). <strong>Railway יבנה רק אחרי Merge ל-main</strong> – עד אז האתר לא משתנה.
+  ה-PR מוכן. לחץ <strong>מזג ל-main</strong> כדי לעדכן את Git ולהפעיל deploy ב-Railway.
 </div>
+{% elif is_merged %}
+<div class="alert alert-success" id="ai-git-merged-banner" style="margin-bottom:16px;font-size:.9rem;font-weight:600">
+  ✓ Git עודכן בהצלחה – ה-PR מוזג ל-main. Railway אמור לבנות את האתר בדקות הקרובות.
+</div>
+{% endif %}
 {% endif %}
 
 {% if req.files_touched %}
@@ -126,7 +144,68 @@
     if (spinner) spinner.style.display = 'none';
   }
 
-  function showPrSuccess(prUrl, prNumber) {
+  function showGitToast(msg) {
+    var toast = document.getElementById('ai-git-toast');
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    toast.classList.add('ai-git-toast--visible');
+    setTimeout(function () {
+      toast.classList.remove('ai-git-toast--visible');
+      setTimeout(function () { toast.style.display = 'none'; }, 400);
+    }, 8000);
+  }
+
+  function showGitMergedSuccess(msg) {
+    showGitToast(msg || '✓ Git עודכן בהצלחה – PR מוזג ל-main');
+    var hint = document.getElementById('ai-deploy-hint');
+    if (hint) hint.remove();
+    var actions = document.getElementById('ai-actions');
+    if (!actions || !actions.parentNode) return;
+    var merged = document.getElementById('ai-git-merged-banner');
+    if (!merged) {
+      merged = document.createElement('div');
+      merged.className = 'alert alert-success';
+      merged.id = 'ai-git-merged-banner';
+      merged.style.marginBottom = '16px';
+      merged.style.fontSize = '.9rem';
+      merged.style.fontWeight = '600';
+      actions.parentNode.insertBefore(merged, actions);
+    }
+    merged.textContent = '✓ Git עודכן בהצלחה – ה-PR מוזג ל-main. Railway אמור לבנות את האתר בדקות הקרובות.';
+    var mergeBtn = document.getElementById('btn-merge-pr');
+    if (mergeBtn) {
+      mergeBtn.disabled = true;
+      mergeBtn.textContent = '✓ מוזג ל-main';
+    }
+  }
+
+  function ensureMergeButton(mergeUrl, statusUrl) {
+    if (!mergeUrl || document.getElementById('btn-merge-pr')) return;
+    var actions = document.getElementById('ai-actions');
+    if (!actions) return;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-green';
+    btn.id = 'btn-merge-pr';
+    btn.dataset.url = mergeUrl;
+    btn.dataset.statusUrl = statusUrl || '';
+    btn.textContent = 'מזג ל-main (Merge PR)';
+    actions.appendChild(btn);
+    wireMergeButton(btn);
+    var deployHint = document.getElementById('ai-deploy-hint');
+    if (!deployHint && actions.parentNode) {
+      deployHint = document.createElement('div');
+      deployHint.className = 'alert alert-success';
+      deployHint.id = 'ai-deploy-hint';
+      deployHint.style.marginBottom = '16px';
+      deployHint.style.fontSize = '.85rem';
+      deployHint.innerHTML = 'ה-PR מוכן. לחץ <strong>מזג ל-main</strong> כדי לעדכן את Git ולהפעיל deploy ב-Railway.';
+      actions.parentNode.insertBefore(deployHint, actions);
+    }
+  }
+
+  function showPrSuccess(prUrl, prNumber, mergeUrl, statusUrl) {
     unlockApproveFlow();
     var actions = document.getElementById('ai-actions');
     if (!actions || !actions.parentNode) return;
@@ -139,16 +218,7 @@
       actions.parentNode.insertBefore(banner, actions);
     }
     banner.innerHTML = '<a href="' + prUrl + '" target="_blank" rel="noopener" style="color:var(--green);font-weight:700">פתח Pull Request #' + (prNumber || '') + '</a>';
-    var deployHint = document.getElementById('ai-deploy-hint');
-    if (!deployHint) {
-      deployHint = document.createElement('div');
-      deployHint.className = 'alert alert-success';
-      deployHint.id = 'ai-deploy-hint';
-      deployHint.style.marginBottom = '16px';
-      deployHint.style.fontSize = '.85rem';
-      actions.parentNode.insertBefore(deployHint, actions);
-    }
-    deployHint.innerHTML = 'ה-PR נוצר ב-GitHub (ענף נפרד). <strong>Railway יבנה רק אחרי Merge ל-main</strong> – עד אז האתר לא משתנה.';
+    if (mergeUrl) ensureMergeButton(mergeUrl, statusUrl);
   }
 
   function renderLogs(logs) {
@@ -257,7 +327,7 @@
           }
           btnApprove.style.display = 'none';
           if (res.data.pr_url) {
-            showPrSuccess(res.data.pr_url, res.data.pr_number);
+            showPrSuccess(res.data.pr_url, res.data.pr_number, res.data.merge_url, btnApprove.dataset.statusUrl);
           } else {
             unlockApproveFlow();
             window.location.reload();
@@ -273,6 +343,42 @@
     });
   }
 
+  function wireMergeButton(btn) {
+    btn.addEventListener('click', function () {
+      if (!confirm('למזג את ה-PR ל-main? Git יתעדכן ו-Railway יתחיל deploy.')) return;
+      setActionsBusy(true);
+      btn.disabled = true;
+      btn.textContent = 'ממזג ל-main…';
+      if (logPanel) logPanel.style.display = 'block';
+      postAction(btn.dataset.url)
+        .then(function (res) {
+          renderLogs(res.data.logs);
+          if (statusLabel) statusLabel.textContent = res.data.status_label || '';
+          setActionsBusy(false);
+          if (!res.ok) {
+            btn.disabled = false;
+            btn.textContent = 'מזג ל-main (Merge PR)';
+            if (res.data.error) alert(res.data.error);
+            return;
+          }
+          showGitMergedSuccess(res.data.message);
+        })
+        .catch(function (err) {
+          setActionsBusy(false);
+          btn.disabled = false;
+          btn.textContent = 'מזג ל-main (Merge PR)';
+          alert('שגיאת רשת: ' + err);
+        });
+    });
+  }
+
+  var btnMerge = document.getElementById('btn-merge-pr');
+  if (btnMerge) wireMergeButton(btnMerge);
+
+  {% if is_merged %}
+  showGitToast('✓ Git עודכן – PR מוזג ל-main');
+  {% endif %}
+
   {% if is_pr_creating %}
   lockApproveFlow();
   var prBtn = document.querySelector('#ai-actions .btn-green');
@@ -281,7 +387,7 @@
     if (data.status === 'pr_created') {
       clearInterval(prPoll);
       if (prBtn) prBtn.style.display = 'none';
-      showPrSuccess(data.pr_url, data.pr_number);
+      showPrSuccess(data.pr_url, data.pr_number, data.merge_url, '{{ status_url }}');
     } else if (data.status === 'failed') {
       clearInterval(prPoll);
       unlockApproveFlow();

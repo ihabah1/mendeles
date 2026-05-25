@@ -133,6 +133,8 @@ button.btn:disabled{opacity:.65;cursor:not-allowed!important}
 .ai-countdown-sub{font-size:.78rem;color:var(--muted);margin-top:12px}
 .ai-countdown-pr{margin-top:16px;font-size:.8rem}
 .ai-countdown-pr a{color:var(--green);font-weight:700}
+.ai-git-toast{position:fixed;top:64px;left:50%;transform:translateX(-50%) translateY(-12px);z-index:600;max-width:90%;padding:14px 22px;border-radius:10px;background:rgba(29,184,122,.95);border:2px solid var(--green);color:#0a1a12;font-weight:700;font-size:.9rem;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.45);opacity:0;transition:opacity .35s,transform .35s;pointer-events:none}
+.ai-git-toast--visible{opacity:1;transform:translateX(-50%) translateY(0)}
 .menu-toggle{display:none;background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer}
 @media(max-width:768px){
   .sidebar{transform:translateX(100%)}

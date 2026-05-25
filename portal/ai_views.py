@@ -13,6 +13,7 @@ from ai_agent.models import AIChangeRequest
 from ai_agent.services.workflow import (
     approve_and_create_pr,
     generate_diff_for_request,
+    merge_pr_for_request,
     reject_request,
 )
 
@@ -50,6 +51,13 @@ def _status_payload(obj: AIChangeRequest) -> dict:
         'ok': obj.status == AIChangeRequest.Status.DIFF_READY,
         'pr_url': obj.pr_url or '',
         'pr_number': obj.pr_number,
+        'can_merge': (
+            obj.status == AIChangeRequest.Status.PR_CREATED and bool(obj.pr_number)
+        ),
+        'merged': obj.status == AIChangeRequest.Status.PR_MERGED,
+        'merge_url': reverse('portal:ai_request_merge', kwargs={'pk': obj.pk})
+        if obj.pr_number
+        else '',
     }
 
 
@@ -103,6 +111,11 @@ def ai_request_detail(request, pk):
         'status_url': reverse('portal:ai_request_status', kwargs={'pk': pk}),
         'generate_url': reverse('portal:ai_request_generate', kwargs={'pk': pk}),
         'approve_url': reverse('portal:ai_request_approve', kwargs={'pk': pk}),
+        'merge_url': reverse('portal:ai_request_merge', kwargs={'pk': pk}),
+        'can_merge': (
+            obj.status == AIChangeRequest.Status.PR_CREATED and bool(obj.pr_number)
+        ),
+        'is_merged': obj.status == AIChangeRequest.Status.PR_MERGED,
     })
 
 
@@ -168,6 +181,48 @@ def ai_request_approve(request, pk):
         obj.refresh_from_db()
         if ajax:
             return JsonResponse({**_status_payload(obj), 'ok': False}, status=400)
+        messages.error(request, str(exc))
+
+    return redirect('portal:ai_request_detail', pk=pk)
+
+
+@admin_required
+@require_POST
+def ai_request_merge(request, pk):
+    _require_ai_enabled()
+    obj = get_object_or_404(AIChangeRequest, pk=pk)
+    ajax = _wants_json(request)
+
+    if obj.status == AIChangeRequest.Status.PR_MERGED:
+        if ajax:
+            return JsonResponse({
+                **_status_payload(obj),
+                'git_updated': True,
+                'message': 'Git כבר עודכן (PR מוזג קודם)',
+            })
+        messages.success(request, 'ה-PR כבר מוזג ל-main')
+        return redirect('portal:ai_request_detail', pk=pk)
+
+    if obj.status != AIChangeRequest.Status.PR_CREATED or not obj.pr_number:
+        if ajax:
+            return JsonResponse({**_status_payload(obj), 'ok': False}, status=400)
+        messages.error(request, 'אין PR למיזוג')
+        return redirect('portal:ai_request_detail', pk=pk)
+
+    try:
+        merge_pr_for_request(obj)
+        obj.refresh_from_db()
+        if ajax:
+            return JsonResponse({
+                **_status_payload(obj),
+                'git_updated': True,
+                'message': 'Git עודכן בהצלחה – main מוזג, Railway יתחיל deploy',
+            })
+        messages.success(request, 'Git עודכן – PR מוזג ל-main')
+    except Exception as exc:
+        obj.refresh_from_db()
+        if ajax:
+            return JsonResponse({**_status_payload(obj), 'ok': False, 'error': str(exc)}, status=400)
         messages.error(request, str(exc))
 
     return redirect('portal:ai_request_detail', pk=pk)

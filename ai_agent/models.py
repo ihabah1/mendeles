@@ -10,6 +10,7 @@ class AIChangeRequest(models.Model):
         APPROVED = 'approved', 'אושר ליצירת PR'
         PR_CREATING = 'pr_creating', 'יוצר PR'
         PR_CREATED = 'pr_created', 'PR נוצר'
+        PR_MERGED = 'pr_merged', 'מוזג ל-main'
         REJECTED = 'rejected', 'נדחה'
         FAILED = 'failed', 'נכשל'
 

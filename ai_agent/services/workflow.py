@@ -5,7 +5,7 @@ import re
 
 from django.utils import timezone
 
-from ai_agent.git_tools.github_pr import GitHubPRError, create_pull_request
+from ai_agent.git_tools.github_pr import GitHubPRError, create_pull_request, merge_pull_request
 from ai_agent.git_tools.repo import GitToolError, apply_diff_and_push
 from ai_agent.models import AIChangeRequest
 
@@ -126,6 +126,32 @@ def approve_and_create_pr(request: AIChangeRequest) -> AIChangeRequest:
             'files_touched', 'error_message', 'updated_at',
         ],
     )
+    return request
+
+
+def merge_pr_for_request(request: AIChangeRequest) -> AIChangeRequest:
+    if request.status not in (
+        AIChangeRequest.Status.PR_CREATED,
+        AIChangeRequest.Status.PR_MERGED,
+    ):
+        raise ValueError('ניתן למזג רק אחרי יצירת PR')
+    if not request.pr_number:
+        raise ValueError('אין מספר PR')
+
+    request.append_log('ממזג PR ל-main ב-GitHub…')
+    try:
+        sha = merge_pull_request(request.pr_number)
+        request.status = AIChangeRequest.Status.PR_MERGED
+        request.error_message = ''
+        request.append_log(f'מוזג בהצלחה ל-main (commit: {sha[:7] if sha and len(sha) > 7 else sha})')
+        request.append_log('Git עודכן – Railway אמור להתחיל deploy')
+    except (GitHubPRError, ValueError) as exc:
+        request.error_message = str(exc)
+        request.append_log(f'שגיאה במיזוג: {exc}')
+        request.save(update_fields=['error_message', 'updated_at'])
+        raise
+
+    request.save(update_fields=['status', 'error_message', 'updated_at'])
     return request
 
 
