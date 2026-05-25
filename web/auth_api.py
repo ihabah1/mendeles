@@ -34,6 +34,10 @@ def _user_payload(user):
     return {
         'id': user.id,
         'email': user.email,
+        'first_name': user.first_name or '',
+        'full_name': user.full_name or '',
+        'phone': user.phone or '',
+        'display_name': user.display_name,
         'is_admin': _is_portal_admin(user),
     }
 
@@ -57,7 +61,10 @@ def register_view(request):
     data = _json_body(request)
     email = (data.get('email') or '').strip().lower()
     password = data.get('password') or ''
+    first_name = (data.get('first_name') or data.get('firstName') or '').strip()
 
+    if len(first_name) < 2:
+        return JsonResponse({'error': 'נא להזין שם פרטי (לפחות 2 תווים)'}, status=400)
     if not EMAIL_RE.match(email):
         return JsonResponse({'error': 'אימייל לא תקין'}, status=400)
     if len(password) < 6:
@@ -69,9 +76,41 @@ def register_view(request):
         email=email,
         password=password,
         role=User.Role.CUSTOMER,
+        first_name=first_name,
+        full_name=first_name,
     )
     login(request, user)
     return JsonResponse({'user': _user_payload(user)}, status=201)
+
+
+@require_http_methods(['GET', 'POST', 'PATCH'])
+def profile_view(request):
+    """קריאה ועדכון פרטי משתמש מחובר (Django session)."""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'נדרשת התחברות'}, status=401)
+
+    user = request.user
+    if request.method == 'GET':
+        return JsonResponse({'user': _user_payload(user)})
+
+    data = _json_body(request)
+    first_name = (data.get('first_name') or '').strip()
+    phone = (data.get('phone') or '').strip()[:20]
+    full_name = (data.get('full_name') or '').strip()[:120]
+
+    if first_name and len(first_name) < 2:
+        return JsonResponse({'error': 'שם פרטי קצר מדי'}, status=400)
+
+    if first_name:
+        user.first_name = first_name
+        if not full_name:
+            user.full_name = first_name
+    if full_name:
+        user.full_name = full_name
+    user.phone = phone
+    user.save(update_fields=['first_name', 'full_name', 'phone'])
+
+    return JsonResponse({'ok': True, 'user': _user_payload(user)})
 
 
 @require_http_methods(['POST'])

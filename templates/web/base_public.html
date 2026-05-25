@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="{% static 'css/public_site.css' %}?v={{ app_version }}">
   {% block extra_head %}{% endblock %}
 </head>
-<body data-active-product="{{ active_product|default:'lotto' }}">
+<body data-active-product="{{ active_product|default:'lotto' }}"{% if user %} data-logged-in="1" data-user-name="{{ user.display_name }}"{% endif %}>
 <a href="#main-content" class="skip-link">דלג לתוכן הראשי</a>
 <nav role="navigation" aria-label="ניווט ראשי">
   <div class="nav-inner">
@@ -25,9 +25,9 @@
       <span id="engine-lbl" style="font-size:.68rem;color:var(--muted);white-space:nowrap;display:none"></span>
     </div>
     {% if user %}
-      <span class="nav-greeting">{{ user.username }}</span>
+      <a href="/account/" class="nav-greeting" id="nav-user-name" title="החשבון שלי">{{ user.display_name }}</a>
       <span class="wallet-badge" id="nav-wallet" style="display:none"></span>
-      <button type="button" id="user-avatar" aria-label="פרופיל" style="display:none"></button>
+      <a href="/account/" class="nav-login-btn" id="user-avatar" aria-label="החשבון שלי" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--gold);color:var(--navy);font-weight:800;font-size:.85rem;text-decoration:none">{{ user.display_name|slice:":1"|upper }}</a>
     {% else %}
       <a href="/login/" class="nav-login-btn" id="nav-login-btn">כניסה / הרשמה</a>
     {% endif %}
@@ -40,6 +40,7 @@
       <li><a href="/legal/">תנאים</a></li>
       <li><a href="/accessibility/">נגישות</a></li>
       {% if user %}
+        <li><a href="/account/">החשבון שלי</a></li>
         <li><a href="#" onclick="logoutUser();return false">יציאה</a></li>
       {% endif %}
     </ul>

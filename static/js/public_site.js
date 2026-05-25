@@ -461,7 +461,7 @@ if(window.matchMedia('(prefers-reduced-motion:reduce)').matches) document.body.c
 // ── עזרים ────────────────────────────────────────────────────
 function getCookie(n){const m=document.cookie.match('(^|;)\\s*'+n+'\\s*=\\s*([^;]+)');return m?m.pop():null;}
 function goToWallet(){window.location.href='/wallet.html';}
-function goToProfile(){window.location.href='/profile.html';}
+function goToProfile(){window.location.href='/account/';}
 function goToLottoForm(){
   const token=localStorage.getItem('auth_token')||localStorage.getItem('fb_token');
   const isDemo=localStorage.getItem('demo_mode')==='1';
@@ -495,7 +495,50 @@ const DEMO_USER = {
   }))
 };
 
+function _hideGuestOnlyUI(){
+  document.querySelectorAll('[data-hide-when-logged-in]').forEach(el=>{ el.style.display='none'; });
+}
+
+function _syncNavUserName(name){
+  const label = name || 'משתמש';
+  let el = document.getElementById('nav-user-name');
+  if(!el){
+    const loginBtn = document.getElementById('nav-login-btn');
+    if(loginBtn){
+      const a = document.createElement('a');
+      a.href = '/account/';
+      a.className = 'nav-greeting';
+      a.id = 'nav-user-name';
+      a.title = 'החשבון שלי';
+      a.textContent = label;
+      loginBtn.replaceWith(a);
+      el = a;
+    }
+  } else {
+    el.textContent = label;
+  }
+  const av = document.getElementById('user-avatar');
+  if(av && av.tagName === 'A') av.textContent = label.charAt(0).toUpperCase();
+}
+
+async function checkDjangoSession(){
+  try{
+    const r = await fetch('/api/auth/me/', { credentials:'same-origin', signal: AbortSignal.timeout(3000) });
+    if(!r.ok) return false;
+    const d = await r.json();
+    if(!d.user) return false;
+    const name = d.user.display_name || d.user.first_name || d.user.email || 'משתמש';
+    _syncNavUserName(name);
+    _hideGuestOnlyUI();
+    document.body.dataset.loggedIn = '1';
+    document.body.dataset.userName = name;
+    return true;
+  }catch(e){ return false; }
+}
+
 function _applyLoggedInUI(name, token, isDemoMode){
+  _hideGuestOnlyUI();
+  _syncNavUserName(name);
   const loginBtn=document.getElementById('nav-login-btn');
   if(!loginBtn) return;
   loginBtn.outerHTML=`
@@ -691,7 +734,11 @@ async function loadSiteStats(){
     window.location.href = '/accessibility/';
   }
 
-  checkAuth();
+  if(document.body.dataset.loggedIn === '1'){
+    _hideGuestOnlyUI();
+  } else {
+    checkDjangoSession().then(function(ok){ if(!ok) checkAuth(); });
+  }
   loadSiteStats();
 
   var isTotoPage = document.body.dataset.activeProduct === 'toto'

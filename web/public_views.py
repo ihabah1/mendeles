@@ -1,6 +1,7 @@
 """דף ראשי ציבורי – תבניות Django (לא React SPA)."""
 from django.conf import settings
-from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect, render
 
 
 def _fetch_site_stats():
@@ -83,8 +84,21 @@ def public_accessibility(request):
 
 
 def public_login(request):
+    if request.user.is_authenticated:
+        return redirect('public-account')
     return render(request, 'web/login.html', _ctx(request, page_title='כניסה – Mandeles.co.il'))
 
 
 def public_register(request):
+    if request.user.is_authenticated:
+        return redirect('public-account')
     return render(request, 'web/register.html', _ctx(request, page_title='הרשמה – Mandeles.co.il'))
+
+
+@login_required(login_url='/login/')
+def public_account(request):
+    return render(
+        request,
+        'web/account.html',
+        _ctx(request, page_title='החשבון שלי – Mandeles.co.il'),
+    )

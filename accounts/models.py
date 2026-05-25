@@ -28,6 +28,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         CUSTOMER = 'customer', 'לקוח'
 
     email = models.EmailField('אימייל', unique=True)
+    first_name = models.CharField('שם פרטי', max_length=60, blank=True)
     full_name = models.CharField('שם מלא', max_length=120, blank=True)
     phone = models.CharField('טלפון', max_length=20, blank=True)
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.CUSTOMER)
@@ -47,6 +48,15 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+    @property
+    def display_name(self) -> str:
+        """שם לתצוגה בסרגל ובאתר."""
+        if self.first_name and self.first_name.strip():
+            return self.first_name.strip()
+        if self.full_name and self.full_name.strip():
+            return self.full_name.strip().split()[0]
+        return self.email.split('@')[0]
 
     @property
     def is_admin(self):
