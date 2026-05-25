@@ -14,6 +14,9 @@
       <label style="font-size:.8rem;color:var(--muted)">שם משפחה</label>
       <input type="text" id="reg-last-name" required minlength="2" maxlength="60" autocomplete="family-name"
         style="background:var(--navy);border:1.5px solid var(--navy-b);border-radius:8px;padding:10px;color:var(--text);font-family:Heebo,sans-serif">
+      <label style="font-size:.8rem;color:var(--muted)">אימייל</label>
+      <input type="email" id="reg-email" required autocomplete="email"
+        style="background:var(--navy);border:1.5px solid var(--navy-b);border-radius:8px;padding:10px;color:var(--text);font-family:Heebo,sans-serif" dir="ltr">
       <label style="font-size:.8rem;color:var(--muted)">טלפון</label>
       <input type="tel" id="reg-phone" required maxlength="20" autocomplete="tel"
         style="background:var(--navy);border:1.5px solid var(--navy-b);border-radius:8px;padding:10px;color:var(--text);font-family:Heebo,sans-serif" dir="ltr">
@@ -60,6 +63,7 @@ document.getElementById('reg-form').addEventListener('submit', async function (e
         username: document.getElementById('reg-username').value.trim().toLowerCase(),
         first_name: document.getElementById('reg-first-name').value.trim(),
         last_name: document.getElementById('reg-last-name').value.trim(),
+        email: document.getElementById('reg-email').value.trim().toLowerCase(),
         phone: document.getElementById('reg-phone').value.trim(),
         password: pw,
         password_confirm: pw2,

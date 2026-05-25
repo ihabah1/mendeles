@@ -92,9 +92,8 @@ def register_view(request):
         return JsonResponse({'error': 'מספר טלפון לא תקין'}, status=400)
     if User.objects.filter(username__iexact=username).exists():
         return JsonResponse({'error': 'שם המשתמש תפוס'}, status=400)
-
     if not email or not EMAIL_RE.match(email):
-        email = f'{username}@users.mandeles.co.il'
+        return JsonResponse({'error': 'נא להזין אימייל תקין'}, status=400)
     if User.objects.filter(email=email).exists():
         return JsonResponse({'error': 'כתובת אימייל כבר רשומה'}, status=400)
 
