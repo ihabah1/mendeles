@@ -1,0 +1,166 @@
+"""אבחון, הפעלה ולוגים לדף אינטגרציה."""
+from __future__ import annotations
+
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+from django.conf import settings
+
+from .health_status import _BACKEND_HEALTH_PATHS, check_backends_health
+
+SERVICE_SCRIPTS: dict[str, tuple[str, int, str]] = {
+    'engine': ('beckend_toto.py', 5001, 'מנוע טוטו'),
+    'auth': ('auth_server.py', 5002, 'התחברות קלאסית'),
+    'wallet': ('wallet_server.py', 5003, 'ארנק / הזמנות'),
+    'lotto_api': ('server.py', 5000, 'API לוטו'),
+}
+
+LOG_FILES = ('integration.log', 'legacy_pids.log')
+
+
+def _data_dir() -> Path:
+    d = Path(settings.BASE_DIR) / 'data'
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def append_integration_log(line: str) -> None:
+    path = _data_dir() / 'integration.log'
+    ts = time.strftime('%Y-%m-%d %H:%M:%S')
+    with path.open('a', encoding='utf-8') as f:
+        f.write(f'[{ts}] {line}\n')
+
+
+def _run_subprocess(cmd: list[str], cwd: Path, timeout: int = 45) -> tuple[int, str]:
+    try:
+        r = subprocess.run(
+            cmd,
+            cwd=str(cwd),
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            encoding='utf-8',
+            errors='replace',
+        )
+        out = (r.stdout or '') + (r.stderr or '')
+        return r.returncode, out.strip()[:4000]
+    except subprocess.TimeoutExpired:
+        return -1, 'תם הזמן להפעלה'
+    except Exception as exc:
+        return -1, str(exc)[:500]
+
+
+def _diagnose_service(key: str, health: dict) -> str:
+    h = health.get(key) or {}
+    parts = [f'שירות={key}']
+    if h.get('disabled'):
+        parts.append('LEGACY_SERVICES_ENABLED=false')
+    if h.get('port'):
+        parts.append(f"port={h['port']} port_up={h.get('port_up')}")
+    direct = h.get('direct') or {}
+    django = h.get('django') or {}
+    if direct.get('error'):
+        parts.append(f"direct: {direct['error']}")
+    elif direct.get('code'):
+        parts.append(f"direct HTTP {direct['code']}")
+    if django.get('error'):
+        parts.append(f"django: {django['error']}")
+    elif django.get('code'):
+        parts.append(f"django proxy {django['code']}")
+    path = _BACKEND_HEALTH_PATHS.get(key, '')
+    if path:
+        parts.append(f'check={path}')
+    return ' · '.join(parts)
+
+
+def try_fix_service(service_key: str) -> dict:
+    """מנסה להפעיל שירות בודד או את כל הסקריפטים."""
+    root = Path(settings.BASE_DIR)
+    append_integration_log(f'פתור בעיה: בקשה עבור {service_key}')
+
+    if service_key == 'all':
+        script = root / 'scripts' / 'start_legacy_background.py'
+        if not script.is_file():
+            msg = 'קובץ start_legacy_background.py לא נמצא'
+            append_integration_log(msg)
+            return {'ok': False, 'message': msg}
+        code, out = _run_subprocess([sys.executable, str(script)], root)
+        append_integration_log(f'start_all exit={code}\n{out or "(ללא פלט)"}')
+        time.sleep(2.5)
+        health = check_backends_health()
+        ok = all(v.get('ok') for v in health.values())
+        return {
+            'ok': ok,
+            'message': 'כל השירותים פעילים' if ok else 'הופעלו תהליכים – חלק מהשירותים עדיין כבויים. ראה לוגים.',
+            'health': health,
+        }
+
+    if service_key not in SERVICE_SCRIPTS:
+        return {'ok': False, 'message': f'שירות לא מוכר: {service_key}'}
+
+    script_name, port, label = SERVICE_SCRIPTS[service_key]
+    script_path = root / script_name
+    health_before = check_backends_health()
+    append_integration_log(_diagnose_service(service_key, health_before))
+
+    if not script_path.is_file():
+        msg = f'לא נמצא {script_name}'
+        append_integration_log(msg)
+        return {'ok': False, 'message': msg}
+
+    h = health_before.get(service_key) or {}
+    if h.get('port_up') and not h.get('ok'):
+        msg = (
+            f'{label}: הפורט {port} פתוח אך הבדיקה נכשלה. '
+            'ייתכן שהתהליך תקוע – נסה להפעיל מחדש את הקונטיינר ב-Railway.'
+        )
+        append_integration_log(msg)
+        return {'ok': False, 'message': msg}
+
+    if h.get('ok'):
+        return {'ok': True, 'message': f'{label} כבר פעיל'}
+
+    proc = subprocess.Popen(
+        [sys.executable, str(script_path)],
+        cwd=str(root),
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    append_integration_log(f'הופעל {script_name} pid={proc.pid} port={port}')
+    time.sleep(2.0)
+    health_after = check_backends_health()
+    append_integration_log(_diagnose_service(service_key, health_after))
+    ok = bool((health_after.get(service_key) or {}).get('ok'))
+    if ok:
+        return {'ok': True, 'message': f'{label} הופעל בהצלחה (פורט {port})'}
+    return {
+        'ok': False,
+        'message': (
+            f'{label}: ניסיון הפעלה בוצע (pid {proc.pid}) אך השירות עדיין לא עונה. '
+            'ב-Railway ודא LEGACY_AUTO_START=true ופרוס מחדש.'
+        ),
+    }
+
+
+def read_log_tail(filename: str, max_lines: int = 250) -> list[str]:
+    path = _data_dir() / filename
+    if not path.is_file():
+        return [f'(אין קובץ {filename} עדיין)']
+    try:
+        text = path.read_text(encoding='utf-8', errors='replace')
+    except OSError as exc:
+        return [f'שגיאת קריאה: {exc}']
+    lines = text.splitlines()
+    if len(lines) <= max_lines:
+        return lines
+    return lines[-max_lines:]
+
+
+def get_integration_logs(max_lines: int = 250) -> dict:
+    """כל קבצי הלוג הרלוונטיים לדף הלוגים."""
+    sections = {}
+    for name in LOG_FILES:
+        sections[name] = read_log_tail(name, max_lines)
+    return {'sections': sections, 'log_dir': str(_data_dir())}

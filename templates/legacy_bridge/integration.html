@@ -7,7 +7,17 @@
     <div class="page-title">Mandeles – Django</div>
     <div class="page-sub">אתר, ניהול והתחברות ב-Django · שירותי לוטו/טוטו ב-Flask (מופעלים אוטומטית בפריסה)</div>
   </div>
-  <a href="/" class="btn btn-outline" target="_self">פתח אתר</a>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <a href="{% url 'legacy_integration_logs' %}" class="btn btn-outline">📜 לוגים</a>
+    {% if not legacy_all_ok and enabled %}
+    <form method="post" action="{% url 'legacy_integration_fix' %}" style="display:inline;margin:0">
+      {% csrf_token %}
+      <input type="hidden" name="service" value="all">
+      <button type="submit" class="btn btn-sm">הפעל את כל השירותים</button>
+    </form>
+    {% endif %}
+    <a href="/" class="btn btn-outline" target="_self">פתח אתר</a>
+  </div>
 </div>
 
 <div class="card-panel" style="margin-bottom:16px">
@@ -35,7 +45,10 @@
 </div>
 
 <div class="card-panel" style="margin-bottom:16px">
-  <div class="form-label">שירותי לוטו / טוטו (Flask)</div>
+  <div class="form-label" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <span>שירותי לוטו / טוטו (Flask)</span>
+    <a href="{% url 'legacy_integration_logs' %}" style="font-size:.78rem">צפה בלוגים →</a>
+  </div>
   <p style="font-size:.8rem;color:var(--muted);margin-bottom:10px">
     פרוקסי: <code>LEGACY_SERVICES_ENABLED={{ enabled|yesno:"true,false" }}</code> ·
     הפעלה אוטומטית: <code>LEGACY_AUTO_START={{ auto_start|yesno:"true,false" }}</code>
@@ -43,38 +56,22 @@
   <table>
     <thead><tr><th>שירות</th><th>סטטוס</th><th>פורט</th><th>בדיקה</th></tr></thead>
     <tbody>
-      <tr>
-        <td>מנוע טוטו (engine)</td>
-        <td>{% if health.engine.ok %}<span class="badge badge-green">פעיל</span>{% else %}<span class="badge badge-red">כבוי</span>{% endif %}</td>
-        <td>{{ health.engine.port|default:"5001" }}</td>
-        <td style="font-size:.72rem;color:var(--muted)">/engine/health</td>
-      </tr>
-      <tr>
-        <td>התחברות קלאסית (auth)</td>
-        <td>{% if health.auth.ok %}<span class="badge badge-green">פעיל</span>{% else %}<span class="badge badge-red">כבוי</span>{% endif %}</td>
-        <td>{{ health.auth.port|default:"5002" }}</td>
-        <td style="font-size:.72rem;color:var(--muted)">/auth/me</td>
-      </tr>
-      <tr>
-        <td>ארנק / הזמנות (wallet)</td>
-        <td>{% if health.wallet.ok %}<span class="badge badge-green">פעיל</span>{% else %}<span class="badge badge-red">כבוי</span>{% endif %}</td>
-        <td>{{ health.wallet.port|default:"5003" }}</td>
-        <td style="font-size:.72rem;color:var(--muted)">/api/stats</td>
-      </tr>
-      <tr>
-        <td>API לוטו (api)</td>
-        <td>{% if health.lotto_api.ok %}<span class="badge badge-green">פעיל</span>{% else %}<span class="badge badge-red">כבוי</span>{% endif %}</td>
-        <td>{{ health.lotto_api.port|default:"5000" }}</td>
-        <td style="font-size:.72rem;color:var(--muted)">/api/health</td>
-      </tr>
+      {% include "legacy_bridge/_integration_service_row.html" with service_key="engine" label="מנוע טוטו (engine)" health_item=health.engine default_port="5001" check_path="/engine/health" %}
+      {% include "legacy_bridge/_integration_service_row.html" with service_key="auth" label="התחברות קלאסית (auth)" health_item=health.auth default_port="5002" check_path="/auth/me" %}
+      {% include "legacy_bridge/_integration_service_row.html" with service_key="wallet" label="ארנק / הזמנות (wallet)" health_item=health.wallet default_port="5003" check_path="/api/stats" %}
+      {% include "legacy_bridge/_integration_service_row.html" with service_key="lotto_api" label="API לוטו (api)" health_item=health.lotto_api default_port="5000" check_path="/api/health" %}
     </tbody>
   </table>
   {% if legacy_all_ok %}
   <p style="margin-top:12px;font-size:.82rem;color:var(--green)">✅ כל שירותי הלוטו פעילים.</p>
   {% elif not legacy_partial %}
   <p style="margin-top:12px;font-size:.8rem;color:var(--muted)">
-    מקומית: <code>python scripts/start_legacy_background.py</code> או <code>.\run.ps1 -Legacy</code>, ואז רענן.
-    ב-Railway: ודא <code>LEGACY_AUTO_START=true</code> (ברירת מחדל) ופרוס מחדש.
+    ליד כל דגל אדום: <strong>פתור בעיה</strong> מנסה להפעיל את השירות ורושם אבחון ב<a href="{% url 'legacy_integration_logs' %}">לוגים</a>.
+    מקומית: <code>python scripts/start_legacy_background.py</code> · ב-Railway: <code>LEGACY_AUTO_START=true</code> ופריסה מחדש.
+  </p>
+  {% else %}
+  <p style="margin-top:12px;font-size:.8rem;color:var(--muted)">
+    חלק מהשירותים פעילים. השתמש ב«פתור בעיה» לשירותים כבויים או ב«הפעל את כל השירותים» למעלה.
   </p>
   {% endif %}
 </div>
@@ -85,6 +82,7 @@
     <li>אתר: <a href="/">/</a> · טוטו: <a href="/toto/">/toto/</a></li>
     <li>ניהול: <a href="/manage/">/manage/</a> · שינויי AI: <a href="{% url 'portal:ai_requests' %}">היסטוריה</a></li>
     <li>טופס לוטו: <a href="/classic/lotto_form.html">/classic/lotto_form.html</a></li>
+    <li>לוגי אינטגרציה: <a href="{% url 'legacy_integration_logs' %}">/manage/integration/logs/</a></li>
   </ul>
 </div>
 

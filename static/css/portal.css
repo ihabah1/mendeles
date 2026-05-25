@@ -79,7 +79,9 @@ tr:hover td{background:rgba(201,168,76,.03)}
 .messages-django{list-style:none;margin-bottom:12px}
 .messages-django li{padding:8px 12px;border-radius:var(--r);margin-bottom:6px;font-size:.8rem}
 .messages-django .success{background:rgba(29,184,122,.1);color:var(--green)}
+.messages-django .warning{background:rgba(212,168,67,.12);color:var(--gold)}
 .messages-django .error{background:rgba(224,80,80,.1);color:var(--red)}
+.integration-log-view{background:#0d1117;color:#c9d1d9;border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;font-size:.72rem;line-height:1.45;max-height:420px;overflow:auto;margin:0;white-space:pre-wrap;word-break:break-word}
 .form-row{margin-bottom:12px}
 .form-label{display:block;font-size:.72rem;font-weight:700;color:var(--muted);margin-bottom:5px}
 .form-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}

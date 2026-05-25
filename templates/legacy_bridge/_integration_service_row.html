@@ -1,0 +1,19 @@
+<tr>
+  <td>{{ label }}</td>
+  <td>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      {% if health_item.ok %}
+      <span class="badge badge-green">פעיל</span>
+      {% else %}
+      <span class="badge badge-red">כבוי</span>
+      <form method="post" action="{% url 'legacy_integration_fix' %}" style="display:inline;margin:0">
+        {% csrf_token %}
+        <input type="hidden" name="service" value="{{ service_key }}">
+        <button type="submit" class="btn btn-sm btn-outline" title="הפעלה מחדש + אבחון">פתור בעיה</button>
+      </form>
+      {% endif %}
+    </div>
+  </td>
+  <td>{{ health_item.port|default:default_port }}</td>
+  <td style="font-size:.72rem;color:var(--muted)">{{ check_path }}</td>
+</tr>

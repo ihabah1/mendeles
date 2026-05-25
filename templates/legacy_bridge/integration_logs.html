@@ -1,0 +1,35 @@
+{% extends "portal/base_dashboard.html" %}
+{% block title %}לוגים – אינטגרציה{% endblock %}
+{% block topbar %}לוגים – אינטגרציה{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">לוגי אינטגרציה</div>
+    <div class="page-sub">תיקונים, הפעלות שירותים ו-PID של Flask · <code>{{ log_dir }}</code></div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a href="{% url 'legacy_integration' %}" class="btn btn-outline">← חזרה לסטטוס</a>
+    <a href="{% url 'legacy_integration_logs' %}" class="btn btn-sm">רענן</a>
+  </div>
+</div>
+
+{% for name, lines in sections.items %}
+<div class="card-panel" style="margin-bottom:16px">
+  <div class="form-label" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <span>{{ name }}</span>
+    <span style="font-size:.72rem;color:var(--muted)">{{ lines|length }} שורות (אחרונות)</span>
+  </div>
+  <pre class="integration-log-view" dir="ltr">{% for line in lines %}{{ line }}
+{% endfor %}</pre>
+</div>
+{% empty %}
+<div class="card-panel">
+  <p style="color:var(--muted);font-size:.85rem">אין קבצי לוג עדיין. לחץ «פתור בעיה» בדף הסטטוס כדי ליצור רשומות.</p>
+</div>
+{% endfor %}
+
+<p style="font-size:.78rem;color:var(--muted);line-height:1.6">
+  ב-Railway: אם השירותים נשארים כבויים אחרי «פתור בעיה», בדוק בלוח Railway את לוגי הקונטיינר (Deploy logs)
+  וודא <code>LEGACY_AUTO_START=true</code> ו-<code>LEGACY_SERVICES_ENABLED=true</code>.
+</p>
+{% endblock %}

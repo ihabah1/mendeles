@@ -5,9 +5,10 @@ import re
 from pathlib import Path
 
 from django.conf import settings
+from django.contrib import messages
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
-from django.shortcuts import redirect
-from django.views.decorators.http import require_GET
+from django.shortcuts import redirect, render
+from django.views.decorators.http import require_GET, require_POST
 from portal.decorators import admin_required
 
 from .health_status import (
@@ -93,10 +94,35 @@ def integration_status(request):
 @admin_required
 @require_GET
 def integration_page(request):
-    from django.shortcuts import render
-
     ctx = integration_dashboard_context()
     return render(request, 'legacy_bridge/integration.html', ctx)
+
+
+@admin_required
+@require_POST
+def integration_fix(request):
+    from .integration_ops import try_fix_service
+
+    service = (request.POST.get('service') or '').strip()
+    if not service:
+        messages.error(request, 'לא נבחר שירות')
+        return redirect('legacy_integration')
+    result = try_fix_service(service)
+    if result.get('ok'):
+        messages.success(request, result.get('message', 'בוצע'))
+    else:
+        messages.warning(request, result.get('message', 'הפעלה נכשלה'))
+    return redirect('legacy_integration')
+
+
+@admin_required
+@require_GET
+def integration_logs(request):
+    from .integration_ops import get_integration_logs
+
+    ctx = get_integration_logs()
+    ctx['page_title'] = 'לוגים – אינטגרציה'
+    return render(request, 'legacy_bridge/integration_logs.html', ctx)
 
 
 def admin_browser_entry(request):
