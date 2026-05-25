@@ -43,7 +43,9 @@ python manage.py setup_portal
 
 ## גרסה
 
-`v1.2.2` – בלוגו ובפוטר של אתר React.
+`v2.2.8` – בלוגו, בכותרת הדף ובפוטר של אתר React.
+
+**מנהל קבוע:** `admin@admin.com` / `admin` (נוצר אוטומטית ב־`setup_portal` ובאתחול).
 
 ## פריסה (Railway / Render / Docker)
 

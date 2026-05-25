@@ -47,7 +47,7 @@ def spa(request):
         {
             'vite_js': vite_js,
             'vite_css': vite_css,
-            'page_title': 'Mandeles.co.il',
+            'page_title': f'Mandeles.co.il v{settings.APP_VERSION}',
             'app_version': settings.APP_VERSION,
         },
     )

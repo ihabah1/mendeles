@@ -172,7 +172,7 @@ SESSION_SAVE_EVERY_REQUEST = True
 # Custom admin dashboard path (not /admin/)
 ADMIN_DASHBOARD_PREFIX = 'manage'
 
-APP_VERSION = '1.2.2'
+APP_VERSION = '2.2.8'
 
 # מנהל יחיד לדשבורד /manage/
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'admin@admin.com')

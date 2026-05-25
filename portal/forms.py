@@ -1,7 +1,7 @@
 from django import forms
-from django.contrib.auth import authenticate
 from django.conf import settings
 
+from accounts.auth_utils import authenticate_user
 from accounts.models import User
 from accounts.permissions import is_portal_admin
 from portal.models import CustomerProfile, CreditAccount
@@ -36,11 +36,9 @@ class AdminLoginForm(forms.Form):
         email = cleaned.get('email')
         password = cleaned.get('password')
         if email and password:
-            user = authenticate(self.request, username=email, password=password)
-            if user is None:
-                raise forms.ValidationError('אימייל או סיסמה שגויים')
-            if not user.is_active:
-                raise forms.ValidationError('החשבון אינו פעיל')
+            user, err = authenticate_user(email, password)
+            if err:
+                raise forms.ValidationError(err)
             if not is_portal_admin(user):
                 raise forms.ValidationError('אין לך הרשאת גישה ללוח הניהול')
             self.user = user

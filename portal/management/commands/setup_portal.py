@@ -7,6 +7,7 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
+from accounts.bootstrap import BOOTSTRAP_ADMIN_EMAIL, ensure_bootstrap_admin
 from accounts.models import User
 from portal.models import (
     ActionLog,
@@ -23,24 +24,10 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        admin, created = User.objects.get_or_create(
-            email='admin@admin.com',
-            defaults={
-                'full_name': 'מנהל מערכת',
-                'phone': '0500000000',
-                'role': User.Role.ADMIN,
-                'is_staff': True,
-                'is_superuser': True,
-                'is_active': True,
-            },
-        )
-        admin.set_password('admin')
-        admin.is_staff = True
-        admin.is_superuser = True
-        admin.role = User.Role.ADMIN
-        admin.save()
+        admin, created = ensure_bootstrap_admin()
         self.stdout.write(self.style.SUCCESS(
-            f'Admin: admin@admin.com / admin ({ "created" if created else "updated" })',
+            f'Admin: {BOOTSTRAP_ADMIN_EMAIL} / admin · active={admin.is_active} '
+            f'({ "created" if created else "verified" })',
         ))
 
         demos = [

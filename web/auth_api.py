@@ -2,11 +2,12 @@ import json
 import re
 
 from django.conf import settings
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import login, logout
 from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 
+from accounts.auth_utils import authenticate_user
 from accounts.models import User
 
 EMAIL_RE = re.compile(r'^[^@]+@[^@]+\.[^@]+$')
@@ -76,9 +77,9 @@ def login_view(request):
     email = (data.get('email') or '').strip().lower()
     password = data.get('password') or ''
 
-    user = authenticate(request, username=email, password=password)
-    if user is None:
-        return JsonResponse({'error': 'אימייל או סיסמה שגויים'}, status=401)
+    user, err = authenticate_user(email, password)
+    if err:
+        return JsonResponse({'error': err}, status=401)
 
     login(request, user)
     return JsonResponse({'user': _user_payload(user)})
