@@ -12,7 +12,8 @@
       <a class="sb-item {% if request.resolver_match.url_name == 'customers' or request.resolver_match.url_name == 'customer_detail' or request.resolver_match.url_name == 'user_create' %}active{% endif %}" href="{% url 'portal:customers' %}"><span class="icon">👥</span> משתמשים</a>
       <a class="sb-item" href="{% url 'portal:user_create' %}"><span class="icon">➕</span> הוסף משתמש</a>
       <a class="sb-item {% if request.resolver_match.url_name == 'orders' %}active{% endif %}" href="{% url 'portal:orders' %}"><span class="icon">🖨️</span> הזמנות</a>
-      <a class="sb-item" href="/" target="_self"><span class="icon">🌐</span> אתר לוטו (Django)</a>
+      <a class="sb-item" href="/" target="_self"><span class="icon">🎱</span> לוטו</a>
+      <a class="sb-item" href="/toto/" target="_self"><span class="icon">⚽</span> טוטו</a>
       <div class="sb-section">מערכת</div>
       {% if AI_AGENT_ENABLED %}
       <a class="sb-item {% if 'ai_' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'portal:ai_requests' %}"><span class="icon">🤖</span> היסטוריית שינויים</a>
