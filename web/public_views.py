@@ -3,16 +3,36 @@ from django.conf import settings
 from django.shortcuts import render
 
 
+def _fetch_site_stats():
+    """סטטיסטיקות לדף הבית (גיבוי אם JS נכשל)."""
+    try:
+        from django.test import Client
+
+        r = Client().get('/api/stats', HTTP_HOST='localhost')
+        if r.status_code == 200:
+            import json
+
+            return json.loads(r.content)
+    except Exception:
+        pass
+    return {'total_wins': 0, 'total_prize': 0, 'active_members': 0}
+
+
 def _ctx(request, **extra):
     user = request.user if request.user.is_authenticated else None
     is_admin = bool(
         user
         and user.email.lower() == settings.ADMIN_EMAIL.lower()
     )
+    site_stats = extra.pop(
+        'site_stats',
+        {'total_wins': 0, 'total_prize': 0, 'active_members': 0},
+    )
     return {
         'app_version': settings.APP_VERSION,
         'page_title': extra.pop('page_title', f'Mandeles.co.il v{settings.APP_VERSION}'),
         'active_product': extra.pop('active_product', 'lotto'),
+        'site_stats': site_stats,
         'user': user,
         'is_admin': is_admin,
         **extra,
@@ -20,7 +40,16 @@ def _ctx(request, **extra):
 
 
 def public_home(request):
-    return render(request, 'web/home.html', _ctx(request, page_title='Mandeles.co.il – לוטו חכם'))
+    stats = _fetch_site_stats()
+    return render(
+        request,
+        'web/home.html',
+        _ctx(
+            request,
+            page_title='Mandeles.co.il – לוטו חכם',
+            site_stats=stats,
+        ),
+    )
 
 
 def public_toto(request):

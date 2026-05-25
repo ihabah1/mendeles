@@ -1,4 +1,4 @@
-<div id="product-lotto" role="tabpanel" aria-labelledby="tab-lotto">
+<div id="product-lotto" role="tabpanel" aria-labelledby="tab-lotto" style="display:block">
 <header class="hero" role="banner">
   <div class="hero-badge" aria-hidden="true">✦ ניתוח מקצועי</div>
   <h1>אסטרטגיית <span>מנדל</span> ללוטו</h1>
@@ -8,9 +8,9 @@
     <p><strong>שים לב:</strong> הצירופים תקפים <strong>עד ההגרלה הקרובה בלבד</strong>. לאחר כל הגרלה מתבצעים חישובים מחדש. לגישה מתמשכת – מנוי חודשי.</p>
   </div>
   <div id="site-stats-bar" style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin:14px 0 0;font-size:.78rem;color:var(--muted)" aria-live="polite">
-    <span>🏆 סה"כ זכיות באתר: <strong id="stat-total-wins" style="color:var(--gold)">טוען...</strong></span>
-    <span>💰 כסף שנזכה: <strong id="stat-total-prize" style="color:var(--win)">טוען...</strong></span>
-    <span>👥 מנויים פעילים: <strong id="stat-members" style="color:var(--cream)">טוען...</strong></span>
+    <span>🏆 סה"כ זכיות באתר: <strong id="stat-total-wins" style="color:var(--gold)">{{ site_stats.total_wins|default:0 }}</strong></span>
+    <span>💰 כסף שנזכה: <strong id="stat-total-prize" style="color:var(--win)">₪{{ site_stats.total_prize|default:0 }}</strong></span>
+    <span>👥 מנויים פעילים: <strong id="stat-members" style="color:var(--cream)">{{ site_stats.active_members|default:0 }}</strong></span>
   </div>
   <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
     <button type="button" class="btn btn-primary" onclick="goPremium()" aria-haspopup="dialog">⭐ רכוש גישה מלאה</button>

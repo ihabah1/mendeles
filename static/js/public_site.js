@@ -151,24 +151,36 @@ function _esc(s) {
 }
 
 // ── NAV ──────────────────────────────────────────────────────
-function switchProduct(p) {
-  ['product-lotto','product-toto','about','legal','accessibility'].forEach(
-    id => document.getElementById(id).style.display = 'none');
-  document.getElementById('product-'+p).style.display = 'block';
-  document.querySelectorAll('.main-tab').forEach(t => {
-    t.classList.toggle('active', t.id==='tab-'+p);
-    t.setAttribute('aria-selected', t.id==='tab-'+p);
+function _hidePanels(ids) {
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
   });
-  if (p === 'toto') renderGameList();
-  window.scrollTo(0,0); closeNav();
+}
+function _showPanel(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = 'block';
+}
+
+function switchProduct(p) {
+  _hidePanels(['product-lotto', 'product-toto', 'about', 'legal', 'accessibility']);
+  _showPanel('product-' + p);
+  document.querySelectorAll('.main-tab').forEach(t => {
+    const on = t.id === 'tab-' + p;
+    t.classList.toggle('active', on);
+    t.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  if (p === 'toto' && typeof renderGameList === 'function') renderGameList();
+  window.scrollTo(0, 0);
+  if (typeof closeNav === 'function') closeNav();
 }
 function showPage(p) {
-  ['product-lotto','product-toto','about','legal','accessibility'].forEach(
-    id => document.getElementById(id).style.display='none');
-  document.getElementById(p).style.display='block';
-  const el = document.getElementById(p+'-main')||document.getElementById(p);
+  _hidePanels(['product-lotto', 'product-toto', 'about', 'legal', 'accessibility']);
+  _showPanel(p);
+  const el = document.getElementById(p + '-main') || document.getElementById(p);
   if (el) el.focus();
-  window.scrollTo(0,0); closeNav();
+  window.scrollTo(0, 0);
+  if (typeof closeNav === 'function') closeNav();
 }
 function toggleNav() {
   const l=document.getElementById('nav-list'),b=document.querySelector('.nav-menu-btn');
