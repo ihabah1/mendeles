@@ -1,0 +1,8 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+preDeployCommand = "python manage.py migrate --noinput && python manage.py setup_portal"
+startCommand = "sh scripts/start.sh"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
