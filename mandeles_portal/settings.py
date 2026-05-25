@@ -37,6 +37,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -67,12 +68,40 @@ TEMPLATES = [
 WSGI_APPLICATION = 'mandeles_portal.wsgi.application'
 ASGI_APPLICATION = 'mandeles_portal.asgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'data' / 'portal.db',
+
+def _configure_databases():
+    """SQLite locally; Postgres via DATABASE_URL; always ensure DB path is writable."""
+    database_url = os.getenv('DATABASE_URL', '').strip()
+    if database_url:
+        import dj_database_url
+
+        return {
+            'default': dj_database_url.config(
+                default=database_url,
+                conn_max_age=600,
+                conn_health_checks=True,
+            )
+        }
+
+    sqlite_path = os.getenv('SQLITE_PATH', '').strip()
+    if sqlite_path:
+        db_path = Path(sqlite_path)
+    else:
+        default_data = '/tmp/mendeles-data' if not DEBUG else str(BASE_DIR / 'data')
+        data_dir = Path(os.getenv('DATA_DIR', default_data))
+        data_dir.mkdir(parents=True, exist_ok=True)
+        db_path = data_dir / 'portal.db'
+
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    return {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': db_path,
+        }
     }
-}
+
+
+DATABASES = _configure_databases()
 
 AUTH_USER_MODEL = 'accounts.User'
 
@@ -91,6 +120,20 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
+    },
+}
+
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    CSRF_TRUSTED_ORIGINS = [
+        origin.strip()
+        for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
+        if origin.strip()
+    ]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

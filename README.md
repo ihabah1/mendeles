@@ -45,6 +45,31 @@ python manage.py setup_portal
 
 `v1.2.2` – בלוגו ובפוטר של אתר React.
 
+## פריסה (Railway / Render / Docker)
+
+השגיאה `unable to open database file` נגרמת כי תיקיית `data/` לא קיימת בקונטיינר. אחרי העדכון האחרון:
+
+| משתנה | חובה בפרודקשן | דוגמה |
+|--------|----------------|--------|
+| `DJANGO_SECRET_KEY` | כן | מחרוזת אקראית ארוכה |
+| `DJANGO_DEBUG` | כן | `false` |
+| `ALLOWED_HOSTS` | כן | `your-app.up.railway.app` |
+| `CSRF_TRUSTED_ORIGINS` | מומלץ | `https://your-app.up.railway.app` |
+| `DATABASE_URL` | מומלץ | Postgres מהפלטפורמה |
+
+בלי `DATABASE_URL` – SQLite נשמר ב־`/tmp/mendeles-data` (נתונים עלולים להימחק בריסטארט).
+
+פקודת start מומלצת:
+
+```bash
+python manage.py migrate --noinput
+python manage.py setup_portal
+python manage.py collectstatic --noinput
+gunicorn mandeles_portal.wsgi:application --bind 0.0.0.0:$PORT
+```
+
+או השתמש ב־`Procfile` שבשורש הפרויקט.
+
 ## בניית Frontend מחדש
 
 ```powershell
