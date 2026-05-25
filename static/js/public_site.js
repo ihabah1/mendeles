@@ -238,6 +238,7 @@ function selectGameType(type, btn) {
 function renderGameList() {
   const games = getGames(curType);
   const list  = document.getElementById('game-list');
+  if (!list) return;
   if (!games.length) {
     list.innerHTML='<p style="color:var(--muted);font-size:.83rem;padding:8px">⏳ טוען נתונים...</p>';
     return;
@@ -440,7 +441,14 @@ let lastF=null;
 function openModal(){lastF=document.activeElement;const m=document.getElementById('pay-modal');m.classList.add('open');m.querySelector('.modal-close').focus();document.addEventListener('keydown',onKey)}
 function closeModal(){document.getElementById('pay-modal').classList.remove('open');document.removeEventListener('keydown',onKey);if(lastF)lastF.focus()}
 function onKey(e){if(e.key==='Escape')closeModal()}
-document.getElementById('pay-modal').addEventListener('click',function(e){if(e.target===this)closeModal()});
+(function () {
+  const payModal = document.getElementById('pay-modal');
+  if (payModal) {
+    payModal.addEventListener('click', function (e) {
+      if (e.target === this) closeModal();
+    });
+  }
+})();
 function selPlan(el){document.querySelectorAll('.plan-card').forEach(c=>{c.classList.remove('sel');c.setAttribute('aria-pressed','false')});el.classList.add('sel');el.setAttribute('aria-pressed','true')}
 document.querySelectorAll('.plan-card').forEach(c=>c.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();c.click()}}));
 function pay(m){alert(m==='stripe'?'💳 מעביר ל-Stripe Checkout...\n(יש לחבר Stripe Checkout API בשרת)':'📱 מעביר ל-PayPal...\n(יש לחבר PayPal Orders API)')}
@@ -672,22 +680,28 @@ async function loadSiteStats(){
   }
   // בדיקת auth + סטטיסטיקות
 
-  // תמיכה ב-?tab= לניווט ישיר מדפים אחרים
-  (function(){
-    var tab = new URLSearchParams(window.location.search).get('tab');
-    if(tab === 'toto') switchProduct('toto');
-    else if(tab === 'about') showPage('about');
-    else if(tab === 'legal') showPage('legal');
-    else if(tab === 'accessibility') showPage('accessibility');
-  })();
+  var tab = new URLSearchParams(window.location.search).get('tab');
+  if (tab === 'toto' && typeof switchProduct === 'function') {
+    switchProduct('toto');
+  } else if (tab === 'about') {
+    window.location.href = '/about/';
+  } else if (tab === 'legal') {
+    window.location.href = '/legal/';
+  } else if (tab === 'accessibility') {
+    window.location.href = '/accessibility/';
+  }
 
   checkAuth();
   loadSiteStats();
-  // SSE / polling לנתוני טוטו
-  if (typeof EventSource !== 'undefined') {
-    connectSSE();
-  } else {
-    startPollingFallback();
+
+  var isTotoPage = document.body.dataset.activeProduct === 'toto'
+    || document.getElementById('product-toto') && !document.getElementById('product-lotto');
+  if (isTotoPage) {
+    if (typeof EventSource !== 'undefined') {
+      connectSSE();
+    } else {
+      startPollingFallback();
+    }
+    renderGameList();
   }
-  renderGameList();
 })();

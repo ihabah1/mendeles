@@ -1,0 +1,28 @@
+<div class="overlay" id="pay-modal" role="dialog" aria-modal="true" aria-labelledby="modal-h">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()" aria-label="סגור">✕</button>
+    <h2 id="modal-h">🌟 גישה מלאה</h2>
+    <p class="modal-sub">לוטו + טוטו – ניתוח מלא ומחולל טורים</p>
+    <div class="modal-validity"><span>⏳</span><div><strong style="color:var(--gold-l);display:block;margin-bottom:2px">תוקף לוטו</strong>הצירופים תקפים עד ההגרלה הקרובה. לגישה מתמשכת – מנוי חודשי.</div></div>
+    <div class="plan-grid">
+      <div class="plan-card sel" onclick="selPlan(this)" role="button" tabindex="0" aria-pressed="true" data-price="25" data-type="weekly"><div class="plan-name">⚡ שבועי</div><div class="plan-price">₪25 <span>/ שבוע</span></div><div class="plan-desc">200 סטים × 2 הגרלות</div><div class="plan-valid warn">⏳ תקף שבוע</div></div>
+      <div class="plan-card" onclick="selPlan(this)" role="button" tabindex="0" aria-pressed="false" data-price="50" data-type="monthly"><div class="plan-name">⭐ חודשי</div><div class="plan-price">₪50 <span>/ חודש</span></div><div class="plan-desc">200 סטים × ~8 הגרלות</div><div class="plan-valid ok">✅ כל ההגרלות</div></div>
+    </div>
+    <button class="pay-stripe" onclick="pay('stripe')">💳 שלם עם כרטיס אשראי</button>
+    <div class="divider" aria-hidden="true">או</div>
+    <button class="pay-pp" onclick="pay('paypal')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.59 3.025-2.566 6.082-8.558 6.082H9.828c-.524 0-.968.382-1.05.9L7.386 21.46c-.072.457.271.877.733.877h4.073c.458 0 .849-.332.923-.784l.038-.196.734-4.655.048-.255c.073-.452.465-.784.923-.784h.581c3.762 0 6.706-1.528 7.567-5.95.362-1.856.176-3.407-.785-4.596z"/></svg>
+      שלם עם PayPal
+    </button>
+    <div class="svc-row"><div class="svc-badge"><span>🔒</span><div><strong>Stripe</strong>PCI DSS</div></div><div class="svc-badge"><span>🧾</span><div><strong>iCount</strong>חשבונית אוטומטית</div></div></div>
+    <p class="modal-legal">בלחיצה אתה מסכים ל<button onclick="showPage('legal');closeModal()">תנאי השימוש</button>. ניתן לביטול בכל עת.</p>
+  </div>
+</div>
+
+<button class="a11y-fab" onclick="togA11y()" aria-label="תפריט נגישות" aria-expanded="false" aria-controls="a11y-panel-el">♿</button>
+<div class="a11y-panel" id="a11y-panel-el" role="region" aria-label="אפשרויות נגישות">
+  <h3>נגישות</h3>
+  <div class="a11y-row"><label>ניגודיות גבוהה</label><button class="a11y-tog" onclick="togMode('hi-contrast',this)" aria-pressed="false" aria-label="ניגודיות גבוהה"></button></div>
+  <div class="a11y-row"><label>טקסט גדול</label><button class="a11y-tog" onclick="togMode('big-text',this)" aria-pressed="false" aria-label="טקסט גדול"></button></div>
+  <div class="a11y-row"><label>הפחת אנימציות</label><button class="a11y-tog" onclick="togMode('no-motion',this)" aria-pressed="false" aria-label="הפחת אנימציות"></button></div>
+</div>

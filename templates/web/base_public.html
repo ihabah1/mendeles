@@ -77,11 +77,6 @@ async function logoutUser() {
   localStorage.removeItem('demo_mode');
   window.location.href = '/';
 }
-document.addEventListener('DOMContentLoaded', function () {
-  var tab = document.body.dataset.activeProduct;
-  if (tab === 'toto' && typeof switchProduct === 'function') switchProduct('toto');
-  if (tab === 'lotto' && typeof switchProduct === 'function') switchProduct('lotto');
-});
 </script>
 {% block extra_js %}{% endblock %}
 </body>

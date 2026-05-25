@@ -1,0 +1,11 @@
+{% extends 'web/base_public.html' %}
+{% block content %}
+{% include 'web/partials/toto_panel.html' %}
+{% endblock %}
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof renderGameList === 'function') renderGameList();
+});
+</script>
+{% endblock %}

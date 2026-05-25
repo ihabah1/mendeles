@@ -1,0 +1,13 @@
+<div id="about" role="region" aria-label="אודות">
+  <div class="page-hero"><h1>אודות Mandeles.co.il</h1><p>כלי ניתוח סטטיסטי מתקדם ללוטו וטוטו. מבוסס על מתמטיקה, מודל פואסון, וניתוח עמוק של ליגת העל.</p></div>
+  <div class="page-wrap" style="padding-top:0">
+    <div class="about-grid">
+      <div class="about-card"><span class="about-icon">📐</span><h3>מתודת מנדל – לוטו</h3><p>Stefan Mandel פיתח גישה מתמטית לכיסוי מקסימלי. אנו מיישמים עקרונות דומים לסינון צירופים חכם.</p></div>
+      <div class="about-card"><span class="about-icon">⚽</span><h3>מנוע טוטו</h3><p>מודל פואסון, ניתוח בית/חוץ, Head-to-Head, עומס משחקים, ו-xG (שערים צפויים) לניבוי 1X2.</p></div>
+      <div class="about-card"><span class="about-icon">🔄</span><h3>עדכון לאחר הגרלה</h3><p>לאחר כל הגרלת לוטו – החישובים מתעדכנים. הצירופים שרכשת תקפים לגרלה הבאה בלבד.</p></div>
+      <div class="about-card"><span class="about-icon">🛡️</span><h3>שקיפות</h3><p>כלי ניתוח בלבד. אין ערובה לזכיה. משחק אחראי הוא ערך עליון.</p></div>
+    </div>
+    <div class="warn-box" role="note"><h3>⚠️ הצהרת אחריות</h3><p>Mandeles.co.il מספק ניתוח סטטיסטי למטרות מידע בלבד. לוטו וטוטו הם משחקי מזל. גיל מינימלי 18. בעיות הימורים: <a href="tel:1800232425" style="color:var(--gold)">1-800-23-24-25</a></p></div>
+    <div class="card"><h2 style="font-family:'Frank Ruhl Libre',serif;font-size:1rem;margin-bottom:9px;color:var(--cream)">יצירת קשר</h2><p>📧 <a href="mailto:support@mandeles.co.il" style="color:var(--gold)">support@mandeles.co.il</a></p><p style="font-size:.78rem;margin-top:5px;color:var(--muted)">מענה עד 48 שעות</p></div>
+  </div>
+</div>

@@ -43,10 +43,11 @@ def public_home(request):
     stats = _fetch_site_stats()
     return render(
         request,
-        'web/home.html',
+        'web/lotto_home.html',
         _ctx(
             request,
             page_title='Mandeles.co.il – לוטו חכם',
+            active_product='lotto',
             site_stats=stats,
         ),
     )
@@ -55,8 +56,13 @@ def public_home(request):
 def public_toto(request):
     return render(
         request,
-        'web/home.html',
-        _ctx(request, active_product='toto', page_title='Mandeles.co.il – טוטו חכם'),
+        'web/toto_home.html',
+        _ctx(
+            request,
+            active_product='toto',
+            page_title='Mandeles.co.il – טוטו חכם',
+            site_stats=_fetch_site_stats(),
+        ),
     )
 
 
