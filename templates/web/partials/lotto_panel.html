@@ -14,9 +14,7 @@
   </div>
   <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
     <button type="button" class="btn btn-primary" onclick="goPremium()" aria-haspopup="dialog">⭐ רכוש גישה מלאה</button>
-    {% if user %}
-    <a href="/account/" class="btn" style="background:transparent;border:1.5px solid var(--gold);color:var(--gold);border-radius:10px;padding:10px 20px;font-family:'Heebo',sans-serif;font-weight:700;cursor:pointer;font-size:.88rem;text-decoration:none;display:inline-block">החשבון שלי</a>
-    {% else %}
+    {% if not user %}
     <button type="button" class="btn" data-hide-when-logged-in onclick="goToAuth()" style="background:transparent;border:1.5px solid var(--gold);color:var(--gold);border-radius:10px;padding:10px 20px;font-family:'Heebo',sans-serif;font-weight:700;cursor:pointer;font-size:.88rem">כניסה לחשבון</button>
     {% endif %}
   </div>
