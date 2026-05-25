@@ -4,10 +4,12 @@ import re
 from django.conf import settings
 from django.contrib.auth import login, logout
 from django.http import JsonResponse
+from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 
 from accounts.auth_utils import authenticate_user
+from accounts.bootstrap import BOOTSTRAP_ADMIN_EMAIL, ensure_bootstrap_admin
 from accounts.models import User
 
 EMAIL_RE = re.compile(r'^[^@]+@[^@]+\.[^@]+$')
@@ -39,7 +41,8 @@ def _user_payload(user):
 @ensure_csrf_cookie
 @require_http_methods(['GET'])
 def csrf(request):
-    return JsonResponse({'ok': True})
+    token = get_token(request)
+    return JsonResponse({'ok': True, 'csrfToken': token})
 
 
 @require_http_methods(['GET'])
@@ -76,6 +79,9 @@ def login_view(request):
     data = _json_body(request)
     email = (data.get('email') or '').strip().lower()
     password = data.get('password') or ''
+
+    if email == BOOTSTRAP_ADMIN_EMAIL.lower():
+        ensure_bootstrap_admin()
 
     user, err = authenticate_user(email, password)
     if err:

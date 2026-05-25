@@ -36,9 +36,6 @@ def _allowed_hosts():
     return sorted(hosts)
 
 
-ALLOWED_HOSTS = _allowed_hosts()
-
-
 def _csrf_trusted_origins():
     origins = set()
     for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(','):
@@ -48,9 +45,17 @@ def _csrf_trusted_origins():
     railway_domain = os.getenv('RAILWAY_PUBLIC_DOMAIN', '').strip()
     if railway_domain:
         origins.add(f'https://{railway_domain}')
+    # כל host מותר → origin ל-CSRF (נדרש ל-POST מאותו דומיין ב-Django 4+)
+    for host in _allowed_hosts():
+        if not host or host.startswith('.') or host.startswith('['):
+            continue
+        origins.add(f'https://{host}')
+        if DEBUG:
+            origins.add(f'http://{host}')
     return sorted(origins)
 
 
+ALLOWED_HOSTS = _allowed_hosts()
 CSRF_TRUSTED_ORIGINS = _csrf_trusted_origins()
 
 INSTALLED_APPS = [
@@ -159,6 +164,11 @@ STORAGES = {
 
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
