@@ -31,9 +31,31 @@ _EXECUTORS = {
 }
 
 
+def _aijob_table_exists() -> bool:
+    """False בזמן migrate לפני יצירת הטבלה – לא לגעת ב-DB ב-ready."""
+    from django.db import connection
+
+    try:
+        if connection.vendor == 'postgresql':
+            with connection.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT 1 FROM information_schema.tables
+                    WHERE table_schema = 'public' AND table_name = %s
+                    """,
+                    [AIJob._meta.db_table],
+                )
+                return cur.fetchone() is not None
+        return AIJob._meta.db_table in connection.introspection.table_names()
+    except Exception:
+        return False
+
+
 def ensure_queue_worker() -> None:
     """מפעיל thread יחיד שמעבד את התור (פעם אחת לתהליך)."""
     global _WORKER_STARTED
+    if not _aijob_table_exists():
+        return
     with _WORKER_LOCK:
         if _WORKER_STARTED:
             return
@@ -44,8 +66,21 @@ def ensure_queue_worker() -> None:
         logger.info('AI job queue worker started')
 
 
+def start_worker_when_db_ready() -> None:
+    """ממתין לטבלת התור (אחרי migrate) – לא שואל DB ב-AppConfig.ready ישירות."""
+    close_old_connections()
+    for _ in range(90):
+        if _aijob_table_exists():
+            ensure_queue_worker()
+            return
+        time.sleep(2)
+    logger.warning('AI job queue: ai_agent_aijob table not found after wait')
+
+
 def recover_stale_jobs() -> int:
     """מחזיר ג'ובים שנתקעו ב-running אחרי קריסת worker."""
+    if not _aijob_table_exists():
+        return 0
     cutoff = timezone.now() - timedelta(minutes=_STALE_RUNNING_MINUTES)
     stale = list(
         AIJob.objects.filter(status=AIJob.Status.RUNNING, started_at__lt=cutoff),
@@ -79,6 +114,8 @@ def enqueue(
     performed_by=None,
 ) -> AIJob:
     """מוסיף משימה לתור. לא יוצר כפילות לאותו סוג שכבר ממתין/רץ."""
+    if not _aijob_table_exists():
+        raise RuntimeError('טבלת תור הג\'ובים לא קיימת – הרץ migrate (ai_agent 0006)')
     ensure_queue_worker()
 
     with transaction.atomic():

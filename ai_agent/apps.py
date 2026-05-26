@@ -1,3 +1,5 @@
+import threading
+
 from django.apps import AppConfig
 
 
@@ -9,7 +11,13 @@ class AiAgentConfig(AppConfig):
     def ready(self) -> None:
         from django.conf import settings
 
-        if getattr(settings, 'AI_AGENT_ENABLED', False):
-            from ai_agent.services.job_queue import ensure_queue_worker
+        if not getattr(settings, 'AI_AGENT_ENABLED', False):
+            return
+        # לא לגעת ב-DB כאן – manage.py migrate קורא ל-ready לפני שהטבלה קיימת
+        from ai_agent.services.job_queue import start_worker_when_db_ready
 
-            ensure_queue_worker()
+        threading.Thread(
+            target=start_worker_when_db_ready,
+            name='ai-queue-init',
+            daemon=True,
+        ).start()
