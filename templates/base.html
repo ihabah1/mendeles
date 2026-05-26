@@ -3,7 +3,7 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#080e14">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>">
@@ -16,7 +16,15 @@
 {% block body %}{% endblock %}
 <script>
 function toggleSidebar(){
-  document.getElementById('sidebar')?.classList.toggle('open');
+  var sb = document.getElementById('sidebar');
+  var bd = document.getElementById('sidebar-backdrop');
+  if (!sb) return;
+  var open = sb.classList.toggle('open');
+  if (bd) {
+    bd.hidden = !open;
+    bd.setAttribute('aria-hidden', open ? 'false' : 'true');
+  }
+  document.body.classList.toggle('sidebar-open', open);
 }
 </script>
 {% block extra_js %}{% endblock %}
