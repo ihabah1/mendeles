@@ -20,6 +20,7 @@ nav{background:var(--navy-m);border-bottom:1px solid var(--navy-b);position:stic
 .nav-menu-btn{display:none;background:none;border:1px solid var(--navy-b);color:var(--muted);border-radius:7px;padding:7px 10px;font-size:1.1rem;cursor:pointer;line-height:1}
 @media(max-width:680px){
   .nav-inner{padding:8px 12px}
+  .nav-inner{padding:12px 12px}
   .nav-links{display:none;flex-direction:column;position:absolute;top:100%;right:0;left:0;background:var(--navy-m);border-bottom:1px solid var(--navy-b);padding:8px 16px 14px;gap:2px;z-index:99;box-shadow:0 12px 24px rgba(0,0,0,.35)}
   .nav-links.open{display:flex}
   .nav-links a{padding:12px 14px;font-size:.95rem}
