@@ -88,10 +88,10 @@
   <button type="button" class="btn btn-green" disabled>יוצר PR ב-Git…</button>
   {% endif %}
   {% if can_cancel %}
-  <button type="button" class="btn btn-outline" id="btn-cancel-job"
+  <button type="button" class="btn btn-outline ai-cancel-job-btn" id="btn-cancel-job"
     data-url="{{ cancel_url }}"
     data-status-url="{{ status_url }}"
-    style="border-color:var(--loss);color:var(--loss)">
+    style="border-color:var(--loss);color:var(--loss);cursor:pointer">
     ⛔ בטל ג'וב (תקוע)
   </button>
   {% endif %}
@@ -159,10 +159,21 @@
 
   var approveLockActive = false;
 
+  function isCancelButton(el) {
+    return el && el.id === 'btn-cancel-job';
+  }
+
+  function keepCancelEnabled() {
+    var cancelBtn = document.getElementById('btn-cancel-job');
+    if (cancelBtn) cancelBtn.disabled = false;
+  }
+
   function setActionsBusy(busy) {
     document.querySelectorAll('#ai-actions button, #ai-actions form button').forEach(function (b) {
+      if (isCancelButton(b)) return;
       b.disabled = busy;
     });
+    if (busy) keepCancelEnabled();
     if (spinner) spinner.style.display = busy ? 'inline' : 'none';
     if (logPanel && busy) logPanel.style.display = 'block';
   }
@@ -325,6 +336,7 @@
     {% if is_generating %}
     btnGen.textContent = 'מייצר diff… (נא להמתין)';
     setActionsBusy(true);
+    keepCancelEnabled();
     const recoverPoll = setInterval(function () {
       pollStatus(btnGen.dataset.statusUrl).then(function (data) {
         renderLogs(data.logs);
@@ -458,7 +470,8 @@
 
   {% if is_pr_creating %}
   lockApproveFlow();
-  var prBtn = document.querySelector('#ai-actions .btn-green');
+  keepCancelEnabled();
+  var prBtn = document.querySelector('#ai-actions .btn-green:not(#btn-cancel-job)');
   if (prBtn) prBtn.textContent = 'נעול · יוצר PR ב-Git…';
   var prPoll = startStatusPolling('{{ status_url }}', function (data) {
     if (data.status === 'pr_created') {
