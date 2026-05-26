@@ -13,6 +13,7 @@
       {% if queue_summary.running_global and queue_summary.running_job %}
       רץ: {{ queue_summary.running_job.type_label }} · בקשה #{{ queue_summary.running_job.request_id }}
       {% else %}ממתינים: {{ queue_summary.pending_global }}{% endif %}
+      · שלבי הרצה מנוהלים ב<a href="{% url 'portal:ai_requests' %}" style="color:var(--gold)">ניהול שינויים</a>
     </div>
   </div>
   <a href="{% url 'portal:ai_request_create' %}" class="btn btn-gold">+ בקשה חדשה</a>
@@ -35,7 +36,7 @@
     <tbody id="ai-jobs-tbody"></tbody>
   </table>
 </div>
-<p style="font-size:.72rem;color:var(--muted);margin-top:8px">לחץ על <strong>שם הג'וב</strong> לראות את הבקשה · <strong>לוג</strong> לפרטי הרצה · מתעדכן כל 3 שניות</p>
+<p style="font-size:.72rem;color:var(--muted);margin-top:8px">לחץ על <strong>שם הג'וב</strong> לפרטים · <strong>לוג</strong> להרצה · להרצת שלבים (diff / PR / Git) עבור לרשומת הבקשה</p>
 
 {% include 'portal/partials/ai_detail_modal.html' %}
 {{ jobs|json_script:"ai-jobs-data" }}
@@ -43,6 +44,7 @@
 (function () {
   var modal = null;
   var queueUrl = '{{ queue_status_url }}';
+  var lastJobs = [];
 
   function openRequestLogs(requestId) {
     fetch('/manage/ai/' + requestId + '/status/', { credentials: 'same-origin', headers: { Accept: 'application/json' } })
@@ -50,6 +52,18 @@
       .then(function (data) {
         modal.open('בקשה #' + requestId + ' · ' + (data.status_label || ''), AiPortalUI.buildLogModalHtml(data));
       });
+  }
+
+  function renderTable(jobs) {
+    lastJobs = jobs || [];
+    AiPortalUI.renderJobsTableBody(document.getElementById('ai-jobs-tbody'), lastJobs, {
+      showRequest: true,
+      showRequestStatus: true,
+      onJobNameClick: function (j) {
+        modal.open('ג\'וב: ' + j.type_label, AiPortalUI.buildJobInfoModalHtml(j));
+      },
+      onRowClick: function (j) { openRequestLogs(j.request_id); },
+    });
   }
 
   function refresh() {
@@ -64,14 +78,7 @@
             sum.textContent = 'ממתינים: ' + (data.pending_global || 0);
           }
         }
-        AiPortalUI.renderJobsTableBody(document.getElementById('ai-jobs-tbody'), data.jobs, {
-          showRequest: true,
-          showRequestStatus: true,
-          onJobNameClick: function (j) {
-            modal.open('ג\'וב: ' + j.type_label, AiPortalUI.buildJobInfoModalHtml(j));
-          },
-          onRowClick: function (j) { openRequestLogs(j.request_id); },
-        });
+        renderTable(data.jobs);
       });
   }
 
@@ -79,14 +86,7 @@
     modal = AiPortalUI.initAiModal();
     var initial = [];
     try { initial = JSON.parse(document.getElementById('ai-jobs-data').textContent); } catch (e) {}
-    AiPortalUI.renderJobsTableBody(document.getElementById('ai-jobs-tbody'), initial, {
-      showRequest: true,
-      showRequestStatus: true,
-      onJobNameClick: function (j) {
-        modal.open('ג\'וב: ' + j.type_label, AiPortalUI.buildJobInfoModalHtml(j));
-      },
-      onRowClick: function (j) { openRequestLogs(j.request_id); },
-    });
+    renderTable(initial);
     setInterval(refresh, 3000);
   });
 })();

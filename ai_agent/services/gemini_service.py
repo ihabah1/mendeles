@@ -15,6 +15,7 @@ from .site_index import (
     select_files_with_index,
     try_direct_edit,
 )
+from .ui_registry import enrich_with_screenshot
 
 REPAIR_PROMPT = """
 Your previous response was invalid. Output ONLY a unified git diff.
@@ -58,8 +59,10 @@ def _build_user_prompt(
         parts.append('')
     if image_paths:
         parts.append(
-            'REFERENCE IMAGES: The user attached screenshot(s) of the site. '
-            'Match layout, colors, and elements visible in the images.\n',
+            'REFERENCE IMAGES: Screenshot(s) of the live UI.\n'
+            'If a VISION / SCREENSHOT block lists mapped elements (Hebrew label → file:line), '
+            'you MUST edit those exact files/lines for the element the user points at.\n'
+            'Example: «דשבורד» in sidebar → templates/portal/base_dashboard.html sb-item line.\n',
         )
     parts.append(f'USER REQUEST:\n{request_prompt.strip()}\n')
     parts.append('ALLOWED PROJECT FILES (read-only context):\n')
@@ -157,15 +160,17 @@ def generate_diff(
         raise GeminiServiceError('לא נמצאו קבצים מותרים בפרויקט')
 
     resolved = resolve_request(prompt, root)
+    if image_paths:
+        log(f'מצורפות {len(image_paths)} תמונות – מקשר צילום לרכיבים בקוד…')
+        resolved = enrich_with_screenshot(prompt, root, resolved, image_paths, log=log)
+
     log(f'פרשנות: {resolved.to_log_line()}')
     if resolved.search_terms:
-        log(f'מונחי חיפוש: {", ".join(resolved.search_terms[:5])}')
+        log(f'מונחי חיפוש: {", ".join(resolved.search_terms[:8])}')
     if resolved.target_files:
         log(f'קבצים מומלצים: {", ".join(resolved.target_files[:4])}')
 
-    if image_paths:
-        log(f'מצורפות {len(image_paths)} תמונות לבקשה (Gemini Vision)')
-    direct = try_direct_edit(prompt, root, resolved) if not image_paths else None
+    direct = try_direct_edit(prompt, root, resolved)
     if direct:
         log('שינוי ישיר מהאינדוקס (ללא Gemini)')
         return direct

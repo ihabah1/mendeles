@@ -1,68 +1,72 @@
 {% extends "portal/base_dashboard.html" %}
-{% block title %}היסטוריית שינויים באתר – Mandeles{% endblock %}
-{% block topbar %}היסטוריית שינויים באתר{% endblock %}
+{% load static %}
+{% block title %}ניהול שינויים AI – Mandeles{% endblock %}
+{% block topbar %}ניהול שינויים{% endblock %}
+{% block extra_head %}
+<script src="{% static 'js/ai_portal_ui.js' %}" defer></script>
+{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
-    <div class="page-title">היסטוריית שינויים באתר</div>
+    <div class="page-title">ניהול שינויים</div>
     <div class="page-sub">
-      כל בקשות ה-AI · מוזגות ל-Git נשמרות גם ב
-      <a href="{% url 'portal:logs' %}" style="color:var(--gold)">היסטוריית פעולות</a>
+      רשומה לכל בקשה · ג'ובים ב<a href="{% url 'portal:ai_jobs' %}" style="color:var(--gold)">תור נפרד</a>
+      · מוזגות ל-Git ב<a href="{% url 'portal:logs' %}" style="color:var(--gold)">היסטוריית פעולות</a>
     </div>
   </div>
   <a href="{% url 'portal:ai_request_create' %}" class="btn btn-outline">שליחת בקשה חדשה →</a>
 </div>
 
-<div class="alert alert-success" style="margin-bottom:16px;font-size:.82rem;line-height:1.5">
-  <strong>איפה רואים שינוי?</strong>
-  האתר ב־<code>/</code> הוא <strong>Django</strong> (<code>templates/web/</code>).
-  דשבורד ניהול ב־<code>/manage/</code> משתמש ב־<code>templates/portal/</code> ו־<code>static/css/portal.css</code>.
-  <code>templates/portal/home.html</code> לא מחובר – שינוי שם לא יופיע באתר.
-</div>
-
 <div class="table-wrap">
-  <table>
+  <table class="ai-changes-table">
     <thead>
       <tr>
         <th>#</th>
         <th>בקשה</th>
         <th>סטטוס</th>
-        <th>איפה נראה</th>
-        <th>קבצים</th>
-        <th>מוזג</th>
+        <th class="ai-stage-th">ייצור diff</th>
+        <th class="ai-stage-th">יצירת PR</th>
+        <th class="ai-stage-th">מיזוג / Push ל-Git</th>
         <th>PR</th>
         <th></th>
       </tr>
     </thead>
-    <tbody>
-    {% for r in requests %}
-    <tr>
+    <tbody id="ai-changes-tbody">
+    {% for row in request_rows %}
+    {% with r=row.req pipeline=row.pipeline %}
+    <tr data-request-id="{{ r.pk }}" data-status-url="{{ pipeline.status_url }}">
       <td class="td-mono">{{ r.id }}</td>
-      <td>{{ r.prompt|truncatechars:50 }}</td>
+      <td style="max-width:200px">{{ r.prompt|truncatechars:48 }}</td>
       <td><span class="badge badge-gold">{{ r.get_status_display }}</span></td>
-      <td style="font-size:.75rem">
-        {% if r.publish_scope == 'live' %}<span class="badge badge-green">אתר ראשי</span>
-        {% elif r.publish_scope == 'manage' %}<span class="badge badge-gray">ניהול בלבד</span>
-        {% elif r.publish_scope == 'mixed' %}<span class="badge badge-green">אתר+ניהול</span>
-        {% else %}—{% endif %}
-      </td>
-      <td style="font-size:.7rem;color:var(--muted);max-width:180px">
-        {% if r.files_touched %}{{ r.files_touched|join:", "|truncatechars:72 }}{% else %}—{% endif %}
-      </td>
-      <td class="td-mono">{% if r.merged_at %}{{ r.merged_at|date:"Y-m-d H:i" }}{% else %}—{% endif %}</td>
+      {% include "portal/partials/ai_pipeline_row.html" with pipeline=pipeline only %}
       <td>
         {% if r.pr_url %}
         <a href="{{ r.pr_url }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">#{{ r.pr_number }}</a>
         {% else %}—{% endif %}
       </td>
-      <td><a href="{% url 'portal:ai_request_detail' r.pk %}" class="btn btn-outline btn-sm">פתח</a></td>
+      <td>
+        <a href="{% url 'portal:ai_request_detail' r.pk %}" class="btn btn-outline btn-sm">פתח</a>
+        {% if pipeline.can_reject %}
+        <button type="button" class="btn btn-red btn-sm ai-btn-reject" data-url="{{ pipeline.reject_url }}">דחה</button>
+        {% endif %}
+      </td>
     </tr>
+    {% endwith %}
     {% empty %}
     <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">
-      אין שינויים מתועדים – <a href="{% url 'portal:ai_request_create' %}" style="color:var(--gold)">צור בקשה</a>
+      אין שינויים – <a href="{% url 'portal:ai_request_create' %}" style="color:var(--gold)">צור בקשה</a>
     </td></tr>
     {% endfor %}
     </tbody>
   </table>
 </div>
+<p style="font-size:.72rem;color:var(--muted);margin-top:8px">
+  <span class="ai-stage-check ai-stage-check--done ai-stage-check--inline"><span class="ai-stage-v">✓</span></span> שלב הושלם ·
+  <strong>הרץ</strong> פעיל רק כשהשלב הקודם מסומן
+</p>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (window.AiPortalUI) AiPortalUI.wirePipelineRunButtons(document.getElementById('ai-changes-tbody'));
+});
+</script>
 {% endblock %}

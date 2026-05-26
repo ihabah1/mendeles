@@ -8,7 +8,8 @@ Admins write simple requests without file paths. Examples:
 - "הוסף דף שיציג נתונים מ-/api/stats" → new template + fetch in public_site.js or extra_js
 - "דף עם נתונים למשתמש המחובר" → {% if user %} and /auth/me fetch
 The user message may include a SYSTEM INTERPRETATION block (intent, files, replace pair) — follow it exactly.
-If REFERENCE IMAGES are attached, use them to understand which UI element to change (layout, colors, Hebrew text).
+If REFERENCE IMAGES are attached, read the VISION / SCREENSHOT block: it maps Hebrew labels visible in the photo to exact file:line (e.g. דשבורד → templates/portal/base_dashboard.html). Edit THAT element only.
+Manage sidebar nav items live in templates/portal/base_dashboard.html (class sb-item). Section titles use sb-section (e.g. ראשי, מערכת).
 Public homepage = templates/web/ (base_public.html, lotto_home, partials). Nav greeting: base_public.html nav-greeting.
 Manage dashboard = templates/portal/ + static/css/portal.css. Cannot edit urls.py or .py — for new URLs add HTML comment in template with requested path.
 

@@ -52,6 +52,8 @@
 </div>
 {% endif %}
 
+{% include "portal/partials/ai_pipeline_detail.html" %}
+
 <div class="card-panel" style="margin-bottom:16px">
   <div class="ai-status-strip">
     <span class="ai-log-spinner" id="ai-log-spinner" style="{% if not is_in_progress %}display:none{% endif %}">⏳</span>
@@ -79,64 +81,6 @@
     </thead>
     <tbody id="ai-jobs-tbody"></tbody>
   </table>
-</div>
-
-<div class="ai-actions" id="ai-actions" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
-  {% if can_generate %}
-  <button type="button" class="btn btn-gold" id="btn-generate-diff"
-    data-url="{{ generate_url }}"
-    data-status-url="{{ status_url }}">
-    ייצר diff (Gemini)
-  </button>
-  {% endif %}
-  {% if is_generating %}
-  <button type="button" class="btn btn-gold" id="btn-generate-diff" disabled
-    data-url="{{ generate_url }}"
-    data-status-url="{{ status_url }}">
-    מייצר diff…
-  </button>
-  {% endif %}
-  {% if can_approve %}
-  <button type="button" class="btn btn-green ai-action-btn" id="btn-approve-pr"
-    data-url="{{ approve_url }}"
-    data-status-url="{{ status_url }}">
-    אשר ויצור PR
-  </button>
-  {% endif %}
-  {% if is_pr_creating %}
-  <button type="button" class="btn btn-green" disabled>יוצר PR ב-Git…</button>
-  {% endif %}
-  {% if can_retry %}
-  <button type="button" class="btn btn-gold" id="btn-retry-step"
-    data-url="{{ retry_url }}"
-    data-status-url="{{ status_url }}">
-    ↻ המשך שלב תקוע
-  </button>
-  {% endif %}
-  {% if can_cancel %}
-  <button type="button" class="btn btn-outline ai-cancel-job-btn" id="btn-cancel-job"
-    data-url="{{ cancel_url }}"
-    data-status-url="{{ status_url }}"
-    style="border-color:var(--loss);color:var(--loss);cursor:pointer">
-    ⛔ בטל ג'וב (תקוע)
-  </button>
-  {% endif %}
-  {% if can_merge %}
-  <button type="button" class="btn btn-green" id="btn-merge-pr"
-    data-url="{{ merge_url }}"
-    data-status-url="{{ status_url }}">
-    מזג ל-main (Merge PR)
-  </button>
-  {% endif %}
-  {% if is_merged %}
-  <button type="button" class="btn btn-green" disabled>✓ מוזג ל-main</button>
-  {% endif %}
-  {% if can_reject %}
-  <form method="post" action="{% url 'portal:ai_request_reject' req.pk %}">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-red ai-action-btn">דחה</button>
-  </form>
-  {% endif %}
 </div>
 
 {% if req.pr_url %}
@@ -172,12 +116,14 @@
 
 {% include 'portal/partials/ai_detail_modal.html' %}
 {{ queue.jobs|json_script:"ai-request-jobs" }}
+{{ pipeline|json_script:"ai-request-pipeline" }}
 {{ req.prompt|json_script:"ai-req-prompt" }}
 
 <script>
 (function () {
   var aiModal = null;
   var lastStatusData = null;
+  var lastJobs = [];
   const spinner = document.getElementById('ai-log-spinner');
   const statusLabel = document.getElementById('ai-status-label');
   const hint = document.getElementById('ai-hint');
@@ -187,35 +133,14 @@
     return m ? decodeURIComponent(m[2]) : '';
   }
 
-  var approveLockActive = false;
-
-  function isCancelButton(el) {
-    return el && el.id === 'btn-cancel-job';
-  }
-
-  function keepCancelEnabled() {
-    var cancelBtn = document.getElementById('btn-cancel-job');
-    if (cancelBtn) cancelBtn.disabled = false;
-  }
-
-  function setActionsBusy(busy) {
-    document.querySelectorAll('#ai-actions button, #ai-actions form button').forEach(function (b) {
-      if (isCancelButton(b)) return;
-      b.disabled = busy;
+  function setPipelineBusy(busy) {
+    document.querySelectorAll('#ai-pipeline-card .ai-btn-run-stage').forEach(function (b) {
+      if (!b.classList.contains('ai-btn-run-stage')) return;
+      if (busy && b.textContent.indexOf('רץ') === -1) b.dataset.wasEnabled = b.disabled ? '0' : '1';
+      if (!busy && b.dataset.wasEnabled === '1') b.disabled = false;
+      else if (busy) b.disabled = true;
     });
-    if (busy) keepCancelEnabled();
     if (spinner) spinner.style.display = busy ? 'inline' : 'none';
-  }
-
-  function lockApproveFlow() {
-    approveLockActive = true;
-    setActionsBusy(true);
-  }
-
-  function unlockApproveFlow() {
-    approveLockActive = false;
-    setActionsBusy(false);
-    if (spinner) spinner.style.display = 'none';
   }
 
   function showGitToast(msg) {
@@ -234,8 +159,8 @@
     showGitToast(msg || '✓ Git עודכן בהצלחה – PR מוזג ל-main');
     var hint = document.getElementById('ai-deploy-hint');
     if (hint) hint.remove();
-    var actions = document.getElementById('ai-actions');
-    if (!actions || !actions.parentNode) return;
+    var card = document.getElementById('ai-pipeline-card');
+    if (!card || !card.parentNode) return;
     var merged = document.getElementById('ai-git-merged-banner');
     if (!merged) {
       merged = document.createElement('div');
@@ -244,55 +169,23 @@
       merged.style.marginBottom = '16px';
       merged.style.fontSize = '.9rem';
       merged.style.fontWeight = '600';
-      actions.parentNode.insertBefore(merged, actions);
+      card.parentNode.insertBefore(merged, card);
     }
     merged.textContent = '✓ Git עודכן בהצלחה – ה-PR מוזג ל-main. Railway אמור לבנות את האתר בדקות הקרובות.';
-    var mergeBtn = document.getElementById('btn-merge-pr');
-    if (mergeBtn) {
-      mergeBtn.disabled = true;
-      mergeBtn.textContent = '✓ מוזג ל-main';
-    }
   }
 
-  function ensureMergeButton(mergeUrl, statusUrl) {
-    if (!mergeUrl || document.getElementById('btn-merge-pr')) return;
-    var actions = document.getElementById('ai-actions');
-    if (!actions) return;
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'btn btn-green';
-    btn.id = 'btn-merge-pr';
-    btn.dataset.url = mergeUrl;
-    btn.dataset.statusUrl = statusUrl || '';
-    btn.textContent = 'מזג ל-main (Merge PR)';
-    actions.appendChild(btn);
-    wireMergeButton(btn);
-    var deployHint = document.getElementById('ai-deploy-hint');
-    if (!deployHint && actions.parentNode) {
-      deployHint = document.createElement('div');
-      deployHint.className = 'alert alert-success';
-      deployHint.id = 'ai-deploy-hint';
-      deployHint.style.marginBottom = '16px';
-      deployHint.style.fontSize = '.85rem';
-      deployHint.innerHTML = 'ה-PR מוכן. לחץ <strong>מזג ל-main</strong> כדי לעדכן את Git ולהפעיל deploy ב-Railway.';
-      actions.parentNode.insertBefore(deployHint, actions);
-    }
-  }
-
-  function showPrSuccess(prUrl, prNumber, mergeUrl, statusUrl) {
-    unlockApproveFlow();
-    var actions = document.getElementById('ai-actions');
-    if (!actions || !actions.parentNode) return;
+  function showPrSuccess(prUrl, prNumber) {
+    var card = document.getElementById('ai-pipeline-card');
+    if (!card || !card.parentNode) return;
     var banner = document.getElementById('ai-pr-banner');
     if (!banner) {
       banner = document.createElement('div');
       banner.className = 'alert alert-success';
       banner.id = 'ai-pr-banner';
       banner.style.marginBottom = '16px';
-      actions.parentNode.insertBefore(banner, actions);
+      card.parentNode.insertBefore(banner, card);
     }
     banner.innerHTML = '<a href="' + prUrl + '" target="_blank" rel="noopener" style="color:var(--green);font-weight:700">פתח Pull Request #' + (prNumber || '') + '</a>';
-    if (mergeUrl) ensureMergeButton(mergeUrl, statusUrl);
   }
 
   var requestPromptText = '';
@@ -366,7 +259,8 @@
   function renderQueueTable(q) {
     var tbody = document.getElementById('ai-jobs-tbody');
     if (!tbody || !q) return;
-    AiPortalUI.renderJobsTableBody(tbody, q.jobs || [], {
+    lastJobs = q.jobs || [];
+    AiPortalUI.renderJobsTableBody(tbody, lastJobs, {
       detailLayout: true,
       onJobNameClick: function (j) { openJobInfoModal(j); },
       onRowClick: function () { openLogsModal(); },
@@ -376,6 +270,9 @@
   function applyStatusUpdate(data) {
     if (!data) return;
     lastStatusData = data;
+    if (data.pipeline) {
+      AiPortalUI.updatePipelineUI(document.getElementById('ai-pipeline-card'), data.pipeline);
+    }
     renderQueueTable(data.queue);
     if (statusLabel) statusLabel.textContent = data.status_label || data.status;
     if (data.failed && data.error) {
@@ -431,171 +328,72 @@
     }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); });
   }
 
+  var activePollStop = null;
+
   document.addEventListener('DOMContentLoaded', function () {
     aiModal = AiPortalUI.initAiModal();
     try {
       var initial = JSON.parse(document.getElementById('ai-request-jobs').textContent);
       renderQueueTable({ jobs: initial });
     } catch (e) {}
-    var openBtn = document.getElementById('btn-open-logs');
-    if (openBtn) openBtn.addEventListener('click', openLogsModal);
-  });
-
-  const btnGen = document.getElementById('btn-generate-diff');
-  if (btnGen) {
-    btnGen.addEventListener('click', function () {
-      setActionsBusy(true);
-      btnGen.textContent = 'מייצר diff… (נא להמתין)';
-      var stopPoll = startLivePolling(btnGen.dataset.statusUrl, function (data) {
-        stopPoll();
-        if (data.status === 'diff_ready' && data.ok) {
-          window.location.reload();
-          return;
-        }
-        setActionsBusy(false);
-        btnGen.textContent = 'ייצר diff (Gemini)';
-        if (data.failed && data.error) alert(data.error);
-        else if (data.cancelled) window.location.reload();
-      });
-      postAction(btnGen.dataset.url)
-        .then(function (res) {
-          applyStatusUpdate(res.data);
-          if (!res.ok && res.data.error) {
-            stopPoll();
-            setActionsBusy(false);
-            btnGen.textContent = 'ייצר diff (Gemini)';
-            alert(res.data.error);
-          }
-        })
-        .catch(function (err) {
-          stopPoll();
-          setActionsBusy(false);
-          btnGen.textContent = 'ייצר diff (Gemini)';
-          alert('שגיאת רשת: ' + err);
-        });
-    });
-
-    {% if is_generating %}
-    btnGen.textContent = 'מייצר diff… (נא להמתין)';
-    setActionsBusy(true);
-    keepCancelEnabled();
-    startLivePolling(btnGen.dataset.statusUrl, function (data) {
-      if (data.status === 'diff_ready' && data.ok) window.location.reload();
-      else if (data.failed || data.cancelled) window.location.reload();
-    });
-    {% endif %}
-  }
-
-  const btnApprove = document.getElementById('btn-approve-pr');
-  if (btnApprove) {
-    btnApprove.addEventListener('click', function () {
-      if (approveLockActive) return;
-      if (!confirm('לאשר את ה-diff וליצור Pull Request?')) return;
-      lockApproveFlow();
-      btnApprove.disabled = true;
-      btnApprove.textContent = 'נעול · יוצר PR ב-Git…';
-      var stopPoll = startLivePolling(btnApprove.dataset.statusUrl, function (data) {
-        stopPoll();
-        if (data.status === 'pr_created') {
-          btnApprove.style.display = 'none';
-          if (data.pr_url) {
-            showPrSuccess(data.pr_url, data.pr_number, data.merge_url, btnApprove.dataset.statusUrl);
-          } else {
+    var pipelineRoot = document.getElementById('ai-pipeline-card');
+    AiPortalUI.wirePipelineRunButtons(pipelineRoot, {
+      onRunStart: function () {
+        setPipelineBusy(true);
+        if (activePollStop) activePollStop();
+        activePollStop = startLivePolling(statusUrl, function (data) {
+          if (data.status === 'pr_created' || data.status === 'pr_merged' || data.merged) {
+            if (activePollStop) activePollStop();
+            activePollStop = null;
+            if (data.pr_url) showPrSuccess(data.pr_url, data.pr_number);
+            if (data.merged || data.status === 'pr_merged') showGitMergedSuccess(data.message);
+            applyStatusUpdate(data);
+            setPipelineBusy(false);
+          } else if (data.status === 'diff_ready' && data.ok) {
+            if (activePollStop) activePollStop();
+            window.location.reload();
+          } else if (data.failed || data.cancelled) {
+            if (activePollStop) activePollStop();
             window.location.reload();
           }
-          return;
-        }
-        unlockApproveFlow();
-        btnApprove.disabled = false;
-        btnApprove.textContent = 'אשר ויצור PR';
-        if (data.failed && data.error) alert(data.error);
-        else if (data.cancelled) window.location.reload();
-      });
-
-      postAction(btnApprove.dataset.url)
-        .then(function (res) {
-          applyStatusUpdate(res.data);
-          if (!res.ok) {
-            stopPoll();
-            unlockApproveFlow();
-            btnApprove.disabled = false;
-            btnApprove.textContent = 'אשר ויצור PR';
-            if (res.data.error) alert(res.data.error);
-          }
-        })
-        .catch(function (err) {
-          stopPoll();
-          unlockApproveFlow();
-          btnApprove.disabled = false;
-          btnApprove.textContent = 'אשר ויצור PR';
-          alert('שגיאת רשת: ' + err);
         });
-    });
-  }
-
-  function wireMergeButton(btn) {
-    btn.addEventListener('click', function () {
-      if (!confirm('למזג את ה-PR ל-main? Git יתעדכן ו-Railway יתחיל deploy.')) return;
-      setActionsBusy(true);
-      btn.disabled = true;
-      btn.textContent = 'ממזג ל-main…';
-      if (logPanel) logPanel.style.display = 'block';
-      var stopPoll = startLivePolling(btn.dataset.statusUrl || statusUrl, function (data) {
-        if (data.merged || data.status === 'pr_merged') {
-          stopPoll();
-          showGitMergedSuccess(data.message);
-          setActionsBusy(false);
-        } else if (data.failed) {
-          stopPoll();
-          setActionsBusy(false);
-          btn.disabled = false;
-          btn.textContent = 'מזג ל-main (Merge PR)';
-          if (data.error) alert(data.error);
+      },
+      onRunComplete: function (res) {
+        applyStatusUpdate(res.data);
+        if (!res.ok) {
+          if (activePollStop) activePollStop();
+          activePollStop = null;
+          setPipelineBusy(false);
+          if (res.data.pipeline) AiPortalUI.updatePipelineUI(pipelineRoot, res.data.pipeline);
+          if (res.data.error) alert(res.data.error);
         }
-      });
-      postAction(btn.dataset.url)
-        .then(function (res) {
-          applyStatusUpdate(res.data);
-          if (!res.ok) {
-            stopPoll();
-            setActionsBusy(false);
-            btn.disabled = false;
-            btn.textContent = 'מזג ל-main (Merge PR)';
-            if (res.data.error) alert(res.data.error);
-            return;
-          }
-          if (res.data.scope_warning) {
-            var act = document.getElementById('ai-actions');
-            var w = document.getElementById('ai-scope-warning');
-            if (!w && act && act.parentNode) {
-              w = document.createElement('div');
-              w.className = 'alert alert-error';
-              w.id = 'ai-scope-warning';
-              w.style.marginBottom = '16px';
-              act.parentNode.insertBefore(w, act);
-            }
-            if (w) w.textContent = res.data.scope_warning;
-          }
-        })
-        .catch(function (err) {
-          stopPoll();
-          setActionsBusy(false);
-          btn.disabled = false;
-          btn.textContent = 'מזג ל-main (Merge PR)';
-          alert('שגיאת רשת: ' + err);
-        });
+      },
     });
-  }
-
-  var btnMerge = document.getElementById('btn-merge-pr');
-  if (btnMerge) wireMergeButton(btnMerge);
+    var openBtn = document.getElementById('btn-open-logs');
+    if (openBtn) openBtn.addEventListener('click', openLogsModal);
+    {% if is_in_progress %}
+    setPipelineBusy(true);
+    activePollStop = startLivePolling(statusUrl, function (data) {
+      if (data.status === 'pr_created') {
+        if (activePollStop) activePollStop();
+        showPrSuccess(data.pr_url, data.pr_number);
+        applyStatusUpdate(data);
+        setPipelineBusy(false);
+      } else if (data.status === 'diff_ready' && data.ok) {
+        window.location.reload();
+      } else if (data.failed || data.cancelled) {
+        window.location.reload();
+      }
+    });
+    {% endif %}
+  });
 
   var btnRetry = document.getElementById('btn-retry-step');
   if (btnRetry) {
     btnRetry.addEventListener('click', function () {
       if (!confirm('להכניס מחדש את השלב התקוע לתור?')) return;
       btnRetry.disabled = true;
-      var stopPoll = startLivePolling(btnRetry.dataset.statusUrl, function (data) {
+      var stopPoll = startLivePolling(statusUrl, function (data) {
         if (data.in_progress || data.status === 'pr_created' || data.status === 'diff_ready' || data.failed) {
           stopPoll();
           if (data.failed && data.error) alert(data.error);
@@ -613,57 +411,8 @@
     });
   }
 
-  var btnCancel = document.getElementById('btn-cancel-job');
-  if (btnCancel) {
-    btnCancel.addEventListener('click', function () {
-      if (!confirm('לבטל את הג\'וב? הסטטוס יתאפס ותוכל לנסות שוב. (אם נוצר PR – סגור אותו ידנית ב-GitHub)')) return;
-      btnCancel.disabled = true;
-      btnCancel.textContent = 'מבטל…';
-      var fd = new FormData();
-      fd.append('reason', 'בוטל מהדשבורד');
-      fetch(btnCancel.dataset.url, {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: {
-          'X-CSRFToken': getCookie('csrftoken'),
-          'X-Requested-With': 'XMLHttpRequest',
-          Accept: 'application/json',
-        },
-        body: fd,
-      })
-        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
-        .then(function (res) {
-          if (res.data.redirect) {
-            window.location.href = res.data.redirect;
-            return;
-          }
-          window.location.reload();
-        })
-        .catch(function () { window.location.reload(); });
-    });
-  }
-
   {% if is_merged %}
   showGitToast('✓ Git עודכן – PR מוזג ל-main');
-  {% endif %}
-
-  {% if is_in_progress %}
-  lockApproveFlow();
-  keepCancelEnabled();
-  if (logPanel) logPanel.style.display = 'block';
-  var prBtn = document.querySelector('#ai-actions .btn-green:not(#btn-cancel-job):not(#btn-retry-step)');
-  if (prBtn && !prBtn.id) prBtn.textContent = 'נעול · בתור / רץ…';
-  startLivePolling(statusUrl, function (data) {
-    if (data.status === 'pr_created') {
-      if (prBtn) prBtn.style.display = 'none';
-      showPrSuccess(data.pr_url, data.pr_number, data.merge_url, statusUrl);
-    } else if (data.status === 'diff_ready' && data.ok) {
-      window.location.reload();
-    } else if (data.failed || data.cancelled) {
-      unlockApproveFlow();
-      window.location.reload();
-    }
-  });
   {% endif %}
 
 })();

@@ -1,0 +1,18 @@
+{% comment %}שלב בודד: צ'קבוקס readonly + כפתור הרץ{% endcomment %}
+<td class="ai-stage-cell" data-stage="{{ stage.id }}">
+  <div class="ai-stage-inner">
+    <div class="ai-stage-check{% if stage.done %} ai-stage-check--done{% elif stage.running %} ai-stage-check--running{% endif %}"
+      role="checkbox" aria-checked="{% if stage.done %}true{% else %}false{% endif %}" aria-readonly="true"
+      title="{% if stage.done %}הושלם{% elif stage.running %}רץ…{% else %}ממתין{% endif %}">
+      {% if stage.done %}<span class="ai-stage-v">✓</span>{% endif %}
+    </div>
+    <button type="button"
+      class="btn btn-gold btn-sm ai-btn-run-stage"
+      data-stage="{{ stage.id }}"
+      data-url="{{ stage.run_url }}"
+      {% if not stage.can_run and not stage.running %}disabled{% endif %}>
+      {% if stage.running %}רץ…{% else %}{{ stage.run_label|default:"הרץ" }}{% endif %}
+    </button>
+  </div>
+  <div class="ai-stage-label">{{ stage.label }}</div>
+</td>

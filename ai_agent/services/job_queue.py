@@ -153,6 +153,90 @@ def enqueue(
     return job
 
 
+def request_action_fields(req: AIChangeRequest | None) -> dict:
+    """דגלים ו-URLs לפעולות בשורת טבלה (לפי סטטוס הבקשה)."""
+    from django.urls import reverse
+
+    from ai_agent.services.workflow import can_cancel_request
+
+    if not req:
+        return {
+            'can_approve': False,
+            'can_reject': False,
+            'can_cancel_request': False,
+            'can_merge': False,
+            'can_generate': False,
+            'approve_url': '',
+            'reject_url': '',
+            'cancel_url': '',
+            'merge_url': '',
+            'generate_url': '',
+        }
+    pk = req.pk
+    is_generating = req.status == AIChangeRequest.Status.GENERATING
+    is_pr_creating = req.status == AIChangeRequest.Status.PR_CREATING
+    return {
+        'can_approve': (
+            req.status == AIChangeRequest.Status.DIFF_READY and bool((req.result or '').strip())
+        ),
+        'can_reject': req.status in (
+            AIChangeRequest.Status.DIFF_READY,
+            AIChangeRequest.Status.DRAFT,
+        ) and not is_generating and not is_pr_creating,
+        'can_cancel_request': can_cancel_request(req),
+        'can_merge': (
+            req.status == AIChangeRequest.Status.PR_CREATED and bool(req.pr_number)
+        ),
+        'can_generate': req.status in (
+            AIChangeRequest.Status.DRAFT,
+            AIChangeRequest.Status.FAILED,
+            AIChangeRequest.Status.CANCELLED,
+        ) and not is_generating and not is_pr_creating,
+        'approve_url': reverse('portal:ai_request_approve', kwargs={'pk': pk}),
+        'reject_url': reverse('portal:ai_request_reject', kwargs={'pk': pk}),
+        'cancel_url': reverse('portal:ai_request_cancel', kwargs={'pk': pk}),
+        'merge_url': reverse('portal:ai_request_merge', kwargs={'pk': pk}),
+        'generate_url': reverse('portal:ai_request_generate', kwargs={'pk': pk}),
+    }
+
+
+def cancel_single_job(job_id: int, *, reason: str = '') -> bool:
+    """מבטל ג'וב בודד בתור (pending/running)."""
+    job = (
+        AIJob.objects.filter(pk=job_id)
+        .select_related('change_request')
+        .first()
+    )
+    if not job or job.status not in (AIJob.Status.PENDING, AIJob.Status.RUNNING):
+        return False
+    note = (reason or 'בוטל מהטבלה')[:500]
+    now = timezone.now()
+    job.status = AIJob.Status.CANCELLED
+    job.finished_at = now
+    job.error_message = note
+    job.save(update_fields=['status', 'finished_at', 'error_message', 'updated_at'])
+
+    req = job.change_request
+    req.append_log(f'[תור] ג\'וב #{job.pk} בוטל: {job.get_job_type_display()}')
+    req.save(update_fields=['updated_at'])
+
+    if AIJob.objects.filter(
+        change_request_id=req.pk,
+        status__in=(AIJob.Status.PENDING, AIJob.Status.RUNNING),
+    ).exists():
+        return True
+
+    if req.status in (
+        AIChangeRequest.Status.GENERATING,
+        AIChangeRequest.Status.PR_CREATING,
+        AIChangeRequest.Status.APPROVED,
+    ):
+        from ai_agent.services.workflow import cancel_request
+
+        cancel_request(req, reason=note)
+    return True
+
+
 def cancel_jobs_for_request(change_request_id: int, *, reason: str = '') -> int:
     now = timezone.now()
     note = reason or 'בוטל'
@@ -249,6 +333,11 @@ def _job_dict(job: AIJob | None) -> dict | None:
         return None
     req = job.change_request
     created_local = timezone.localtime(job.created_at) if job.created_at else None
+    actions = request_action_fields(req)
+    can_cancel_job = job.status in (AIJob.Status.PENDING, AIJob.Status.RUNNING)
+    from django.urls import reverse
+
+    cancel_job_url = reverse('portal:ai_job_cancel', kwargs={'job_id': job.pk})
     return {
         'id': job.pk,
         'request_id': job.change_request_id,
@@ -265,6 +354,9 @@ def _job_dict(job: AIJob | None) -> dict | None:
         'request_prompt': (req.prompt or '').strip() if req else '',
         'request_status': req.status if req else '',
         'request_status_label': req.get_status_display() if req else '',
+        'can_cancel_job': can_cancel_job,
+        'cancel_job_url': cancel_job_url,
+        **actions,
     }
 
 

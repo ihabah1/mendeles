@@ -1,0 +1,4 @@
+{% comment %}שורת שלבים לרשומת בקשה (3 עמודות){% endcomment %}
+{% for stage in pipeline.stages %}
+{% include "portal/partials/ai_pipeline_stage_cell.html" with stage=stage only %}
+{% endfor %}

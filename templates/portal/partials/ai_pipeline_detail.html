@@ -1,0 +1,35 @@
+{% comment %}שלבי תהליך – כרטיס בדף בקשה בודדת{% endcomment %}
+<div class="card-panel ai-pipeline-card" id="ai-pipeline-card" style="margin-bottom:16px">
+  <div class="form-label" style="margin-bottom:12px">תהליך שינוי (רשומה #{{ req.id }})</div>
+  <div class="ai-pipeline-grid" id="ai-pipeline-grid">
+    {% for stage in pipeline.stages %}
+    <div class="ai-pipeline-step" data-stage="{{ stage.id }}">
+      <div class="ai-stage-check{% if stage.done %} ai-stage-check--done{% elif stage.running %} ai-stage-check--running{% endif %}"
+        role="checkbox" aria-checked="{% if stage.done %}true{% else %}false{% endif %}" aria-readonly="true">
+        {% if stage.done %}<span class="ai-stage-v">✓</span>{% endif %}
+      </div>
+      <div class="ai-pipeline-step-title">{{ stage.label }}</div>
+      <button type="button"
+        class="btn btn-gold btn-sm ai-btn-run-stage"
+        data-stage="{{ stage.id }}"
+        data-url="{{ stage.run_url }}"
+        {% if not stage.can_run and not stage.running %}disabled{% endif %}>
+        {% if stage.running %}רץ…{% else %}הרץ{% endif %}
+      </button>
+    </div>
+    {% if not forloop.last %}<div class="ai-pipeline-arrow" aria-hidden="true">←</div>{% endif %}
+    {% endfor %}
+  </div>
+  <div class="ai-pipeline-meta" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+    {% if pipeline.can_reject %}
+    <button type="button" class="btn btn-red btn-sm ai-btn-reject" data-url="{{ pipeline.reject_url }}">דחה בקשה</button>
+    {% endif %}
+    {% if pipeline.can_cancel %}
+    <button type="button" class="btn btn-outline btn-sm ai-btn-cancel-request" data-url="{{ pipeline.cancel_url }}">בטל תהליך תקוע</button>
+    {% endif %}
+    {% if can_retry %}
+    <button type="button" class="btn btn-outline btn-sm" id="btn-retry-step" data-url="{{ retry_url }}">↻ המשך שלב תקוע</button>
+    {% endif %}
+    <a href="{% url 'portal:ai_jobs' %}?request={{ req.id }}" class="btn btn-outline btn-sm">ג'ובים בתור →</a>
+  </div>
+</div>

@@ -70,6 +70,8 @@ ZONES: dict[str, dict] = {
         'label': 'דשבורד ניהול',
         'keywords': (
             'ניהול', 'דשבורד', 'manage', 'לקוחות', 'הזמנות', 'פורטל',
+            'סרגל', 'תפריט צד', 'sidebar', 'משתמשים', 'הזמנות', 'לוטו', 'טוטו',
+            'תור', 'שינויים', 'אינטגרציה',
         ),
         'files': (
             'templates/portal/base_dashboard.html',

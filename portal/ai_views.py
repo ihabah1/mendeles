@@ -12,12 +12,15 @@ from portal.forms import AIChangeRequestForm
 from ai_agent.models import AIChangeRequest, AIJob
 from ai_agent.services.publish_scope import scope_label, scope_warning
 from ai_agent.services.job_queue import (
+    cancel_single_job,
     enqueue,
     infer_retry_job_type,
     queue_status_for_request,
     queue_status_global,
+    request_action_fields,
     retry_request_step,
 )
+from ai_agent.services.pipeline import build_pipeline, pipeline_to_json
 from ai_agent.services.workflow import (
     cancel_request,
     can_cancel_request,
@@ -105,6 +108,14 @@ def _status_payload(obj: AIChangeRequest) -> dict:
         'scope_warning': scope_warning(obj.publish_scope or '', obj.files_touched or []) or '',
         'queue': queue_status_for_request(obj.pk),
         'can_retry': _can_retry_request(obj),
+        'actions': request_action_fields(obj),
+        'approve_url': reverse('portal:ai_request_approve', kwargs={'pk': obj.pk}),
+        'reject_url': reverse('portal:ai_request_reject', kwargs={'pk': obj.pk}),
+        'cancel_url': reverse('portal:ai_request_cancel', kwargs={'pk': obj.pk}),
+        'pipeline': pipeline_to_json(
+            obj,
+            list(AIJob.objects.filter(change_request=obj).order_by('-created_at')[:12]),
+        ),
     }
 
 
@@ -130,7 +141,17 @@ def ai_queue_status(request):
 def ai_requests_list(request):
     _require_ai_enabled()
     reqs = AIChangeRequest.objects.select_related('created_by').order_by('-created_at')[:50]
-    return render(request, 'portal/ai_requests.html', {'requests': reqs})
+    request_rows = [
+        {
+            'req': r,
+            'act': request_action_fields(r),
+            'pipeline': build_pipeline(r),
+        }
+        for r in reqs
+    ]
+    return render(request, 'portal/ai_requests.html', {
+        'request_rows': request_rows,
+    })
 
 
 @admin_required
@@ -215,6 +236,8 @@ def ai_request_detail(request, pk):
         'can_retry': _can_retry_request(obj),
         'retry_url': reverse('portal:ai_request_retry', kwargs={'pk': pk}),
         'queue': queue_status_for_request(pk),
+        'request_actions': request_action_fields(obj),
+        'pipeline': build_pipeline(obj),
     })
 
 
@@ -405,6 +428,35 @@ def ai_request_cancel(request, pk):
 def ai_request_reject(request, pk):
     _require_ai_enabled()
     obj = get_object_or_404(AIChangeRequest, pk=pk)
+    ajax = _wants_json(request)
     reject_request(obj)
+    obj.refresh_from_db()
+    if ajax:
+        return JsonResponse({
+            **_status_payload(obj),
+            'message': 'הבקשה נדחתה',
+        })
     messages.warning(request, 'הבקשה נדחתה')
     return redirect('portal:ai_request_detail', pk=pk)
+
+
+@admin_required
+@require_POST
+def ai_job_cancel(request, job_id):
+    _require_ai_enabled()
+    ajax = _wants_json(request)
+    reason = (request.POST.get('reason') or 'בוטל מהטבלה').strip()
+    job = get_object_or_404(AIJob, pk=job_id)
+    if not cancel_single_job(job_id, reason=reason):
+        if ajax:
+            return JsonResponse({'ok': False, 'error': 'לא ניתן לבטל ג\'וב זה'}, status=400)
+        messages.error(request, 'לא ניתן לבטל ג\'וב זה')
+        return redirect('portal:ai_request_detail', pk=job.change_request_id)
+    req = AIChangeRequest.objects.get(pk=job.change_request_id)
+    if ajax:
+        return JsonResponse({
+            **_status_payload(req),
+            'message': 'הג\'וב בוטל',
+        })
+    messages.success(request, 'הג\'וב בוטל')
+    return redirect('portal:ai_request_detail', pk=job.change_request_id)
