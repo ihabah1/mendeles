@@ -11,6 +11,12 @@ python manage.py setup_portal
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
+if command -v git >/dev/null 2>&1; then
+  echo "git OK: $(git --version)"
+else
+  echo "ERROR: git not installed – AI PR jobs will fail. Set RAILPACK_DEPLOY_APT_PACKAGES=git"
+fi
+
 if [ "${LEGACY_AUTO_START:-true}" != "false" ] && [ "${LEGACY_SERVICES_ENABLED:-true}" != "false" ]; then
   echo "Starting legacy lotto services in background..."
   python scripts/start_legacy_background.py || true

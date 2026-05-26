@@ -21,11 +21,28 @@ from ai_agent.git_tools.github_config import (
 from ai_agent.git_tools.patch_apply import apply_unified_diff_to_repo
 from ai_agent.services.path_guard import extract_paths_from_diff, normalize_repo_path, validate_diff_paths
 
-GIT_BIN = 'git'
+_GIT_BIN: str | None = None
 
 
 class GitToolError(RuntimeError):
     pass
+
+
+def git_bin() -> str:
+    """מחזיר נתיב ל-git – נדרש ב-Railway (railpack.json → deploy.aptPackages: git)."""
+    global _GIT_BIN
+    if _GIT_BIN:
+        return _GIT_BIN
+    found = shutil.which('git')
+    if not found and os.path.isfile('/usr/bin/git'):
+        found = '/usr/bin/git'
+    if not found:
+        raise GitToolError(
+            'פקודת git לא מותקנת בשרת. '
+            'ב-Railway: הגדר RAILPACK_DEPLOY_APT_PACKAGES=git או פרוס מחדש עם railpack.json.',
+        )
+    _GIT_BIN = found
+    return found
 
 
 def _run(
@@ -99,7 +116,7 @@ def _git_env(base: dict | None = None) -> dict:
 
 def _ensure_origin_authenticated(work: Path, env: dict, log_callback=None) -> None:
     _run(
-        [GIT_BIN, 'remote', 'set-url', 'origin', _auth_clone_url()],
+        [git_bin(), 'remote', 'set-url', 'origin', _auth_clone_url()],
         work,
         env=env,
         log_callback=log_callback,
@@ -121,11 +138,11 @@ def _ensure_clone(work: Path, log_callback=None) -> Path:
     env = _git_env()
     if (work / '.git').is_dir():
         _ensure_origin_authenticated(work, env, log_callback=log_callback)
-        _run([GIT_BIN, 'fetch', 'origin'], work, env=env, log_callback=log_callback)
+        _run([git_bin(), 'fetch', 'origin'], work, env=env, log_callback=log_callback)
         default = getattr(settings, 'GITHUB_DEFAULT_BRANCH', 'main')
-        _run([GIT_BIN, 'checkout', default], work, env=env, log_callback=log_callback)
+        _run([git_bin(), 'checkout', default], work, env=env, log_callback=log_callback)
         _run(
-            [GIT_BIN, 'reset', '--hard', f'origin/{default}'],
+            [git_bin(), 'reset', '--hard', f'origin/{default}'],
             work,
             env=env,
             log_callback=log_callback,
@@ -136,7 +153,7 @@ def _ensure_clone(work: Path, log_callback=None) -> Path:
         shutil.rmtree(work, ignore_errors=True)
     work.parent.mkdir(parents=True, exist_ok=True)
     _run(
-        [GIT_BIN, 'clone', '--depth', '1', _auth_clone_url(), str(work)],
+        [git_bin(), 'clone', '--depth', '1', _auth_clone_url(), str(work)],
         work.parent,
         env=env,
         log_callback=log_callback,
@@ -153,7 +170,7 @@ def _apply_diff_with_patch(repo: Path, diff_text: str, log_callback=None) -> lis
         patch_path = fh.name
     try:
         _run(
-            [GIT_BIN, 'apply', '--verbose', '--whitespace=nowarn', '--ignore-space-change', patch_path],
+            [git_bin(), 'apply', '--verbose', '--whitespace=nowarn', '--ignore-space-change', patch_path],
             repo,
             log_callback=log_callback,
         )
@@ -162,7 +179,7 @@ def _apply_diff_with_patch(repo: Path, diff_text: str, log_callback=None) -> lis
         try:
             if log_callback:
                 log_callback('▶ git apply נכשל – מנסה --3way…')
-            _run([GIT_BIN, 'apply', '--verbose', '--3way', patch_path], repo, log_callback=log_callback)
+            _run([git_bin(), 'apply', '--verbose', '--3way', patch_path], repo, log_callback=log_callback)
             return paths
         except GitToolError:
             pass
@@ -203,29 +220,29 @@ def apply_diff_and_push(
     _ensure_origin_authenticated(work, env, log_callback=log)
 
     log(f'checkout לענף {branch_name}…')
-    _run([GIT_BIN, 'checkout', '-B', branch_name], work, env=env, log_callback=log)
+    _run([git_bin(), 'checkout', '-B', branch_name], work, env=env, log_callback=log)
     log('מיישם diff על הקבצים (git apply / Python)…')
     touched = _apply_diff_with_patch(work, diff_text, log_callback=log)
     log(f'patch הוחל על {len(touched)} קבצים')
 
-    status = _run([GIT_BIN, 'status', '--porcelain'], work, env=env, log_callback=log)
+    status = _run([git_bin(), 'status', '--porcelain'], work, env=env, log_callback=log)
     if not status.strip():
         raise GitToolError('אין שינויים לאחר יישום ה-diff')
 
     log('git add + commit…')
     _run(
-        [GIT_BIN, 'add'] + [normalize_repo_path(p) for p in touched],
+        [git_bin(), 'add'] + [normalize_repo_path(p) for p in touched],
         work,
         env=env,
         log_callback=log,
     )
     _run(
-        [GIT_BIN, 'commit', '-m', f'ai-agent: change request #{request_id}'],
+        [git_bin(), 'commit', '-m', f'ai-agent: change request #{request_id}'],
         work,
         env=env,
         log_callback=log,
     )
     log(f'דוחף ל-origin/{branch_name}…')
-    _run([GIT_BIN, 'push', '-u', 'origin', branch_name], work, env=env, log_callback=log)
+    _run([git_bin(), 'push', '-u', 'origin', branch_name], work, env=env, log_callback=log)
     log('push הושלם')
     return touched

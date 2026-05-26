@@ -1,0 +1,8 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "buildAptPackages": ["git"],
+  "deploy": {
+    "aptPackages": ["git"],
+    "startCommand": "sh scripts/start.sh"
+  }
+}
