@@ -38,12 +38,23 @@ def _wants_json(request) -> bool:
 
 
 def _status_payload(obj: AIChangeRequest) -> dict:
+    logs = obj.processing_log or []
+    last = logs[-1] if logs else {}
     return {
         'id': obj.pk,
         'status': obj.status,
         'status_label': obj.get_status_display(),
-        'logs': obj.processing_log or [],
+        'logs': logs,
+        'last_log': last.get('msg', ''),
+        'last_log_ts': last.get('ts', ''),
+        'updated_at': obj.updated_at.isoformat() if obj.updated_at else '',
         'error': obj.error_message or '',
+        'failed': obj.status == AIChangeRequest.Status.FAILED,
+        'in_progress': obj.status in (
+            AIChangeRequest.Status.GENERATING,
+            AIChangeRequest.Status.PR_CREATING,
+            AIChangeRequest.Status.APPROVED,
+        ),
         'generating': obj.status == AIChangeRequest.Status.GENERATING,
         'pr_creating': obj.status == AIChangeRequest.Status.PR_CREATING,
         'done': obj.status in (
@@ -174,19 +185,25 @@ def ai_request_generate(request, pk):
         messages.warning(request, 'הבקשה כבר בעיבוד')
         return redirect('portal:ai_request_detail', pk=pk)
 
+    if ajax:
+        from ai_agent.services.ai_jobs import run_ai_job
+
+        try:
+            run_ai_job(pk, generate_diff_for_request)
+            obj.refresh_from_db()
+            return JsonResponse({
+                **_status_payload(obj),
+                'message': 'התהליך רץ ברקע – הלוג מתעדכן כל כמה שניות',
+            })
+        except ValueError as exc:
+            return JsonResponse({**_status_payload(obj), 'ok': False, 'error': str(exc)}, status=400)
+
     try:
         generate_diff_for_request(obj)
         obj.refresh_from_db()
-        if ajax:
-            return JsonResponse({
-                **_status_payload(obj),
-                'redirect': reverse('portal:ai_request_detail', kwargs={'pk': pk}),
-            })
         messages.success(request, 'ה-diff נוצר – בדוק לפני אישור PR')
     except Exception as exc:
         obj.refresh_from_db()
-        if ajax:
-            return JsonResponse({**_status_payload(obj), 'ok': False}, status=400)
         messages.error(request, str(exc))
 
     return redirect('portal:ai_request_detail', pk=pk)
@@ -204,17 +221,35 @@ def ai_request_approve(request, pk):
             return JsonResponse({**_status_payload(obj), 'message': 'כבר יוצר PR'})
         return redirect('portal:ai_request_detail', pk=pk)
 
+    if obj.status != AIChangeRequest.Status.DIFF_READY:
+        if ajax:
+            return JsonResponse(
+                {**_status_payload(obj), 'ok': False, 'error': 'אין diff מוכן לאישור'},
+                status=400,
+            )
+        messages.error(request, 'אין diff מוכן לאישור')
+        return redirect('portal:ai_request_detail', pk=pk)
+
+    if ajax:
+        from ai_agent.services.ai_jobs import run_ai_job
+
+        obj.status = AIChangeRequest.Status.PR_CREATING
+        obj.error_message = ''
+        obj.append_log('מתחיל יצירת PR (רקע)…')
+        obj.save(update_fields=['status', 'error_message', 'updated_at'])
+        run_ai_job(pk, approve_and_create_pr)
+        obj.refresh_from_db()
+        return JsonResponse({
+            **_status_payload(obj),
+            'message': 'יוצר PR ברקע – עקוב אחרי הלוג למטה',
+        })
+
     try:
         approve_and_create_pr(obj)
         obj.refresh_from_db()
-        if ajax:
-            return JsonResponse(_status_payload(obj))
         messages.success(request, f'PR נוצר: {obj.pr_url}')
-        return redirect('portal:ai_request_detail', pk=pk)
     except Exception as exc:
         obj.refresh_from_db()
-        if ajax:
-            return JsonResponse({**_status_payload(obj), 'ok': False}, status=400)
         messages.error(request, str(exc))
 
     return redirect('portal:ai_request_detail', pk=pk)

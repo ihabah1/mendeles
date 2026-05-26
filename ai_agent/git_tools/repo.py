@@ -143,13 +143,25 @@ def _apply_diff_with_patch(repo: Path, diff_text: str) -> list[str]:
         raise GitToolError(str(exc)) from exc
 
 
-def apply_diff_and_push(request_id: int, diff_text: str, branch_name: str) -> list[str]:
+def apply_diff_and_push(
+    request_id: int,
+    diff_text: str,
+    branch_name: str,
+    log_callback=None,
+) -> list[str]:
     """יוצר ענף, מיישם diff, commit, push ל-remote. לא נוגע ב-main."""
+
+    def log(msg: str) -> None:
+        if log_callback:
+            log_callback(msg)
+
     default_branch = getattr(settings, 'GITHUB_DEFAULT_BRANCH', 'main')
     if branch_name == default_branch or branch_name.startswith('main'):
         raise GitToolError('אסור לדחוף ישירות ל-main')
 
+    log('מתחיל clone / fetch מ-GitHub (origin/main)…')
     work = _ensure_clone(_work_dir(request_id))
+    log('clone מעודכן – מכין ענף מקומי…')
     env = _git_env({
         'GIT_AUTHOR_NAME': 'Mandeles AI Agent',
         'GIT_AUTHOR_EMAIL': 'ai-agent@mandeles.local',
@@ -158,18 +170,24 @@ def apply_diff_and_push(request_id: int, diff_text: str, branch_name: str) -> li
     })
     _ensure_origin_authenticated(work, env)
 
+    log(f'checkout לענף {branch_name}…')
     _run([GIT_BIN, 'checkout', '-B', branch_name], work, env=env)
+    log('מיישם diff על הקבצים (git apply / Python)…')
     touched = _apply_diff_with_patch(work, diff_text)
+    log(f'patch הוחל על {len(touched)} קבצים')
 
     status = _run([GIT_BIN, 'status', '--porcelain'], work, env=env)
     if not status.strip():
         raise GitToolError('אין שינויים לאחר יישום ה-diff')
 
+    log('git add + commit…')
     _run([GIT_BIN, 'add'] + [normalize_repo_path(p) for p in touched], work, env=env)
     _run(
         [GIT_BIN, 'commit', '-m', f'ai-agent: change request #{request_id}'],
         work,
         env=env,
     )
+    log(f'דוחף ל-origin/{branch_name}…')
     _run([GIT_BIN, 'push', '-u', 'origin', branch_name], work, env=env)
+    log('push הושלם')
     return touched

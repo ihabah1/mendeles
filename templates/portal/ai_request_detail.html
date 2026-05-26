@@ -20,9 +20,7 @@
 <div class="alert alert-error" id="ai-scope-warning" style="margin-bottom:16px">{{ scope_warning }}</div>
 {% endif %}
 
-{% if req.error_message %}
-<div class="alert alert-error" id="ai-error-banner">{{ req.error_message }}</div>
-{% endif %}
+<div class="alert alert-error" id="ai-error-banner" style="{% if not req.error_message %}display:none{% endif %}">{% if req.error_message %}{{ req.error_message }}{% endif %}</div>
 
 {% if req.publish_scope %}
 <p style="font-size:.78rem;color:var(--muted);margin-bottom:12px">
@@ -51,10 +49,16 @@
 {% endif %}
 
 <div class="card-panel ai-log-panel" id="ai-log-panel" style="{% if not req.processing_log and not is_generating and not is_pr_creating %}display:none{% endif %}">
-  <div class="form-label" style="margin-bottom:8px;display:flex;align-items:center;gap:8px">
+  <div class="form-label" style="margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
     <span>לוג עיבוד</span>
     <span class="ai-log-spinner" id="ai-log-spinner" style="{% if not is_generating and not is_pr_creating %}display:none{% endif %}">⏳</span>
+    <span class="ai-poll-meta" id="ai-poll-meta" style="{% if not is_generating and not is_pr_creating %}display:none{% endif %}">מתעדכן כל 3 שניות</span>
   </div>
+  <div class="ai-live-step" id="ai-live-step" style="{% if not is_generating and not is_pr_creating %}display:none{% endif %}">
+    <span class="ai-live-step-label">כרגע:</span>
+    <strong id="ai-live-step-text">{% if req.processing_log %}{% with step=req.processing_log|last %}{{ step.msg }}{% endwith %}{% else %}ממתין…{% endif %}</strong>
+  </div>
+  <div class="alert alert-error" id="ai-stale-warning" style="display:none;margin:10px 0;font-size:.82rem"></div>
   <ul class="ai-log-list" id="ai-log-list">
     {% for line in req.processing_log %}
     <li><span class="ai-log-ts">{{ line.ts }}</span> {{ line.msg }}</li>
@@ -278,19 +282,90 @@
     logList.scrollTop = logList.scrollHeight;
   }
 
-  function pollStatus(statusUrl) {
-    return fetch(statusUrl, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+  var POLL_MS = 3000;
+  var STALE_MS = 8 * 60 * 1000;
+  var statusUrl = '{{ status_url }}';
+
+  function pollStatus(url) {
+    return fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
       .then(function (r) { return r.json(); });
   }
 
-  function startStatusPolling(statusUrl, onUpdate) {
-    return setInterval(function () {
-      pollStatus(statusUrl).then(function (data) {
-        renderLogs(data.logs);
-        if (statusLabel) statusLabel.textContent = data.status_label || data.status;
-        if (onUpdate) onUpdate(data);
+  function showErrorBanner(msg, show) {
+    var banner = document.getElementById('ai-error-banner');
+    if (!banner) return;
+    if (show && msg) {
+      banner.textContent = msg;
+      banner.style.display = 'block';
+    } else if (!show) {
+      banner.style.display = 'none';
+    }
+  }
+
+  function updateLiveStep(data) {
+    var box = document.getElementById('ai-live-step');
+    var text = document.getElementById('ai-live-step-text');
+    var meta = document.getElementById('ai-poll-meta');
+    var busy = data && (data.generating || data.pr_creating || data.in_progress);
+    if (box) box.style.display = busy ? 'block' : 'none';
+    if (meta) meta.style.display = busy ? 'inline' : 'none';
+    if (text && data) {
+      var step = data.last_log || '';
+      if (!step && data.logs && data.logs.length) {
+        step = data.logs[data.logs.length - 1].msg || '';
+      }
+      text.textContent = step || 'ממתין…';
+    }
+    if (data && data.updated_at && busy) {
+      var updated = new Date(data.updated_at).getTime();
+      var staleEl = document.getElementById('ai-stale-warning');
+      if (staleEl && Date.now() - updated > STALE_MS) {
+        staleEl.textContent = 'אין עדכון זמן רב – ייתכן שהשרת נתקע. נסה «בטל ג\'וב» ואז שוב.';
+        staleEl.style.display = 'block';
+      }
+    }
+  }
+
+  function applyStatusUpdate(data) {
+    if (!data) return;
+    renderLogs(data.logs);
+    if (statusLabel) statusLabel.textContent = data.status_label || data.status;
+    if (data.failed && data.error) {
+      showErrorBanner(data.error, true);
+    } else if (!data.in_progress) {
+      showErrorBanner('', false);
+    }
+    updateLiveStep(data);
+    if (logPanel && (data.generating || data.pr_creating || data.in_progress)) {
+      logPanel.style.display = 'block';
+    }
+    if (spinner) spinner.style.display = (data.generating || data.pr_creating) ? 'inline' : 'none';
+  }
+
+  function startLivePolling(url, onTerminal) {
+    var lastLen = -1;
+    function tick() {
+      return pollStatus(url).then(function (data) {
+        applyStatusUpdate(data);
+        var len = (data.logs || []).length;
+        if (len !== lastLen) {
+          lastLen = len;
+          var staleEl = document.getElementById('ai-stale-warning');
+          if (staleEl) staleEl.style.display = 'none';
+        }
+        if (data.status === 'pr_created') {
+          if (onTerminal) onTerminal(data);
+        } else if (data.status === 'diff_ready' && data.ok) {
+          if (onTerminal) onTerminal(data);
+        } else if (data.failed || data.cancelled) {
+          if (onTerminal) onTerminal(data);
+        }
+        return data;
       }).catch(function () {});
-    }, 600);
+    }
+    tick();
+    var id = setInterval(tick, POLL_MS);
+    return function stop() { clearInterval(id); };
   }
 
   function postAction(url) {
@@ -311,22 +386,29 @@
     btnGen.addEventListener('click', function () {
       setActionsBusy(true);
       btnGen.textContent = 'מייצר diff… (נא להמתין)';
-      var pollId = startStatusPolling(btnGen.dataset.statusUrl);
+      var stopPoll = startLivePolling(btnGen.dataset.statusUrl, function (data) {
+        stopPoll();
+        if (data.status === 'diff_ready' && data.ok) {
+          window.location.reload();
+          return;
+        }
+        setActionsBusy(false);
+        btnGen.textContent = 'ייצר diff (Gemini)';
+        if (data.failed && data.error) alert(data.error);
+        else if (data.cancelled) window.location.reload();
+      });
       postAction(btnGen.dataset.url)
         .then(function (res) {
-          clearInterval(pollId);
-          renderLogs(res.data.logs);
-          if (statusLabel) statusLabel.textContent = res.data.status_label || '';
-          if (res.data.ok && res.data.redirect) {
-            window.location.href = res.data.redirect;
-            return;
+          applyStatusUpdate(res.data);
+          if (!res.ok && res.data.error) {
+            stopPoll();
+            setActionsBusy(false);
+            btnGen.textContent = 'ייצר diff (Gemini)';
+            alert(res.data.error);
           }
-          setActionsBusy(false);
-          btnGen.textContent = 'ייצר diff (Gemini)';
-          if (!res.ok && res.data.error) alert(res.data.error);
         })
         .catch(function (err) {
-          clearInterval(pollId);
+          stopPoll();
           setActionsBusy(false);
           btnGen.textContent = 'ייצר diff (Gemini)';
           alert('שגיאת רשת: ' + err);
@@ -337,16 +419,10 @@
     btnGen.textContent = 'מייצר diff… (נא להמתין)';
     setActionsBusy(true);
     keepCancelEnabled();
-    const recoverPoll = setInterval(function () {
-      pollStatus(btnGen.dataset.statusUrl).then(function (data) {
-        renderLogs(data.logs);
-        if (statusLabel) statusLabel.textContent = data.status_label || '';
-        if (data.done || data.cancelled) {
-          clearInterval(recoverPoll);
-          window.location.reload();
-        }
-      });
-    }, 1000);
+    startLivePolling(btnGen.dataset.statusUrl, function (data) {
+      if (data.status === 'diff_ready' && data.ok) window.location.reload();
+      else if (data.failed || data.cancelled) window.location.reload();
+    });
     {% endif %}
   }
 
@@ -358,30 +434,37 @@
       lockApproveFlow();
       btnApprove.disabled = true;
       btnApprove.textContent = 'נעול · יוצר PR ב-Git…';
-      var livePoll = startStatusPolling(btnApprove.dataset.statusUrl);
+      var stopPoll = startLivePolling(btnApprove.dataset.statusUrl, function (data) {
+        stopPoll();
+        if (data.status === 'pr_created') {
+          btnApprove.style.display = 'none';
+          if (data.pr_url) {
+            showPrSuccess(data.pr_url, data.pr_number, data.merge_url, btnApprove.dataset.statusUrl);
+          } else {
+            window.location.reload();
+          }
+          return;
+        }
+        unlockApproveFlow();
+        btnApprove.disabled = false;
+        btnApprove.textContent = 'אשר ויצור PR';
+        if (data.failed && data.error) alert(data.error);
+        else if (data.cancelled) window.location.reload();
+      });
 
       postAction(btnApprove.dataset.url)
         .then(function (res) {
-          clearInterval(livePoll);
-          renderLogs(res.data.logs);
-          if (statusLabel) statusLabel.textContent = res.data.status_label || '';
+          applyStatusUpdate(res.data);
           if (!res.ok) {
+            stopPoll();
             unlockApproveFlow();
             btnApprove.disabled = false;
             btnApprove.textContent = 'אשר ויצור PR';
             if (res.data.error) alert(res.data.error);
-            return;
-          }
-          btnApprove.style.display = 'none';
-          if (res.data.pr_url) {
-            showPrSuccess(res.data.pr_url, res.data.pr_number, res.data.merge_url, btnApprove.dataset.statusUrl);
-          } else {
-            unlockApproveFlow();
-            window.location.reload();
           }
         })
         .catch(function (err) {
-          clearInterval(livePoll);
+          stopPoll();
           unlockApproveFlow();
           btnApprove.disabled = false;
           btnApprove.textContent = 'אשר ויצור PR';
@@ -471,15 +554,14 @@
   {% if is_pr_creating %}
   lockApproveFlow();
   keepCancelEnabled();
+  if (logPanel) logPanel.style.display = 'block';
   var prBtn = document.querySelector('#ai-actions .btn-green:not(#btn-cancel-job)');
   if (prBtn) prBtn.textContent = 'נעול · יוצר PR ב-Git…';
-  var prPoll = startStatusPolling('{{ status_url }}', function (data) {
+  startLivePolling(statusUrl, function (data) {
     if (data.status === 'pr_created') {
-      clearInterval(prPoll);
       if (prBtn) prBtn.style.display = 'none';
-      showPrSuccess(data.pr_url, data.pr_number, data.merge_url, '{{ status_url }}');
-    } else if (data.status === 'failed' || data.status === 'cancelled') {
-      clearInterval(prPoll);
+      showPrSuccess(data.pr_url, data.pr_number, data.merge_url, statusUrl);
+    } else if (data.failed || data.cancelled) {
       unlockApproveFlow();
       window.location.reload();
     }

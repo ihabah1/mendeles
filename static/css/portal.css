@@ -123,6 +123,10 @@ tr:hover td{background:rgba(201,168,76,.03)}
 .ai-log-list li:last-child{border-bottom:none}
 .ai-log-ts{color:var(--gold);margin-left:8px}
 .ai-log-spinner{font-size:.85rem;animation:ai-pulse 1s ease-in-out infinite}
+.ai-poll-meta{font-size:.7rem;color:var(--muted);font-weight:400}
+.ai-live-step{margin:0 0 10px;padding:10px 12px;border-radius:var(--r);background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);font-size:.82rem}
+.ai-live-step-label{color:var(--muted);margin-left:6px}
+.ai-live-step strong{color:var(--gold)}
 @keyframes ai-pulse{50%{opacity:.4}}
 button.btn:disabled{opacity:.65;cursor:not-allowed!important}
 #btn-cancel-job.btn:disabled{opacity:1}

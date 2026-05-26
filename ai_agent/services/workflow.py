@@ -20,18 +20,22 @@ def _branch_name(request: AIChangeRequest) -> str:
     return f'ai-agent/{request.pk or "new"}-{ts}-{slug or "change"}'[:80]
 
 
-def generate_diff_for_request(request: AIChangeRequest) -> AIChangeRequest:
+def generate_diff_for_request(request: AIChangeRequest, *, resume: bool = False) -> AIChangeRequest:
     """ללא transaction.atomic – שומר לוג ל-DB בזמן אמת ל-polling."""
-    if request.status not in (
+    if request.status == AIChangeRequest.Status.GENERATING:
+        if not resume:
+            raise ValueError('הבקשה כבר בעיבוד')
+    elif request.status not in (
         AIChangeRequest.Status.DRAFT,
         AIChangeRequest.Status.FAILED,
         AIChangeRequest.Status.CANCELLED,
         AIChangeRequest.Status.DIFF_READY,
     ):
         raise ValueError('לא ניתן לייצר diff בסטטוס הנוכחי')
+    else:
+        request.clear_log()
+        request.append_log('מתחיל עיבוד בקשה…')
 
-    request.clear_log()
-    request.append_log('מתחיל עיבוד בקשה…')
     request.status = AIChangeRequest.Status.GENERATING
     request.error_message = ''
     request.save(update_fields=['status', 'error_message', 'updated_at'])
@@ -77,31 +81,42 @@ def generate_diff_for_request(request: AIChangeRequest) -> AIChangeRequest:
     return request
 
 
-def approve_and_create_pr(request: AIChangeRequest) -> AIChangeRequest:
+def approve_and_create_pr(request: AIChangeRequest, *, resume: bool = False) -> AIChangeRequest:
     """ללא transaction.atomic – לוג נשמר ב-DB בזמן אמת ל-polling."""
-    if request.status != AIChangeRequest.Status.DIFF_READY:
+    if request.status == AIChangeRequest.Status.PR_CREATING:
+        if not resume:
+            raise ValueError('הבקשה כבר בתהליך יצירת PR')
+    elif request.status != AIChangeRequest.Status.DIFF_READY:
         raise ValueError('יש לאשר רק בקשה עם diff מוכן לבדיקה')
     if not request.result.strip():
         raise ValueError('אין diff ליישום')
 
-    request.clear_log()
-    request.append_log('מאשר בקשה…')
-    request.status = AIChangeRequest.Status.APPROVED
-    request.save(update_fields=['status', 'updated_at'])
+    if request.status == AIChangeRequest.Status.DIFF_READY:
+        request.clear_log()
+        request.append_log('מאשר בקשה…')
+        request.status = AIChangeRequest.Status.APPROVED
+        request.save(update_fields=['status', 'updated_at'])
 
     request.status = AIChangeRequest.Status.PR_CREATING
+    request.error_message = ''
     request.append_log('מכין ענף Git…')
-    request.save(update_fields=['status', 'updated_at'])
+    request.save(update_fields=['status', 'error_message', 'updated_at'])
 
     branch = request.branch_name or _branch_name(request)
     request.branch_name = branch
     request.save(update_fields=['branch_name', 'updated_at'])
 
+    def log(msg: str) -> None:
+        request.append_log(msg)
+
     try:
-        request.append_log(f'מוריד/מעדכן clone מ-GitHub (ענף {branch})…')
-        request.append_log('מיישם patch על הקבצים (git apply / גיבוי Python)…')
         try:
-            touched = apply_diff_and_push(request.pk, request.result, branch)
+            touched = apply_diff_and_push(
+                request.pk,
+                request.result,
+                branch,
+                log_callback=log,
+            )
         except GitToolError as exc:
             msg = str(exc)
             if 'patch failed' in msg or 'does not apply' in msg:
@@ -112,8 +127,7 @@ def approve_and_create_pr(request: AIChangeRequest) -> AIChangeRequest:
             raise
         request.files_touched = touched
         request.publish_scope = classify_publish_scope(touched)
-        request.append_log(f'commit + push ל-origin/{branch} הושלם')
-        request.append_log('יוצר Pull Request ב-GitHub…')
+        log('יוצר Pull Request ב-GitHub…')
 
         pr_number, pr_url = create_pull_request(
             branch_name=branch,
