@@ -216,11 +216,17 @@ def can_cancel_request(request: AIChangeRequest) -> bool:
 
 def cancel_request(request: AIChangeRequest, *, reason: str = '') -> AIChangeRequest:
     """מבטל ג'וב תקוע – מאפס סטטוס כדי לאפשר ניסיון חוזר."""
+    from ai_agent.services.job_queue import cancel_jobs_for_request
+
     if not can_cancel_request(request):
         raise ValueError(
             f'לא ניתן לבטל בסטטוס «{request.get_status_display()}». '
             'רק בזמן יצירת diff, יצירת PR, או PR פתוח.'
         )
+    n = cancel_jobs_for_request(request.pk, reason=reason or 'בוטל עם הבקשה')
+    if n:
+        request.append_log(f'[תור] בוטלו {n} ג\'ובים בתור')
+
     prev = request.get_status_display()
     request.status = AIChangeRequest.Status.CANCELLED
     note = reason.strip() or 'בוטל ידנית – אפשר ללחוץ «ייצר diff» מחדש'

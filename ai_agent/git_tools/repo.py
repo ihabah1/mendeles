@@ -28,7 +28,21 @@ class GitToolError(RuntimeError):
     pass
 
 
-def _run(cmd: list[str], cwd: Path, env: dict | None = None) -> str:
+def _run(
+    cmd: list[str],
+    cwd: Path,
+    env: dict | None = None,
+    log_callback=None,
+) -> str:
+    if log_callback:
+        shown = ' '.join(
+            '***' if arg.startswith('https://') and '@github.com' in arg else arg
+            for arg in cmd[:6]
+        )
+        if len(cmd) > 6:
+            shown += ' …'
+        log_callback(f'▶ git: {shown}')
+
     result = subprocess.run(
         cmd,
         cwd=cwd,
@@ -83,8 +97,13 @@ def _git_env(base: dict | None = None) -> dict:
     return env
 
 
-def _ensure_origin_authenticated(work: Path, env: dict) -> None:
-    _run([GIT_BIN, 'remote', 'set-url', 'origin', _auth_clone_url()], work, env=env)
+def _ensure_origin_authenticated(work: Path, env: dict, log_callback=None) -> None:
+    _run(
+        [GIT_BIN, 'remote', 'set-url', 'origin', _auth_clone_url()],
+        work,
+        env=env,
+        log_callback=log_callback,
+    )
 
 
 def _work_dir(request_id: int) -> Path:
@@ -98,25 +117,35 @@ def ensure_github_context_clone() -> Path:
     return _ensure_clone(_work_dir(0))
 
 
-def _ensure_clone(work: Path) -> Path:
+def _ensure_clone(work: Path, log_callback=None) -> Path:
     env = _git_env()
     if (work / '.git').is_dir():
-        _ensure_origin_authenticated(work, env)
-        _run([GIT_BIN, 'fetch', 'origin'], work, env=env)
+        _ensure_origin_authenticated(work, env, log_callback=log_callback)
+        _run([GIT_BIN, 'fetch', 'origin'], work, env=env, log_callback=log_callback)
         default = getattr(settings, 'GITHUB_DEFAULT_BRANCH', 'main')
-        _run([GIT_BIN, 'checkout', default], work, env=env)
-        _run([GIT_BIN, 'reset', '--hard', f'origin/{default}'], work, env=env)
+        _run([GIT_BIN, 'checkout', default], work, env=env, log_callback=log_callback)
+        _run(
+            [GIT_BIN, 'reset', '--hard', f'origin/{default}'],
+            work,
+            env=env,
+            log_callback=log_callback,
+        )
         return work
 
     if work.exists():
         shutil.rmtree(work, ignore_errors=True)
     work.parent.mkdir(parents=True, exist_ok=True)
-    _run([GIT_BIN, 'clone', '--depth', '1', _auth_clone_url(), str(work)], work.parent, env=env)
-    _ensure_origin_authenticated(work, env)
+    _run(
+        [GIT_BIN, 'clone', '--depth', '1', _auth_clone_url(), str(work)],
+        work.parent,
+        env=env,
+        log_callback=log_callback,
+    )
+    _ensure_origin_authenticated(work, env, log_callback=log_callback)
     return work
 
 
-def _apply_diff_with_patch(repo: Path, diff_text: str) -> list[str]:
+def _apply_diff_with_patch(repo: Path, diff_text: str, log_callback=None) -> list[str]:
     validate_diff_paths(diff_text)
     paths = extract_paths_from_diff(diff_text)
     with tempfile.NamedTemporaryFile('w', suffix='.patch', delete=False, encoding='utf-8') as fh:
@@ -126,11 +155,14 @@ def _apply_diff_with_patch(repo: Path, diff_text: str) -> list[str]:
         _run(
             [GIT_BIN, 'apply', '--verbose', '--whitespace=nowarn', '--ignore-space-change', patch_path],
             repo,
+            log_callback=log_callback,
         )
         return paths
     except GitToolError:
         try:
-            _run([GIT_BIN, 'apply', '--verbose', '--3way', patch_path], repo)
+            if log_callback:
+                log_callback('▶ git apply נכשל – מנסה --3way…')
+            _run([GIT_BIN, 'apply', '--verbose', '--3way', patch_path], repo, log_callback=log_callback)
             return paths
         except GitToolError:
             pass
@@ -160,7 +192,7 @@ def apply_diff_and_push(
         raise GitToolError('אסור לדחוף ישירות ל-main')
 
     log('מתחיל clone / fetch מ-GitHub (origin/main)…')
-    work = _ensure_clone(_work_dir(request_id))
+    work = _ensure_clone(_work_dir(request_id), log_callback=log)
     log('clone מעודכן – מכין ענף מקומי…')
     env = _git_env({
         'GIT_AUTHOR_NAME': 'Mandeles AI Agent',
@@ -168,26 +200,32 @@ def apply_diff_and_push(
         'GIT_COMMITTER_NAME': 'Mandeles AI Agent',
         'GIT_COMMITTER_EMAIL': 'ai-agent@mandeles.local',
     })
-    _ensure_origin_authenticated(work, env)
+    _ensure_origin_authenticated(work, env, log_callback=log)
 
     log(f'checkout לענף {branch_name}…')
-    _run([GIT_BIN, 'checkout', '-B', branch_name], work, env=env)
+    _run([GIT_BIN, 'checkout', '-B', branch_name], work, env=env, log_callback=log)
     log('מיישם diff על הקבצים (git apply / Python)…')
-    touched = _apply_diff_with_patch(work, diff_text)
+    touched = _apply_diff_with_patch(work, diff_text, log_callback=log)
     log(f'patch הוחל על {len(touched)} קבצים')
 
-    status = _run([GIT_BIN, 'status', '--porcelain'], work, env=env)
+    status = _run([GIT_BIN, 'status', '--porcelain'], work, env=env, log_callback=log)
     if not status.strip():
         raise GitToolError('אין שינויים לאחר יישום ה-diff')
 
     log('git add + commit…')
-    _run([GIT_BIN, 'add'] + [normalize_repo_path(p) for p in touched], work, env=env)
+    _run(
+        [GIT_BIN, 'add'] + [normalize_repo_path(p) for p in touched],
+        work,
+        env=env,
+        log_callback=log,
+    )
     _run(
         [GIT_BIN, 'commit', '-m', f'ai-agent: change request #{request_id}'],
         work,
         env=env,
+        log_callback=log,
     )
     log(f'דוחף ל-origin/{branch_name}…')
-    _run([GIT_BIN, 'push', '-u', 'origin', branch_name], work, env=env)
+    _run([GIT_BIN, 'push', '-u', 'origin', branch_name], work, env=env, log_callback=log)
     log('push הושלם')
     return touched

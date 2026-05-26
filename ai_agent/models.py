@@ -81,3 +81,47 @@ class AIChangeRequest(models.Model):
         })
         self.processing_log = logs
         self.save(update_fields=['processing_log', 'updated_at'])
+
+
+class AIJob(models.Model):
+    """משימה בתור – רצה ברצף (לא במקביל)."""
+
+    class JobType(models.TextChoices):
+        GENERATE_DIFF = 'generate_diff', 'ייצור diff'
+        CREATE_PR = 'create_pr', 'יצירת PR'
+        MERGE_PR = 'merge_pr', 'מיזוג ל-main'
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'ממתין בתור'
+        RUNNING = 'running', 'רץ'
+        COMPLETED = 'completed', 'הושלם'
+        FAILED = 'failed', 'נכשל'
+        CANCELLED = 'cancelled', 'בוטל'
+
+    change_request = models.ForeignKey(
+        AIChangeRequest,
+        on_delete=models.CASCADE,
+        related_name='jobs',
+        verbose_name='בקשה',
+    )
+    job_type = models.CharField(max_length=20, choices=JobType.choices, db_index=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    attempts = models.PositiveSmallIntegerField(default=0)
+    max_attempts = models.PositiveSmallIntegerField(default=3)
+    error_message = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'ג\'וב AI'
+        verbose_name_plural = 'תור ג\'ובים AI'
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'#{self.pk} {self.get_job_type_display()} ({self.get_status_display()})'

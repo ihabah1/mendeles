@@ -7,7 +7,7 @@
     <div class="page-title">בקשת שינוי AI</div>
     <div class="page-sub">כתוב בשפה פשוטה — המערכת תמצא לבד איפה לשנות</div>
   </div>
-  <a href="{% url 'portal:ai_requests' %}" class="btn btn-outline">← חזרה לרשימה</a>
+  <a href="{% url 'portal:ai_requests' %}" class="btn btn-outline">← היסטוריית שינויים</a>
 </div>
 <div class="card-panel" style="max-width:720px">
   <form method="post" enctype="multipart/form-data">
@@ -21,7 +21,7 @@
       <label class="form-label" for="id_images">תמונות (אופציונלי)</label>
       <input type="file" name="images" id="id_images" accept="image/png,image/jpeg,image/webp,image/gif" multiple
         class="form-control" style="padding:8px;background:var(--navy);border:1.5px solid var(--navy-b);border-radius:8px;color:var(--text)">
-      <p style="font-size:.72rem;color:var(--muted);margin-top:6px">עד 5 תמונות (PNG/JPG/WebP, עד 5MB כל אחת) — צילום מסך של האזור לשינוי</p>
+      <p style="font-size:.72rem;color:var(--muted);margin-top:6px">עד 5 תמונות (PNG/JPG/WebP, עד 5MB) — או <strong>Ctrl+V</strong> בשדה הבקשה להדבקת צילום מסך מהלוח</p>
       <div id="img-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"></div>
     </div>
     <div style="background:var(--navy-c);border:1px solid var(--navy-b);border-radius:10px;padding:14px;margin-bottom:16px;font-size:.78rem;color:var(--muted);line-height:1.65">
@@ -47,17 +47,63 @@
 </details>
 {% endif %}
 <script>
-document.getElementById('id_images')?.addEventListener('change', function (e) {
+(function () {
+  const input = document.getElementById('id_images');
+  const prompt = document.getElementById('id_prompt');
   const box = document.getElementById('img-preview');
-  if (!box) return;
-  box.innerHTML = '';
-  Array.from(e.target.files || []).slice(0, 5).forEach(function (file) {
-    const img = document.createElement('img');
-    img.src = URL.createObjectURL(file);
-    img.style.cssText = 'max-height:72px;border-radius:6px;border:1px solid var(--navy-b)';
-    img.alt = file.name;
-    box.appendChild(img);
+  const MAX = 5;
+
+  function renderPreview(files) {
+    if (!box) return;
+    box.innerHTML = '';
+    Array.from(files || []).slice(0, MAX).forEach(function (file) {
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      img.style.cssText = 'max-height:72px;border-radius:6px;border:1px solid var(--navy-b)';
+      img.alt = file.name || 'image';
+      box.appendChild(img);
+    });
+  }
+
+  function addFiles(newFiles) {
+    if (!input) return;
+    const dt = new DataTransfer();
+    const existing = Array.from(input.files || []);
+    existing.concat(Array.from(newFiles)).slice(0, MAX).forEach(function (f) { dt.items.add(f); });
+    input.files = dt.files;
+    renderPreview(input.files);
+  }
+
+  input?.addEventListener('change', function (e) {
+    renderPreview(e.target.files);
   });
-});
+
+  prompt?.addEventListener('paste', function (e) {
+    const items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    const images = [];
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type && items[i].type.indexOf('image') !== -1) {
+        const blob = items[i].getAsFile();
+        if (blob) {
+          const ext = (blob.type || 'image/png').split('/')[1] || 'png';
+          images.push(new File([blob], 'paste-' + Date.now() + '-' + i + '.' + ext, { type: blob.type }));
+        }
+      }
+    }
+    if (!images.length) return;
+    e.preventDefault();
+    addFiles(images);
+    const hint = document.getElementById('paste-hint');
+    if (hint) hint.textContent = 'צורפו ' + images.length + ' תמונה/ות מהלוח';
+  });
+
+  if (!document.getElementById('paste-hint') && prompt) {
+    const p = document.createElement('p');
+    p.id = 'paste-hint';
+    p.style.cssText = 'font-size:.72rem;color:var(--gold);margin-top:6px';
+    prompt.parentNode.appendChild(p);
+  }
+})();
 </script>
 {% endblock %}

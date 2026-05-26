@@ -9,16 +9,40 @@ from django.views.decorators.http import require_GET, require_POST
 from portal.decorators import admin_required
 from portal.forms import AIChangeRequestForm
 
-from ai_agent.models import AIChangeRequest
+from ai_agent.models import AIChangeRequest, AIJob
 from ai_agent.services.publish_scope import scope_label, scope_warning
+from ai_agent.services.job_queue import (
+    enqueue,
+    infer_retry_job_type,
+    queue_status_for_request,
+    retry_request_step,
+)
 from ai_agent.services.workflow import (
-    approve_and_create_pr,
     cancel_request,
     can_cancel_request,
-    generate_diff_for_request,
     merge_pr_for_request,
     reject_request,
 )
+
+
+def _can_retry_request(obj: AIChangeRequest) -> bool:
+    if not infer_retry_job_type(obj):
+        return False
+    if obj.status in (
+        AIChangeRequest.Status.FAILED,
+        AIChangeRequest.Status.CANCELLED,
+    ):
+        return True
+    if obj.status in (
+        AIChangeRequest.Status.GENERATING,
+        AIChangeRequest.Status.PR_CREATING,
+        AIChangeRequest.Status.APPROVED,
+    ):
+        return not AIJob.objects.filter(
+            change_request=obj,
+            status__in=(AIJob.Status.PENDING, AIJob.Status.RUNNING),
+        ).exists()
+    return False
 
 
 def _ai_available() -> bool:
@@ -78,6 +102,8 @@ def _status_payload(obj: AIChangeRequest) -> dict:
         'publish_scope': obj.publish_scope or '',
         'publish_scope_label': scope_label(obj.publish_scope or ''),
         'scope_warning': scope_warning(obj.publish_scope or '', obj.files_touched or []) or '',
+        'queue': queue_status_for_request(obj.pk),
+        'can_retry': _can_retry_request(obj),
     }
 
 
@@ -135,6 +161,11 @@ def ai_request_detail(request, pk):
         return redirect('portal:ai_requests')
     is_generating = obj.status == AIChangeRequest.Status.GENERATING
     is_pr_creating = obj.status == AIChangeRequest.Status.PR_CREATING
+    is_in_progress = obj.status in (
+        AIChangeRequest.Status.GENERATING,
+        AIChangeRequest.Status.PR_CREATING,
+        AIChangeRequest.Status.APPROVED,
+    )
     return render(request, 'portal/ai_request_detail.html', {
         'req': obj,
         'can_generate': obj.status in (
@@ -151,6 +182,7 @@ def ai_request_detail(request, pk):
         ) and not is_generating and not is_pr_creating,
         'is_generating': is_generating,
         'is_pr_creating': is_pr_creating,
+        'is_in_progress': is_in_progress,
         'status_url': reverse('portal:ai_request_status', kwargs={'pk': pk}),
         'generate_url': reverse('portal:ai_request_generate', kwargs={'pk': pk}),
         'approve_url': reverse('portal:ai_request_approve', kwargs={'pk': pk}),
@@ -161,6 +193,9 @@ def ai_request_detail(request, pk):
         'is_merged': obj.status == AIChangeRequest.Status.PR_MERGED,
         'scope_warning': scope_warning(obj.publish_scope or '', obj.files_touched or []),
         'publish_scope_label': scope_label(obj.publish_scope or ''),
+        'can_retry': _can_retry_request(obj),
+        'retry_url': reverse('portal:ai_request_retry', kwargs={'pk': pk}),
+        'queue': queue_status_for_request(pk),
     })
 
 
@@ -186,26 +221,17 @@ def ai_request_generate(request, pk):
         return redirect('portal:ai_request_detail', pk=pk)
 
     if ajax:
-        from ai_agent.services.ai_jobs import run_ai_job
-
         try:
-            run_ai_job(pk, generate_diff_for_request)
+            enqueue(pk, AIJob.JobType.GENERATE_DIFF)
             obj.refresh_from_db()
             return JsonResponse({
                 **_status_payload(obj),
-                'message': 'התהליך רץ ברקע – הלוג מתעדכן כל כמה שניות',
+                'message': 'נוסף לתור – ג\'וב אחד בכל פעם, הלוג מתעדכן כל 3 שניות',
             })
         except ValueError as exc:
             return JsonResponse({**_status_payload(obj), 'ok': False, 'error': str(exc)}, status=400)
 
-    try:
-        generate_diff_for_request(obj)
-        obj.refresh_from_db()
-        messages.success(request, 'ה-diff נוצר – בדוק לפני אישור PR')
-    except Exception as exc:
-        obj.refresh_from_db()
-        messages.error(request, str(exc))
-
+    messages.info(request, 'השתמש בכפתור «ייצר diff» בדף הבקשה (תור רקע)')
     return redirect('portal:ai_request_detail', pk=pk)
 
 
@@ -218,7 +244,7 @@ def ai_request_approve(request, pk):
 
     if obj.status == AIChangeRequest.Status.PR_CREATING:
         if ajax:
-            return JsonResponse({**_status_payload(obj), 'message': 'כבר יוצר PR'})
+            return JsonResponse({**_status_payload(obj), 'message': 'כבר בתור/בריצה – עקוב אחרי הלוג'})
         return redirect('portal:ai_request_detail', pk=pk)
 
     if obj.status != AIChangeRequest.Status.DIFF_READY:
@@ -231,27 +257,17 @@ def ai_request_approve(request, pk):
         return redirect('portal:ai_request_detail', pk=pk)
 
     if ajax:
-        from ai_agent.services.ai_jobs import run_ai_job
+        try:
+            enqueue(pk, AIJob.JobType.CREATE_PR)
+            obj.refresh_from_db()
+            return JsonResponse({
+                **_status_payload(obj),
+                'message': 'יצירת PR נוספה לתור – לא מקביל לג\'ובים אחרים',
+            })
+        except ValueError as exc:
+            return JsonResponse({**_status_payload(obj), 'ok': False, 'error': str(exc)}, status=400)
 
-        obj.status = AIChangeRequest.Status.PR_CREATING
-        obj.error_message = ''
-        obj.append_log('מתחיל יצירת PR (רקע)…')
-        obj.save(update_fields=['status', 'error_message', 'updated_at'])
-        run_ai_job(pk, approve_and_create_pr)
-        obj.refresh_from_db()
-        return JsonResponse({
-            **_status_payload(obj),
-            'message': 'יוצר PR ברקע – עקוב אחרי הלוג למטה',
-        })
-
-    try:
-        approve_and_create_pr(obj)
-        obj.refresh_from_db()
-        messages.success(request, f'PR נוצר: {obj.pr_url}')
-    except Exception as exc:
-        obj.refresh_from_db()
-        messages.error(request, str(exc))
-
+    messages.info(request, 'השתמש בכפתור «אשר ויצור PR» בדף הבקשה')
     return redirect('portal:ai_request_detail', pk=pk)
 
 
@@ -278,22 +294,45 @@ def ai_request_merge(request, pk):
         messages.error(request, 'אין PR למיזוג')
         return redirect('portal:ai_request_detail', pk=pk)
 
+    if ajax:
+        try:
+            enqueue(pk, AIJob.JobType.MERGE_PR, performed_by=request.user)
+            obj.refresh_from_db()
+            return JsonResponse({
+                **_status_payload(obj),
+                'message': 'מיזוג נוסף לתור',
+            })
+        except ValueError as exc:
+            return JsonResponse({**_status_payload(obj), 'ok': False, 'error': str(exc)}, status=400)
+
     try:
         merge_pr_for_request(obj, performed_by=request.user)
         obj.refresh_from_db()
-        msg = 'Git עודכן בהצלחה – main מוזג, Railway יתחיל deploy'
-        warn = scope_warning(obj.publish_scope or '', obj.files_touched or [])
-        if warn:
-            msg = f'{msg}. {warn}'
+        messages.success(request, 'Git עודכן – PR מוזג')
+    except Exception as exc:
+        obj.refresh_from_db()
+        messages.error(request, str(exc))
+
+    return redirect('portal:ai_request_detail', pk=pk)
+
+
+@admin_required
+@require_POST
+def ai_request_retry(request, pk):
+    _require_ai_enabled()
+    obj = get_object_or_404(AIChangeRequest, pk=pk)
+    ajax = _wants_json(request)
+
+    try:
+        retry_request_step(pk, performed_by=request.user)
+        obj.refresh_from_db()
         if ajax:
             return JsonResponse({
                 **_status_payload(obj),
-                'git_updated': True,
-                'message': msg,
+                'message': 'השלב הוכנס מחדש לתור',
             })
-        messages.success(request, msg)
-    except Exception as exc:
-        obj.refresh_from_db()
+        messages.success(request, 'השלב הוכנס מחדש לתור')
+    except ValueError as exc:
         if ajax:
             return JsonResponse({**_status_payload(obj), 'ok': False, 'error': str(exc)}, status=400)
         messages.error(request, str(exc))

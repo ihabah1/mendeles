@@ -48,13 +48,32 @@
 </div>
 {% endif %}
 
-<div class="card-panel ai-log-panel" id="ai-log-panel" style="{% if not req.processing_log and not is_generating and not is_pr_creating %}display:none{% endif %}">
+<div class="card-panel" id="ai-queue-panel" style="margin-bottom:16px">
+  <div class="form-label" style="margin-bottom:8px">תור ג'ובים (רצף – לא מקביל)</div>
+  <p id="ai-queue-summary" style="font-size:.8rem;color:var(--muted);margin:0 0 10px">
+    {% if queue.running_global and queue.running_job %}
+    רץ כעת: {{ queue.running_job.type_label }} (בקשה #{{ queue.running_job.request_id }})
+    {% elif queue.pending_global %}ממתינים בתור: {{ queue.pending_global }}{% else %}אין ג'ובים פעילים{% endif %}
+  </p>
+  <ul class="ai-queue-jobs" id="ai-queue-jobs">
+    {% for j in queue.jobs %}
+    <li><span class="ai-log-ts">#{{ j.id }}</span> {{ j.type_label }} · {{ j.status_label }}
+      {% if j.attempts %} ({{ j.attempts }}/{{ j.max_attempts }}){% endif %}
+      {% if j.error %}<span style="color:var(--loss)"> – {{ j.error|truncatechars:80 }}</span>{% endif %}
+    </li>
+    {% empty %}
+    <li style="color:var(--muted)">אין ג'ובים לבקשה זו</li>
+    {% endfor %}
+  </ul>
+</div>
+
+<div class="card-panel ai-log-panel" id="ai-log-panel" style="{% if not req.processing_log and not is_in_progress %}display:none{% endif %}">
   <div class="form-label" style="margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
     <span>לוג עיבוד</span>
-    <span class="ai-log-spinner" id="ai-log-spinner" style="{% if not is_generating and not is_pr_creating %}display:none{% endif %}">⏳</span>
-    <span class="ai-poll-meta" id="ai-poll-meta" style="{% if not is_generating and not is_pr_creating %}display:none{% endif %}">מתעדכן כל 3 שניות</span>
+    <span class="ai-log-spinner" id="ai-log-spinner" style="{% if not is_in_progress %}display:none{% endif %}">⏳</span>
+    <span class="ai-poll-meta" id="ai-poll-meta" style="{% if not is_in_progress %}display:none{% endif %}">מתעדכן כל 3 שניות</span>
   </div>
-  <div class="ai-live-step" id="ai-live-step" style="{% if not is_generating and not is_pr_creating %}display:none{% endif %}">
+  <div class="ai-live-step" id="ai-live-step" style="{% if not is_in_progress %}display:none{% endif %}">
     <span class="ai-live-step-label">כרגע:</span>
     <strong id="ai-live-step-text">{% if req.processing_log %}{% with step=req.processing_log|last %}{{ step.msg }}{% endwith %}{% else %}ממתין…{% endif %}</strong>
   </div>
@@ -90,6 +109,13 @@
   {% endif %}
   {% if is_pr_creating %}
   <button type="button" class="btn btn-green" disabled>יוצר PR ב-Git…</button>
+  {% endif %}
+  {% if can_retry %}
+  <button type="button" class="btn btn-gold" id="btn-retry-step"
+    data-url="{{ retry_url }}"
+    data-status-url="{{ status_url }}">
+    ↻ המשך שלב תקוע
+  </button>
   {% endif %}
   {% if can_cancel %}
   <button type="button" class="btn btn-outline ai-cancel-job-btn" id="btn-cancel-job"
@@ -326,9 +352,40 @@
     }
   }
 
+  function renderQueue(q) {
+    if (!q) return;
+    var summary = document.getElementById('ai-queue-summary');
+    var list = document.getElementById('ai-queue-jobs');
+    if (summary) {
+      if (q.running_global && q.running_job) {
+        summary.textContent = 'רץ כעת: ' + q.running_job.type_label + ' (בקשה #' + q.running_job.request_id + ')';
+      } else if (q.pending_global) {
+        summary.textContent = 'ממתינים בתור (כללי): ' + q.pending_global;
+      } else {
+        summary.textContent = 'אין ג\'ובים פעילים בתור';
+      }
+    }
+    if (!list) return;
+    list.innerHTML = '';
+    (q.jobs || []).forEach(function (j) {
+      var li = document.createElement('li');
+      var err = j.error ? ' – ' + j.error : '';
+      li.innerHTML = '<span class="ai-log-ts">#' + j.id + '</span> ' + j.type_label + ' · ' + j.status_label
+        + (j.attempts ? ' (' + j.attempts + '/' + j.max_attempts + ')' : '') + err;
+      list.appendChild(li);
+    });
+    if (!(q.jobs || []).length) {
+      var empty = document.createElement('li');
+      empty.style.color = 'var(--muted)';
+      empty.textContent = 'אין ג\'ובים לבקשה זו';
+      list.appendChild(empty);
+    }
+  }
+
   function applyStatusUpdate(data) {
     if (!data) return;
     renderLogs(data.logs);
+    renderQueue(data.queue);
     if (statusLabel) statusLabel.textContent = data.status_label || data.status;
     if (data.failed && data.error) {
       showErrorBanner(data.error, true);
@@ -339,7 +396,7 @@
     if (logPanel && (data.generating || data.pr_creating || data.in_progress)) {
       logPanel.style.display = 'block';
     }
-    if (spinner) spinner.style.display = (data.generating || data.pr_creating) ? 'inline' : 'none';
+    if (spinner) spinner.style.display = (data.generating || data.pr_creating || data.in_progress) ? 'inline' : 'none';
   }
 
   function startLivePolling(url, onTerminal) {
@@ -353,7 +410,7 @@
           var staleEl = document.getElementById('ai-stale-warning');
           if (staleEl) staleEl.style.display = 'none';
         }
-        if (data.status === 'pr_created') {
+        if (data.status === 'pr_created' || data.merged || data.status === 'pr_merged') {
           if (onTerminal) onTerminal(data);
         } else if (data.status === 'diff_ready' && data.ok) {
           if (onTerminal) onTerminal(data);
@@ -480,12 +537,25 @@
       btn.disabled = true;
       btn.textContent = 'ממזג ל-main…';
       if (logPanel) logPanel.style.display = 'block';
+      var stopPoll = startLivePolling(btn.dataset.statusUrl || statusUrl, function (data) {
+        if (data.merged || data.status === 'pr_merged') {
+          stopPoll();
+          showGitMergedSuccess(data.message);
+          setActionsBusy(false);
+        } else if (data.failed) {
+          stopPoll();
+          setActionsBusy(false);
+          btn.disabled = false;
+          btn.textContent = 'מזג ל-main (Merge PR)';
+          if (data.error) alert(data.error);
+        }
+      });
       postAction(btn.dataset.url)
         .then(function (res) {
-          renderLogs(res.data.logs);
-          if (statusLabel) statusLabel.textContent = res.data.status_label || '';
-          setActionsBusy(false);
+          applyStatusUpdate(res.data);
           if (!res.ok) {
+            stopPoll();
+            setActionsBusy(false);
             btn.disabled = false;
             btn.textContent = 'מזג ל-main (Merge PR)';
             if (res.data.error) alert(res.data.error);
@@ -503,9 +573,9 @@
             }
             if (w) w.textContent = res.data.scope_warning;
           }
-          showGitMergedSuccess(res.data.message);
         })
         .catch(function (err) {
+          stopPoll();
           setActionsBusy(false);
           btn.disabled = false;
           btn.textContent = 'מזג ל-main (Merge PR)';
@@ -516,6 +586,29 @@
 
   var btnMerge = document.getElementById('btn-merge-pr');
   if (btnMerge) wireMergeButton(btnMerge);
+
+  var btnRetry = document.getElementById('btn-retry-step');
+  if (btnRetry) {
+    btnRetry.addEventListener('click', function () {
+      if (!confirm('להכניס מחדש את השלב התקוע לתור?')) return;
+      btnRetry.disabled = true;
+      var stopPoll = startLivePolling(btnRetry.dataset.statusUrl, function (data) {
+        if (data.in_progress || data.status === 'pr_created' || data.status === 'diff_ready' || data.failed) {
+          stopPoll();
+          if (data.failed && data.error) alert(data.error);
+          else window.location.reload();
+        }
+      });
+      postAction(btnRetry.dataset.url).then(function (res) {
+        applyStatusUpdate(res.data);
+        if (!res.ok) {
+          stopPoll();
+          btnRetry.disabled = false;
+          if (res.data.error) alert(res.data.error);
+        }
+      }).catch(function () { stopPoll(); btnRetry.disabled = false; });
+    });
+  }
 
   var btnCancel = document.getElementById('btn-cancel-job');
   if (btnCancel) {
@@ -551,16 +644,18 @@
   showGitToast('✓ Git עודכן – PR מוזג ל-main');
   {% endif %}
 
-  {% if is_pr_creating %}
+  {% if is_in_progress %}
   lockApproveFlow();
   keepCancelEnabled();
   if (logPanel) logPanel.style.display = 'block';
-  var prBtn = document.querySelector('#ai-actions .btn-green:not(#btn-cancel-job)');
-  if (prBtn) prBtn.textContent = 'נעול · יוצר PR ב-Git…';
+  var prBtn = document.querySelector('#ai-actions .btn-green:not(#btn-cancel-job):not(#btn-retry-step)');
+  if (prBtn && !prBtn.id) prBtn.textContent = 'נעול · בתור / רץ…';
   startLivePolling(statusUrl, function (data) {
     if (data.status === 'pr_created') {
       if (prBtn) prBtn.style.display = 'none';
       showPrSuccess(data.pr_url, data.pr_number, data.merge_url, statusUrl);
+    } else if (data.status === 'diff_ready' && data.ok) {
+      window.location.reload();
     } else if (data.failed || data.cancelled) {
       unlockApproveFlow();
       window.location.reload();
