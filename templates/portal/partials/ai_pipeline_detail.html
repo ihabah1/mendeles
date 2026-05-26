@@ -22,9 +22,9 @@
   </div>
   <div class="ai-pipeline-meta" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
     {% if pipeline.can_archive %}
-    <button type="button" class="btn btn-outline btn-sm ai-btn-archive-request"
-      data-url="{{ pipeline.archive_url }}" style="border-color:var(--loss);color:var(--loss)">
-      הסר מהרשימה
+    <button type="button" class="btn btn-red btn-sm ai-btn-archive-request"
+      data-url="{{ pipeline.archive_url }}">
+      בטל רשומה
     </button>
     {% endif %}
     {% if pipeline.can_reject %}

@@ -288,21 +288,37 @@
         ev.stopPropagation();
         if (
           !confirm(
-            'להסיר את הרשומה מ«ניהול שינויים»?\n'
-              + 'הבקשה תיעודם ב«היסטוריית פעולות» ולא תופיע יותר ברשימה.',
+            'לבטל את הרשומה ולהסיר אותה מהטבלה?\n'
+              + 'הפעולה תתועד ב«היסטוריית פעולות».',
           )
         ) {
           return;
         }
+        btn.disabled = true;
+        btn.textContent = '…';
+        var tr = btn.closest('tr');
         var fdArch = new FormData();
-        fdArch.append('reason', 'הוסר מניהול שינויים');
+        fdArch.append('reason', 'בוטל מניהול שינויים');
         post(btn.dataset.url, fdArch).then(function (res) {
-          if (res.data && res.data.redirect) {
-            window.location.href = res.data.redirect;
+          if (res.ok) {
+            if (tr) {
+              tr.remove();
+              var tbody = tr.closest('tbody');
+              if (tbody && !tbody.querySelector('tr[data-request-id]')) {
+                window.location.reload();
+              }
+            } else {
+              window.location.reload();
+            }
             return;
           }
-          if (!res.ok && res.data && res.data.error) alert(res.data.error);
+          btn.disabled = false;
+          btn.textContent = 'בטל';
+          if (res.data && res.data.error) alert(res.data.error);
           else window.location.reload();
+        }).catch(function () {
+          btn.disabled = false;
+          btn.textContent = 'בטל';
         });
       }
     });

@@ -29,7 +29,8 @@
         <th class="ai-stage-th">יצירת PR</th>
         <th class="ai-stage-th">מיזוג / Push ל-Git</th>
         <th>PR</th>
-        <th></th>
+        <th class="ai-col-cancel">בטל</th>
+        <th class="ai-col-actions">פעולות</th>
       </tr>
     </thead>
     <tbody id="ai-changes-tbody">
@@ -58,7 +59,7 @@
     </tr>
     {% endwith %}
     {% empty %}
-    <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">
+    <tr><td colspan="9" style="text-align:center;color:var(--muted);padding:24px">
       אין שינויים – <a href="{% url 'portal:ai_request_create' %}" style="color:var(--gold)">צור בקשה</a>
     </td></tr>
     {% endfor %}
@@ -68,11 +69,12 @@
 <p style="font-size:.72rem;color:var(--muted);margin-top:8px">
   <span class="ai-stage-check ai-stage-check--done ai-stage-check--inline"><span class="ai-stage-v">✓</span></span> שלב הושלם ·
   <strong>הרץ</strong> פעיל רק כשהשלב הקודם מסומן ·
-  <strong>הסר</strong> – מוחק מהרשימה (לא מה-DB) ומתועד ב<a href="{% url 'portal:logs' %}" style="color:var(--gold)">היסטוריית פעולות</a>
+  <strong>בטל</strong> – מסיר מהרשימה רשומות שלא הסתיימו (מתועד ב<a href="{% url 'portal:logs' %}" style="color:var(--gold)">היסטוריית פעולות</a>)
 </p>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  if (window.AiPortalUI) AiPortalUI.wirePipelineRunButtons(document.getElementById('ai-changes-tbody'));
+  var wrap = document.querySelector('.ai-changes-table')?.closest('.table-wrap');
+  if (window.AiPortalUI && wrap) AiPortalUI.wirePipelineRunButtons(wrap);
 });
 </script>
 {% endblock %}
