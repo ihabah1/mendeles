@@ -22,20 +22,20 @@
   <table class="ai-jobs-table">
     <thead>
       <tr>
-        <th>ג'וב</th>
+        <th>#</th>
         <th>בקשה</th>
-        <th>סוג</th>
+        <th>שם הג'וב</th>
         <th>סטטוס בקשה</th>
-        <th>ג'וב</th>
+        <th>סטטוס ג'וב</th>
         <th>ניסיונות</th>
-        <th>שעה</th>
+        <th>תאריך ושעה</th>
         <th></th>
       </tr>
     </thead>
     <tbody id="ai-jobs-tbody"></tbody>
   </table>
 </div>
-<p style="font-size:.72rem;color:var(--muted);margin-top:8px">לחץ על שורה לפתיחת לוג מלא · מתעדכן כל 3 שניות</p>
+<p style="font-size:.72rem;color:var(--muted);margin-top:8px">לחץ על <strong>שם הג'וב</strong> לראות את הבקשה · <strong>לוג</strong> לפרטי הרצה · מתעדכן כל 3 שניות</p>
 
 {% include 'portal/partials/ai_detail_modal.html' %}
 {{ jobs|json_script:"ai-jobs-data" }}
@@ -67,6 +67,9 @@
         AiPortalUI.renderJobsTableBody(document.getElementById('ai-jobs-tbody'), data.jobs, {
           showRequest: true,
           showRequestStatus: true,
+          onJobNameClick: function (j) {
+            modal.open('ג\'וב: ' + j.type_label, AiPortalUI.buildJobInfoModalHtml(j));
+          },
           onRowClick: function (j) { openRequestLogs(j.request_id); },
         });
       });
@@ -79,6 +82,9 @@
     AiPortalUI.renderJobsTableBody(document.getElementById('ai-jobs-tbody'), initial, {
       showRequest: true,
       showRequestStatus: true,
+      onJobNameClick: function (j) {
+        modal.open('ג\'וב: ' + j.type_label, AiPortalUI.buildJobInfoModalHtml(j));
+      },
       onRowClick: function (j) { openRequestLogs(j.request_id); },
     });
     setInterval(refresh, 3000);

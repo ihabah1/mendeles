@@ -136,8 +136,11 @@ tr:hover td{background:rgba(201,168,76,.03)}
 .ai-prompt-editor:empty::before{content:attr(data-placeholder);color:var(--muted);pointer-events:none}
 .ai-prompt-hidden{position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none}
 .ai-inline-paste-img{display:inline-block;max-height:52px;max-width:88px;border-radius:6px;border:1px solid var(--gold);margin:4px 6px 4px 0;vertical-align:middle;object-fit:cover;box-shadow:0 2px 8px rgba(0,0,0,.35)}
-.ai-jobs-table tbody tr.ai-row-clickable{cursor:pointer}
-.ai-jobs-table tbody tr.ai-row-clickable:hover{background:rgba(201,168,76,.06)}
+.ai-jobs-table tbody tr.ai-row-clickable{cursor:default}
+.ai-jobs-table tbody tr.ai-row-clickable:hover{background:rgba(201,168,76,.04)}
+.ai-job-name-link{background:none;border:none;padding:0;color:var(--gold);font-weight:700;font-family:inherit;font-size:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.ai-job-name-link:hover{color:var(--cream)}
+.ai-job-prompt-box{white-space:pre-wrap;line-height:1.6;background:var(--panel);padding:12px 14px;border-radius:8px;border:1px solid var(--border);margin:0;max-height:280px;overflow-y:auto}
 .ai-jobs-table .badge-running{background:rgba(201,168,76,.2);color:var(--gold)}
 .ai-status-strip{display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:.82rem;margin-bottom:12px}
 .ai-status-strip strong{color:var(--gold)}

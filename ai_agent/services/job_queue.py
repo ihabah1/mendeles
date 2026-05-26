@@ -210,15 +210,7 @@ def list_recent_jobs(limit: int = 80) -> list[dict]:
         AIJob.objects.select_related('change_request')
         .order_by('-created_at')[:limit]
     )
-    out = []
-    for job in jobs:
-        row = _job_dict(job)
-        req = job.change_request
-        row['request_prompt'] = (req.prompt or '')[:70] if req else ''
-        row['request_status'] = req.status if req else ''
-        row['request_status_label'] = req.get_status_display() if req else ''
-        out.append(row)
-    return out
+    return [_job_dict(job) for job in jobs]
 
 
 def queue_status_global() -> dict:
@@ -234,6 +226,7 @@ def queue_status_global() -> dict:
 def queue_status_for_request(change_request_id: int) -> dict:
     jobs = list(
         AIJob.objects.filter(change_request_id=change_request_id)
+        .select_related('change_request')
         .order_by('-created_at')[:8],
     )
     pending_global = AIJob.objects.filter(status=AIJob.Status.PENDING).count()
@@ -254,6 +247,8 @@ def queue_status_for_request(change_request_id: int) -> dict:
 def _job_dict(job: AIJob | None) -> dict | None:
     if not job:
         return None
+    req = job.change_request
+    created_local = timezone.localtime(job.created_at) if job.created_at else None
     return {
         'id': job.pk,
         'request_id': job.change_request_id,
@@ -265,7 +260,11 @@ def _job_dict(job: AIJob | None) -> dict | None:
         'max_attempts': job.max_attempts,
         'error': job.error_message or '',
         'created_at': job.created_at.isoformat() if job.created_at else '',
+        'created_at_display': created_local.strftime('%d/%m/%Y %H:%M') if created_local else '—',
         'started_at': job.started_at.isoformat() if job.started_at else '',
+        'request_prompt': (req.prompt or '').strip() if req else '',
+        'request_status': req.status if req else '',
+        'request_status_label': req.get_status_display() if req else '',
     }
 
 

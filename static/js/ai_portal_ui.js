@@ -137,6 +137,28 @@
     return 'badge-gray';
   }
 
+  function buildJobInfoModalHtml(j, extraPrompt) {
+    var prompt = (j.request_prompt || extraPrompt || '').trim() || '—';
+    var html = '';
+    html += '<p style="margin-bottom:6px"><strong>ג\'וב #' + j.id + '</strong> · ' + escapeHtml(j.type_label || j.type) + '</p>';
+    html += '<p style="font-size:.78rem;color:var(--muted);margin-bottom:12px">בקשה #' + j.request_id;
+    if (j.request_status_label) html += ' · ' + escapeHtml(j.request_status_label);
+    html += '</p>';
+    html += '<div class="form-label" style="margin-bottom:6px">על איזה שינוי מדובר</div>';
+    html += '<p class="ai-job-prompt-box">' + escapeHtml(prompt) + '</p>';
+    if (j.error) {
+      html += '<div class="alert alert-error" style="margin-top:12px;font-size:.82rem">' + escapeHtml(j.error) + '</div>';
+    }
+    html += '<p style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">';
+    html += '<a href="/manage/ai/' + j.request_id + '/" class="btn btn-gold btn-sm">פתח בקשה</a>';
+    html += '</p>';
+    return html;
+  }
+
+  function jobNameCell(j) {
+    return '<button type="button" class="ai-job-name-link">' + escapeHtml(j.type_label || j.type) + '</button>';
+  }
+
   function renderJobsTableBody(tbody, jobs, opts) {
     if (!tbody) return;
     opts = opts || {};
@@ -145,38 +167,40 @@
       var tr = document.createElement('tr');
       tr.className = 'ai-row-clickable';
       tr.dataset.jobId = j.id;
-      var reqCell = '';
-      if (opts.showRequest) {
-        reqCell =
-          '<td><a href="/manage/ai/' + j.request_id + '/">#' + j.request_id + '</a>' +
-          '<div style="font-size:.68rem;color:var(--muted);max-width:200px">' + escapeHtml(j.request_prompt || '') + '</div></td>';
-      }
-      var reqStatusCell = opts.showRequestStatus
-        ? '<td style="font-size:.75rem">' + escapeHtml(j.request_status_label || '') + '</td>'
+      var reqCell = opts.showRequest
+        ? '<td class="td-mono"><a href="/manage/ai/' + j.request_id + '/">#' + j.request_id + '</a></td>'
         : '';
+      var reqStatusCell = opts.showRequestStatus
+        ? '<td style="font-size:.75rem">' + escapeHtml(j.request_status_label || '—') + '</td>'
+        : '';
+      var dateCell = '<td class="td-mono" style="font-size:.72rem;white-space:nowrap">' + escapeHtml(j.created_at_display || '—') + '</td>';
       if (opts.detailLayout) {
         tr.innerHTML =
           '<td class="td-mono">#' + j.id + '</td>' +
-          '<td>' + (j.type_label || j.type) + '</td>' +
+          '<td>' + jobNameCell(j) + '</td>' +
           '<td><span class="badge ' + statusBadgeClass(j.status) + '">' + (j.status_label || j.status) + '</span></td>' +
           '<td class="td-mono">' + (j.attempts || 0) + '/' + (j.max_attempts || 3) + '</td>' +
-          '<td style="font-size:.72rem;max-width:200px">' + (j.error ? '<span style="color:var(--loss)">' + escapeHtml(j.error) + '</span>' : '—') + '</td>' +
+          '<td style="font-size:.72rem;max-width:220px">' + (j.error ? '<span style="color:var(--loss)">' + escapeHtml(j.error) + '</span>' : '—') + '</td>' +
+          dateCell +
           '<td><button type="button" class="btn btn-outline btn-sm ai-btn-details">לוג</button></td>';
       } else {
         tr.innerHTML =
           '<td class="td-mono">#' + j.id + '</td>' +
           reqCell +
-          '<td>' + (j.type_label || j.type) + '</td>' +
+          '<td>' + jobNameCell(j) + '</td>' +
           reqStatusCell +
           '<td><span class="badge ' + statusBadgeClass(j.status) + '">' + (j.status_label || j.status) + '</span></td>' +
           '<td class="td-mono">' + (j.attempts || 0) + '/' + (j.max_attempts || 3) + '</td>' +
-          '<td style="font-size:.72rem;color:var(--muted)">' + (j.created_at ? j.created_at.slice(11, 19) : '—') + '</td>' +
-          '<td><button type="button" class="btn btn-outline btn-sm ai-btn-details">פרטים</button></td>';
+          dateCell +
+          '<td><button type="button" class="btn btn-outline btn-sm ai-btn-details">לוג</button></td>';
       }
-      tr.addEventListener('click', function (ev) {
-        if (ev.target.closest('a')) return;
-        if (opts.onRowClick) opts.onRowClick(j, tr);
-      });
+      var nameBtn = tr.querySelector('.ai-job-name-link');
+      if (nameBtn) {
+        nameBtn.addEventListener('click', function (ev) {
+          ev.stopPropagation();
+          if (opts.onJobNameClick) opts.onJobNameClick(j, tr);
+        });
+      }
       var btn = tr.querySelector('.ai-btn-details');
       if (btn) {
         btn.addEventListener('click', function (ev) {
@@ -187,7 +211,7 @@
       tbody.appendChild(tr);
     });
     if (!(jobs || []).length) {
-      var cols = opts.detailLayout ? 6 : 6 + (opts.showRequest ? 1 : 0) + (opts.showRequestStatus ? 1 : 0);
+      var cols = opts.detailLayout ? 7 : 7 + (opts.showRequest ? 1 : 0) + (opts.showRequestStatus ? 1 : 0);
       tbody.innerHTML = '<tr><td colspan="' + cols + '" style="text-align:center;color:var(--muted);padding:20px">אין ג\'ובים</td></tr>';
     }
   }
@@ -231,6 +255,7 @@
     initAiModal: initAiModal,
     renderJobsTableBody: renderJobsTableBody,
     buildLogModalHtml: buildLogModalHtml,
+    buildJobInfoModalHtml: buildJobInfoModalHtml,
     escapeHtml: escapeHtml,
     statusBadgeClass: statusBadgeClass,
   };

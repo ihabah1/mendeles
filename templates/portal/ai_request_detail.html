@@ -69,10 +69,11 @@
     <thead>
       <tr>
         <th>#</th>
-        <th>סוג</th>
+        <th>שם הג'וב</th>
         <th>סטטוס</th>
         <th>ניסיונות</th>
         <th>שגיאה</th>
+        <th>תאריך ושעה</th>
         <th></th>
       </tr>
     </thead>
@@ -171,6 +172,7 @@
 
 {% include 'portal/partials/ai_detail_modal.html' %}
 {{ queue.jobs|json_script:"ai-request-jobs" }}
+{{ req.prompt|json_script:"ai-req-prompt" }}
 
 <script>
 (function () {
@@ -293,6 +295,19 @@
     if (mergeUrl) ensureMergeButton(mergeUrl, statusUrl);
   }
 
+  var requestPromptText = '';
+  try {
+    requestPromptText = JSON.parse(document.getElementById('ai-req-prompt').textContent);
+  } catch (e) {}
+
+  function openJobInfoModal(j) {
+    if (!aiModal) return;
+    aiModal.open(
+      'ג\'וב: ' + (j.type_label || ''),
+      AiPortalUI.buildJobInfoModalHtml(j, requestPromptText),
+    );
+  }
+
   function openLogsModal() {
     if (!aiModal) return;
     var data = lastStatusData;
@@ -353,6 +368,7 @@
     if (!tbody || !q) return;
     AiPortalUI.renderJobsTableBody(tbody, q.jobs || [], {
       detailLayout: true,
+      onJobNameClick: function (j) { openJobInfoModal(j); },
       onRowClick: function () { openLogsModal(); },
     });
   }
