@@ -47,3 +47,15 @@ class PipelineStagesTests(SimpleTestCase):
         for s in p['stages']:
             self.assertTrue(s['done'])
             self.assertFalse(s['can_run'])
+
+    def test_incomplete_can_archive(self):
+        from ai_agent.services.pipeline import can_archive_request
+
+        r = self._req(status=AIChangeRequest.Status.DIFF_READY, result='diff')
+        self.assertTrue(can_archive_request(r, jobs=[]))
+
+    def test_merged_cannot_archive(self):
+        from ai_agent.services.pipeline import can_archive_request
+
+        r = self._req(status=AIChangeRequest.Status.PR_MERGED, result='d', pr_number=1)
+        self.assertFalse(can_archive_request(r, jobs=[]))

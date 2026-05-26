@@ -37,6 +37,7 @@ urlpatterns = [
     path(f'{_prefix}/ai/<int:pk>/approve/', ai_views.ai_request_approve, name='ai_request_approve'),
     path(f'{_prefix}/ai/<int:pk>/merge/', ai_views.ai_request_merge, name='ai_request_merge'),
     path(f'{_prefix}/ai/<int:pk>/reject/', ai_views.ai_request_reject, name='ai_request_reject'),
+    path(f'{_prefix}/ai/<int:pk>/archive/', ai_views.ai_request_archive, name='ai_request_archive'),
     path(f'{_prefix}/ai/<int:pk>/cancel/', ai_views.ai_request_cancel, name='ai_request_cancel'),
     path(f'{_prefix}/ai/<int:pk>/retry/', ai_views.ai_request_retry, name='ai_request_retry'),
     path(

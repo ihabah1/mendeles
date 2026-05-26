@@ -214,6 +214,46 @@ def can_cancel_request(request: AIChangeRequest) -> bool:
     return request.status in CANCELLABLE_STATUSES
 
 
+def archive_request(
+    request: AIChangeRequest,
+    *,
+    performed_by=None,
+    reason: str = '',
+) -> AIChangeRequest:
+    """מסיר מהרשימה בפורטל; מתועד ב-היסטוריית פעולות. לא מוחק מה-DB."""
+    from ai_agent.services.change_history import record_ai_request_archived
+    from ai_agent.services.job_queue import cancel_jobs_for_request
+
+    from .pipeline import build_pipeline, can_archive_request
+
+    if not can_archive_request(request):
+        raise ValueError(
+            'לא ניתן להסיר רשומה שהושלמו כל שלביה (מיזוג ל-Git). '
+            'רק בקשות שלא הסתיימו.',
+        )
+
+    pipeline = build_pipeline(request)
+    stages_done = [s['label'] for s in pipeline['stages'] if s.get('done')]
+    stages_pending = [s['label'] for s in pipeline['stages'] if not s.get('done')]
+
+    prev_label = request.get_status_display()
+    cancel_jobs_for_request(request.pk, reason=reason or 'הוסר מהרשימה')
+    note = (reason or 'הוסר מניהול שינויים').strip()
+    request.append_log(f'🗑 הוסר מהרשימה (היה: {prev_label}). {note}')
+    request.status = AIChangeRequest.Status.ARCHIVED
+    request.error_message = ''
+    request.save(update_fields=['status', 'error_message', 'updated_at'])
+    record_ai_request_archived(
+        request,
+        performed_by,
+        reason=note,
+        previous_status=prev_label,
+        stages_done=stages_done,
+        stages_pending=stages_pending,
+    )
+    return request
+
+
 def cancel_request(request: AIChangeRequest, *, reason: str = '') -> AIChangeRequest:
     """מבטל ג'וב תקוע – מאפס סטטוס כדי לאפשר ניסיון חוזר."""
     from ai_agent.services.job_queue import cancel_jobs_for_request

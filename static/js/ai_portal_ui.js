@@ -281,6 +281,29 @@
           if (res.data.redirect) window.location.href = res.data.redirect;
           else window.location.reload();
         });
+        return;
+      }
+
+      if (btn.classList.contains('ai-btn-archive-request')) {
+        ev.stopPropagation();
+        if (
+          !confirm(
+            'להסיר את הרשומה מ«ניהול שינויים»?\n'
+              + 'הבקשה תיעודם ב«היסטוריית פעולות» ולא תופיע יותר ברשימה.',
+          )
+        ) {
+          return;
+        }
+        var fdArch = new FormData();
+        fdArch.append('reason', 'הוסר מניהול שינויים');
+        post(btn.dataset.url, fdArch).then(function (res) {
+          if (res.data && res.data.redirect) {
+            window.location.href = res.data.redirect;
+            return;
+          }
+          if (!res.ok && res.data && res.data.error) alert(res.data.error);
+          else window.location.reload();
+        });
       }
     });
   }

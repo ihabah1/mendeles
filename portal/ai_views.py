@@ -22,6 +22,7 @@ from ai_agent.services.job_queue import (
 )
 from ai_agent.services.pipeline import build_pipeline, pipeline_to_json
 from ai_agent.services.workflow import (
+    archive_request,
     cancel_request,
     can_cancel_request,
     merge_pr_for_request,
@@ -140,7 +141,11 @@ def ai_queue_status(request):
 @admin_required
 def ai_requests_list(request):
     _require_ai_enabled()
-    reqs = AIChangeRequest.objects.select_related('created_by').order_by('-created_at')[:50]
+    reqs = (
+        AIChangeRequest.objects.exclude(status=AIChangeRequest.Status.ARCHIVED)
+        .select_related('created_by')
+        .order_by('-created_at')[:50]
+    )
     request_rows = [
         {
             'req': r,
@@ -198,6 +203,9 @@ def ai_request_detail(request, pk):
             request,
             f'בקשה #{pk} לא נמצאה. ייתכן שהמסד אופס (SQLite ב-Railway). צור בקשה חדשה.',
         )
+        return redirect('portal:ai_requests')
+    if obj.status == AIChangeRequest.Status.ARCHIVED:
+        messages.info(request, f'בקשה #{pk} הוסרה מהרשימה. פרטים ב«היסטוריית פעולות».')
         return redirect('portal:ai_requests')
     is_generating = obj.status == AIChangeRequest.Status.GENERATING
     is_pr_creating = obj.status == AIChangeRequest.Status.PR_CREATING
@@ -421,6 +429,34 @@ def ai_request_cancel(request, pk):
         messages.error(request, str(exc))
 
     return redirect('portal:ai_request_detail', pk=pk)
+
+
+@admin_required
+@require_POST
+def ai_request_archive(request, pk):
+    _require_ai_enabled()
+    obj = get_object_or_404(AIChangeRequest, pk=pk)
+    ajax = _wants_json(request)
+    reason = (request.POST.get('reason') or 'הוסר מניהול שינויים').strip()
+
+    try:
+        archive_request(obj, performed_by=request.user, reason=reason)
+        if ajax:
+            return JsonResponse({
+                'ok': True,
+                'message': 'הרשומה הוסרה מהרשימה ותועדה בהיסטוריית פעולות',
+                'redirect': reverse('portal:ai_requests'),
+            })
+        messages.success(
+            request,
+            'הרשומה הוסרה מ«ניהול שינויים» ותועדה ב«היסטוריית פעולות».',
+        )
+    except ValueError as exc:
+        if ajax:
+            return JsonResponse({'ok': False, 'error': str(exc)}, status=400)
+        messages.error(request, str(exc))
+
+    return redirect('portal:ai_requests')
 
 
 @admin_required

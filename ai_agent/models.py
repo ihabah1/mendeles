@@ -14,6 +14,7 @@ class AIChangeRequest(models.Model):
         REJECTED = 'rejected', 'נדחה'
         FAILED = 'failed', 'נכשל'
         CANCELLED = 'cancelled', 'בוטל'
+        ARCHIVED = 'archived', 'הוסר מהרשימה'
 
     prompt = models.TextField('בקשה בשפה טבעית')
     reference_images = models.JSONField(

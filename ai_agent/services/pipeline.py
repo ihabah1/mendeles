@@ -22,27 +22,12 @@ def _job_active(jobs: list[AIJob], job_type: str) -> bool:
     )
 
 
-def build_pipeline(
+def _stage_flags(
     req: AIChangeRequest,
-    jobs: list[AIJob] | None = None,
-) -> dict:
-    """
-    שלושה שלבים ברשומת הבקשה:
-    1. ייצור diff
-    2. יצירת PR
-    3. מיזוג / Push ל-Git
-    """
-    if jobs is None:
-        jobs = list(req.jobs.all())
-
-    pk = req.pk
+    jobs: list[AIJob],
+) -> tuple[bool, bool, bool]:
+    """האם שלבים 1–3 הושלמו."""
     result_ok = bool((req.result or '').strip())
-    terminal_bad = req.status in (
-        AIChangeRequest.Status.REJECTED,
-        AIChangeRequest.Status.FAILED,
-    )
-
-    # --- שלב 1: ייצור diff ---
     s1_done = (
         result_ok
         or req.status
@@ -55,6 +40,70 @@ def build_pipeline(
         )
         or _job_completed(jobs, AIJob.JobType.GENERATE_DIFF)
     )
+    s2_done = (
+        bool(req.pr_number)
+        or req.status
+        in (
+            AIChangeRequest.Status.PR_CREATED,
+            AIChangeRequest.Status.PR_MERGED,
+        )
+        or _job_completed(jobs, AIJob.JobType.CREATE_PR)
+    )
+    s3_done = (
+        req.status == AIChangeRequest.Status.PR_MERGED
+        or bool(req.merged_at)
+        or _job_completed(jobs, AIJob.JobType.MERGE_PR)
+    )
+    return s1_done, s2_done, s3_done
+
+
+def is_pipeline_complete(
+    req: AIChangeRequest,
+    jobs: list[AIJob] | None = None,
+) -> bool:
+    if jobs is None:
+        jobs = list(req.jobs.all()) if req.pk else []
+    s1, s2, s3 = _stage_flags(req, jobs)
+    return s1 and s2 and s3
+
+
+def can_archive_request(
+    req: AIChangeRequest,
+    jobs: list[AIJob] | None = None,
+) -> bool:
+    """הסרה מהרשימה – רק כשלא כל השלבים הושלמו."""
+    if req.status in (
+        AIChangeRequest.Status.ARCHIVED,
+        AIChangeRequest.Status.PR_MERGED,
+    ):
+        return False
+    return not is_pipeline_complete(req, jobs)
+
+
+def build_pipeline(
+    req: AIChangeRequest,
+    jobs: list[AIJob] | None = None,
+) -> dict:
+    """
+    שלושה שלבים ברשומת הבקשה:
+    1. ייצור diff
+    2. יצירת PR
+    3. מיזוג / Push ל-Git
+    """
+    if jobs is None:
+        jobs = list(req.jobs.all()) if req.pk else []
+
+    pk = req.pk
+    result_ok = bool((req.result or '').strip())
+    terminal_bad = req.status in (
+        AIChangeRequest.Status.REJECTED,
+        AIChangeRequest.Status.FAILED,
+        AIChangeRequest.Status.ARCHIVED,
+    )
+
+    s1_done, s2_done, s3_done = _stage_flags(req, jobs)
+
+    # --- שלב 1: ייצור diff ---
     s1_running = (
         req.status == AIChangeRequest.Status.GENERATING
         or _job_active(jobs, AIJob.JobType.GENERATE_DIFF)
@@ -72,15 +121,6 @@ def build_pipeline(
     )
 
     # --- שלב 2: יצירת PR ---
-    s2_done = (
-        bool(req.pr_number)
-        or req.status
-        in (
-            AIChangeRequest.Status.PR_CREATED,
-            AIChangeRequest.Status.PR_MERGED,
-        )
-        or _job_completed(jobs, AIJob.JobType.CREATE_PR)
-    )
     s2_running = (
         req.status
         in (
@@ -99,11 +139,6 @@ def build_pipeline(
     )
 
     # --- שלב 3: מיזוג / Push ---
-    s3_done = (
-        req.status == AIChangeRequest.Status.PR_MERGED
-        or bool(req.merged_at)
-        or _job_completed(jobs, AIJob.JobType.MERGE_PR)
-    )
     s3_running = _job_active(jobs, AIJob.JobType.MERGE_PR)
     s3_can_run = (
         not terminal_bad
@@ -155,8 +190,10 @@ def build_pipeline(
             AIChangeRequest.Status.DRAFT,
         ) and not s1_running and not s2_running,
         'can_cancel': can_cancel_request(req),
+        'can_archive': can_archive_request(req, jobs),
         'reject_url': reverse('portal:ai_request_reject', kwargs={'pk': pk}),
         'cancel_url': reverse('portal:ai_request_cancel', kwargs={'pk': pk}),
+        'archive_url': reverse('portal:ai_request_archive', kwargs={'pk': pk}),
         'status_url': reverse('portal:ai_request_status', kwargs={'pk': pk}),
         'detail_url': reverse('portal:ai_request_detail', kwargs={'pk': pk}),
     }
