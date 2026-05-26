@@ -205,6 +205,32 @@ def retry_request_step(change_request_id: int, *, performed_by=None) -> AIJob:
     return enqueue(change_request_id, job_type, performed_by=performed_by)
 
 
+def list_recent_jobs(limit: int = 80) -> list[dict]:
+    jobs = (
+        AIJob.objects.select_related('change_request')
+        .order_by('-created_at')[:limit]
+    )
+    out = []
+    for job in jobs:
+        row = _job_dict(job)
+        req = job.change_request
+        row['request_prompt'] = (req.prompt or '')[:70] if req else ''
+        row['request_status'] = req.status if req else ''
+        row['request_status_label'] = req.get_status_display() if req else ''
+        out.append(row)
+    return out
+
+
+def queue_status_global() -> dict:
+    running = AIJob.objects.filter(status=AIJob.Status.RUNNING).select_related('change_request').first()
+    return {
+        'pending_global': AIJob.objects.filter(status=AIJob.Status.PENDING).count(),
+        'running_global': bool(running),
+        'running_job': _job_dict(running) if running else None,
+        'jobs': list_recent_jobs(60),
+    }
+
+
 def queue_status_for_request(change_request_id: int) -> dict:
     jobs = list(
         AIJob.objects.filter(change_request_id=change_request_id)

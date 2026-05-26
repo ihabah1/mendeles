@@ -130,6 +130,27 @@ tr:hover td{background:rgba(201,168,76,.03)}
 .ai-queue-jobs{list-style:none;font-size:.75rem;line-height:1.55;margin:0;padding:0}
 .ai-queue-jobs li{padding:4px 0;border-bottom:1px solid rgba(30,48,72,.35)}
 .ai-queue-jobs li:last-child{border-bottom:none}
+.ai-prompt-shell{position:relative;border:1.5px solid var(--navy-b);border-radius:8px;background:var(--navy);min-height:140px}
+.ai-prompt-shell:focus-within{border-color:var(--gold)}
+.ai-prompt-editor{min-height:130px;padding:10px 12px;font-family:var(--font);font-size:.88rem;line-height:1.55;color:var(--text);outline:none;white-space:pre-wrap;word-break:break-word}
+.ai-prompt-editor:empty::before{content:attr(data-placeholder);color:var(--muted);pointer-events:none}
+.ai-prompt-hidden{position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none}
+.ai-inline-paste-img{display:inline-block;max-height:52px;max-width:88px;border-radius:6px;border:1px solid var(--gold);margin:4px 6px 4px 0;vertical-align:middle;object-fit:cover;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.ai-jobs-table tbody tr.ai-row-clickable{cursor:pointer}
+.ai-jobs-table tbody tr.ai-row-clickable:hover{background:rgba(201,168,76,.06)}
+.ai-jobs-table .badge-running{background:rgba(201,168,76,.2);color:var(--gold)}
+.ai-status-strip{display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:.82rem;margin-bottom:12px}
+.ai-status-strip strong{color:var(--gold)}
+.ai-modal{position:fixed;inset:0;z-index:700;display:flex;align-items:center;justify-content:center;padding:16px}
+.ai-modal[hidden]{display:none!important}
+.ai-modal-backdrop{position:absolute;inset:0;background:rgba(4,10,16,.78)}
+.ai-modal-panel{position:relative;width:100%;max-width:720px;max-height:88vh;background:var(--card);border:1px solid var(--border);border-radius:14px;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(0,0,0,.55)}
+.ai-modal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+.ai-modal-title{margin:0;font-size:1rem;color:var(--cream)}
+.ai-modal-close{background:none;border:none;color:var(--muted);font-size:1.5rem;line-height:1;cursor:pointer;padding:4px 8px}
+.ai-modal-close:hover{color:var(--gold)}
+.ai-modal-body{padding:16px 18px;overflow-y:auto;font-size:.82rem;line-height:1.55}
+.ai-modal-body .ai-log-list{max-height:50vh}
 @keyframes ai-pulse{50%{opacity:.4}}
 button.btn:disabled{opacity:.65;cursor:not-allowed!important}
 #btn-cancel-job.btn:disabled{opacity:1}

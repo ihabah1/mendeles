@@ -1,0 +1,88 @@
+{% extends "portal/base_dashboard.html" %}
+{% load static %}
+{% block title %}תור ג'ובים AI – Mandeles{% endblock %}
+{% block topbar %}תור ג'ובים{% endblock %}
+{% block extra_head %}
+<script src="{% static 'js/ai_portal_ui.js' %}" defer></script>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">תור ג'ובים (רצף)</div>
+    <div class="page-sub" id="queue-global-summary">
+      {% if queue_summary.running_global and queue_summary.running_job %}
+      רץ: {{ queue_summary.running_job.type_label }} · בקשה #{{ queue_summary.running_job.request_id }}
+      {% else %}ממתינים: {{ queue_summary.pending_global }}{% endif %}
+    </div>
+  </div>
+  <a href="{% url 'portal:ai_request_create' %}" class="btn btn-gold">+ בקשה חדשה</a>
+</div>
+
+<div class="table-wrap">
+  <table class="ai-jobs-table">
+    <thead>
+      <tr>
+        <th>ג'וב</th>
+        <th>בקשה</th>
+        <th>סוג</th>
+        <th>סטטוס בקשה</th>
+        <th>ג'וב</th>
+        <th>ניסיונות</th>
+        <th>שעה</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="ai-jobs-tbody"></tbody>
+  </table>
+</div>
+<p style="font-size:.72rem;color:var(--muted);margin-top:8px">לחץ על שורה לפתיחת לוג מלא · מתעדכן כל 3 שניות</p>
+
+{% include 'portal/partials/ai_detail_modal.html' %}
+{{ jobs|json_script:"ai-jobs-data" }}
+<script>
+(function () {
+  var modal = null;
+  var queueUrl = '{{ queue_status_url }}';
+
+  function openRequestLogs(requestId) {
+    fetch('/manage/ai/' + requestId + '/status/', { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        modal.open('בקשה #' + requestId + ' · ' + (data.status_label || ''), AiPortalUI.buildLogModalHtml(data));
+      });
+  }
+
+  function refresh() {
+    fetch(queueUrl, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var sum = document.getElementById('queue-global-summary');
+        if (sum) {
+          if (data.running_global && data.running_job) {
+            sum.textContent = 'רץ: ' + data.running_job.type_label + ' · בקשה #' + data.running_job.request_id;
+          } else {
+            sum.textContent = 'ממתינים: ' + (data.pending_global || 0);
+          }
+        }
+        AiPortalUI.renderJobsTableBody(document.getElementById('ai-jobs-tbody'), data.jobs, {
+          showRequest: true,
+          showRequestStatus: true,
+          onRowClick: function (j) { openRequestLogs(j.request_id); },
+        });
+      });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    modal = AiPortalUI.initAiModal();
+    var initial = [];
+    try { initial = JSON.parse(document.getElementById('ai-jobs-data').textContent); } catch (e) {}
+    AiPortalUI.renderJobsTableBody(document.getElementById('ai-jobs-tbody'), initial, {
+      showRequest: true,
+      showRequestStatus: true,
+      onRowClick: function (j) { openRequestLogs(j.request_id); },
+    });
+    setInterval(refresh, 3000);
+  });
+})();
+</script>
+{% endblock %}

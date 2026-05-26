@@ -1,6 +1,10 @@
 {% extends "portal/base_dashboard.html" %}
+{% load static %}
 {% block title %}בקשה #{{ req.id }} – AI{% endblock %}
 {% block topbar %}בקשת שינוי #{{ req.id }}{% endblock %}
+{% block extra_head %}
+<script src="{% static 'js/ai_portal_ui.js' %}" defer></script>
+{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
@@ -48,41 +52,32 @@
 </div>
 {% endif %}
 
-<div class="card-panel" id="ai-queue-panel" style="margin-bottom:16px">
-  <div class="form-label" style="margin-bottom:8px">תור ג'ובים (רצף – לא מקביל)</div>
-  <p id="ai-queue-summary" style="font-size:.8rem;color:var(--muted);margin:0 0 10px">
-    {% if queue.running_global and queue.running_job %}
-    רץ כעת: {{ queue.running_job.type_label }} (בקשה #{{ queue.running_job.request_id }})
-    {% elif queue.pending_global %}ממתינים בתור: {{ queue.pending_global }}{% else %}אין ג'ובים פעילים{% endif %}
-  </p>
-  <ul class="ai-queue-jobs" id="ai-queue-jobs">
-    {% for j in queue.jobs %}
-    <li><span class="ai-log-ts">#{{ j.id }}</span> {{ j.type_label }} · {{ j.status_label }}
-      {% if j.attempts %} ({{ j.attempts }}/{{ j.max_attempts }}){% endif %}
-      {% if j.error %}<span style="color:var(--loss)"> – {{ j.error|truncatechars:80 }}</span>{% endif %}
-    </li>
-    {% empty %}
-    <li style="color:var(--muted)">אין ג'ובים לבקשה זו</li>
-    {% endfor %}
-  </ul>
+<div class="card-panel" style="margin-bottom:16px">
+  <div class="ai-status-strip">
+    <span class="ai-log-spinner" id="ai-log-spinner" style="{% if not is_in_progress %}display:none{% endif %}">⏳</span>
+    <span>כרגע: <strong id="ai-live-step-text">{% if req.processing_log %}{% with step=req.processing_log|last %}{{ step.msg }}{% endwith %}{% else %}—{% endif %}</strong></span>
+    <span class="ai-poll-meta" id="ai-poll-meta" style="{% if not is_in_progress %}display:none{% endif %}">· מתעדכן כל 3 שניות</span>
+    <button type="button" class="btn btn-outline btn-sm" id="btn-open-logs">📋 לוג מלא</button>
+    <a href="{% url 'portal:ai_jobs' %}" class="btn btn-outline btn-sm">תור כללי</a>
+  </div>
+  <div class="alert alert-error" id="ai-stale-warning" style="display:none;margin-top:10px;font-size:.82rem"></div>
 </div>
 
-<div class="card-panel ai-log-panel" id="ai-log-panel" style="{% if not req.processing_log and not is_in_progress %}display:none{% endif %}">
-  <div class="form-label" style="margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-    <span>לוג עיבוד</span>
-    <span class="ai-log-spinner" id="ai-log-spinner" style="{% if not is_in_progress %}display:none{% endif %}">⏳</span>
-    <span class="ai-poll-meta" id="ai-poll-meta" style="{% if not is_in_progress %}display:none{% endif %}">מתעדכן כל 3 שניות</span>
-  </div>
-  <div class="ai-live-step" id="ai-live-step" style="{% if not is_in_progress %}display:none{% endif %}">
-    <span class="ai-live-step-label">כרגע:</span>
-    <strong id="ai-live-step-text">{% if req.processing_log %}{% with step=req.processing_log|last %}{{ step.msg }}{% endwith %}{% else %}ממתין…{% endif %}</strong>
-  </div>
-  <div class="alert alert-error" id="ai-stale-warning" style="display:none;margin:10px 0;font-size:.82rem"></div>
-  <ul class="ai-log-list" id="ai-log-list">
-    {% for line in req.processing_log %}
-    <li><span class="ai-log-ts">{{ line.ts }}</span> {{ line.msg }}</li>
-    {% endfor %}
-  </ul>
+<div class="table-wrap" style="margin-bottom:16px">
+  <div class="form-label" style="padding:12px 14px 0">ג'ובים לבקשה זו</div>
+  <table class="ai-jobs-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>סוג</th>
+        <th>סטטוס</th>
+        <th>ניסיונות</th>
+        <th>שגיאה</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="ai-jobs-tbody"></tbody>
+  </table>
 </div>
 
 <div class="ai-actions" id="ai-actions" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
@@ -174,10 +169,13 @@
 <p style="color:var(--muted);font-size:.85rem" id="ai-hint">לחץ "ייצר diff" כדי ליצור את השינוי המוצע.</p>
 {% endif %}
 
+{% include 'portal/partials/ai_detail_modal.html' %}
+{{ queue.jobs|json_script:"ai-request-jobs" }}
+
 <script>
 (function () {
-  const logPanel = document.getElementById('ai-log-panel');
-  const logList = document.getElementById('ai-log-list');
+  var aiModal = null;
+  var lastStatusData = null;
   const spinner = document.getElementById('ai-log-spinner');
   const statusLabel = document.getElementById('ai-status-label');
   const hint = document.getElementById('ai-hint');
@@ -205,13 +203,11 @@
     });
     if (busy) keepCancelEnabled();
     if (spinner) spinner.style.display = busy ? 'inline' : 'none';
-    if (logPanel && busy) logPanel.style.display = 'block';
   }
 
   function lockApproveFlow() {
     approveLockActive = true;
     setActionsBusy(true);
-    if (logPanel) logPanel.style.display = 'block';
   }
 
   function unlockApproveFlow() {
@@ -297,15 +293,17 @@
     if (mergeUrl) ensureMergeButton(mergeUrl, statusUrl);
   }
 
-  function renderLogs(logs) {
-    if (!logList) return;
-    logList.innerHTML = '';
-    (logs || []).forEach(function (line) {
-      const li = document.createElement('li');
-      li.innerHTML = '<span class="ai-log-ts">' + (line.ts || '') + '</span> ' + (line.msg || '');
-      logList.appendChild(li);
-    });
-    logList.scrollTop = logList.scrollHeight;
+  function openLogsModal() {
+    if (!aiModal) return;
+    var data = lastStatusData;
+    if (!data) {
+      pollStatus(statusUrl).then(function (d) {
+        lastStatusData = d;
+        aiModal.open('בקשה #{{ req.id }} · ' + (d.status_label || ''), AiPortalUI.buildLogModalHtml(d));
+      });
+      return;
+    }
+    aiModal.open('בקשה #{{ req.id }} · ' + (data.status_label || ''), AiPortalUI.buildLogModalHtml(data));
   }
 
   var POLL_MS = 3000;
@@ -329,11 +327,9 @@
   }
 
   function updateLiveStep(data) {
-    var box = document.getElementById('ai-live-step');
     var text = document.getElementById('ai-live-step-text');
     var meta = document.getElementById('ai-poll-meta');
     var busy = data && (data.generating || data.pr_creating || data.in_progress);
-    if (box) box.style.display = busy ? 'block' : 'none';
     if (meta) meta.style.display = busy ? 'inline' : 'none';
     if (text && data) {
       var step = data.last_log || '';
@@ -352,40 +348,19 @@
     }
   }
 
-  function renderQueue(q) {
-    if (!q) return;
-    var summary = document.getElementById('ai-queue-summary');
-    var list = document.getElementById('ai-queue-jobs');
-    if (summary) {
-      if (q.running_global && q.running_job) {
-        summary.textContent = 'רץ כעת: ' + q.running_job.type_label + ' (בקשה #' + q.running_job.request_id + ')';
-      } else if (q.pending_global) {
-        summary.textContent = 'ממתינים בתור (כללי): ' + q.pending_global;
-      } else {
-        summary.textContent = 'אין ג\'ובים פעילים בתור';
-      }
-    }
-    if (!list) return;
-    list.innerHTML = '';
-    (q.jobs || []).forEach(function (j) {
-      var li = document.createElement('li');
-      var err = j.error ? ' – ' + j.error : '';
-      li.innerHTML = '<span class="ai-log-ts">#' + j.id + '</span> ' + j.type_label + ' · ' + j.status_label
-        + (j.attempts ? ' (' + j.attempts + '/' + j.max_attempts + ')' : '') + err;
-      list.appendChild(li);
+  function renderQueueTable(q) {
+    var tbody = document.getElementById('ai-jobs-tbody');
+    if (!tbody || !q) return;
+    AiPortalUI.renderJobsTableBody(tbody, q.jobs || [], {
+      detailLayout: true,
+      onRowClick: function () { openLogsModal(); },
     });
-    if (!(q.jobs || []).length) {
-      var empty = document.createElement('li');
-      empty.style.color = 'var(--muted)';
-      empty.textContent = 'אין ג\'ובים לבקשה זו';
-      list.appendChild(empty);
-    }
   }
 
   function applyStatusUpdate(data) {
     if (!data) return;
-    renderLogs(data.logs);
-    renderQueue(data.queue);
+    lastStatusData = data;
+    renderQueueTable(data.queue);
     if (statusLabel) statusLabel.textContent = data.status_label || data.status;
     if (data.failed && data.error) {
       showErrorBanner(data.error, true);
@@ -393,10 +368,12 @@
       showErrorBanner('', false);
     }
     updateLiveStep(data);
-    if (logPanel && (data.generating || data.pr_creating || data.in_progress)) {
-      logPanel.style.display = 'block';
-    }
     if (spinner) spinner.style.display = (data.generating || data.pr_creating || data.in_progress) ? 'inline' : 'none';
+    var modalBody = document.getElementById('ai-modal-body');
+    var modalEl = document.getElementById('ai-detail-modal');
+    if (modalBody && modalEl && !modalEl.hidden) {
+      modalBody.innerHTML = AiPortalUI.buildLogModalHtml(data);
+    }
   }
 
   function startLivePolling(url, onTerminal) {
@@ -438,8 +415,18 @@
     }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); });
   }
 
+  document.addEventListener('DOMContentLoaded', function () {
+    aiModal = AiPortalUI.initAiModal();
+    try {
+      var initial = JSON.parse(document.getElementById('ai-request-jobs').textContent);
+      renderQueueTable({ jobs: initial });
+    } catch (e) {}
+    var openBtn = document.getElementById('btn-open-logs');
+    if (openBtn) openBtn.addEventListener('click', openLogsModal);
+  });
+
   const btnGen = document.getElementById('btn-generate-diff');
-  if (btnGen && logList) {
+  if (btnGen) {
     btnGen.addEventListener('click', function () {
       setActionsBusy(true);
       btnGen.textContent = 'מייצר diff… (נא להמתין)';

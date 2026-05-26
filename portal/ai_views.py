@@ -15,6 +15,7 @@ from ai_agent.services.job_queue import (
     enqueue,
     infer_retry_job_type,
     queue_status_for_request,
+    queue_status_global,
     retry_request_step,
 )
 from ai_agent.services.workflow import (
@@ -105,6 +106,24 @@ def _status_payload(obj: AIChangeRequest) -> dict:
         'queue': queue_status_for_request(obj.pk),
         'can_retry': _can_retry_request(obj),
     }
+
+
+@admin_required
+def ai_jobs_list(request):
+    _require_ai_enabled()
+    g = queue_status_global()
+    return render(request, 'portal/ai_jobs.html', {
+        'jobs': g['jobs'],
+        'queue_summary': g,
+        'queue_status_url': reverse('portal:ai_queue_status'),
+    })
+
+
+@admin_required
+@require_GET
+def ai_queue_status(request):
+    _require_ai_enabled()
+    return JsonResponse(queue_status_global())
 
 
 @admin_required

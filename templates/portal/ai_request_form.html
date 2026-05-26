@@ -1,16 +1,20 @@
 {% extends "portal/base_dashboard.html" %}
+{% load static %}
 {% block title %}בקשת שינוי AI – Mandeles{% endblock %}
 {% block topbar %}בקשת שינוי חדשה{% endblock %}
+{% block extra_head %}
+<script src="{% static 'js/ai_portal_ui.js' %}" defer></script>
+{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
     <div class="page-title">בקשת שינוי AI</div>
-    <div class="page-sub">כתוב בשפה פשוטה — המערכת תמצא לבד איפה לשנות</div>
+    <div class="page-sub">כתוב בשפה פשוטה — Ctrl+V להדבקת צילום מסך ישירות לתוך הטקסט</div>
   </div>
   <a href="{% url 'portal:ai_requests' %}" class="btn btn-outline">← היסטוריית שינויים</a>
 </div>
 <div class="card-panel" style="max-width:720px">
-  <form method="post" enctype="multipart/form-data">
+  <form method="post" enctype="multipart/form-data" id="ai-request-form">
     {% csrf_token %}
     <div class="form-row" style="margin-bottom:16px">
       <label class="form-label" for="id_prompt">{{ form.prompt.label }}</label>
@@ -18,92 +22,39 @@
       {% if form.prompt.errors %}<div class="alert alert-error" style="margin-top:8px">{{ form.prompt.errors.0 }}</div>{% endif %}
     </div>
     <div class="form-row" style="margin-bottom:16px">
-      <label class="form-label" for="id_images">תמונות (אופציונלי)</label>
+      <label class="form-label" for="id_images">תמונות נוספות (קובץ)</label>
       <input type="file" name="images" id="id_images" accept="image/png,image/jpeg,image/webp,image/gif" multiple
         class="form-control" style="padding:8px;background:var(--navy);border:1.5px solid var(--navy-b);border-radius:8px;color:var(--text)">
-      <p style="font-size:.72rem;color:var(--muted);margin-top:6px">עד 5 תמונות (PNG/JPG/WebP, עד 5MB) — או <strong>Ctrl+V</strong> בשדה הבקשה להדבקת צילום מסך מהלוח</p>
+      <p style="font-size:.72rem;color:var(--muted);margin-top:6px">עד 5 תמונות · ההדבקה בשדה למעלה מציגה תמונה קטנה בתוך הטקסט</p>
       <div id="img-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"></div>
     </div>
     <div style="background:var(--navy-c);border:1px solid var(--navy-b);border-radius:10px;padding:14px;margin-bottom:16px;font-size:.78rem;color:var(--muted);line-height:1.65">
-      <strong style="color:var(--gold)">דוגמאות (פשוט — בלי שמות קבצים):</strong>
+      <strong style="color:var(--gold)">דוגמאות:</strong>
       <ul style="margin:8px 0 0;padding-right:18px">
         <li>תוריד את המילה version מהדף הראשי</li>
-        <li>במקום המילה יופי שיופיע שם משתמש (בסרגל) — או: הוסף שם פרטי בהרשמה</li>
-        <li>הסר את «מצב הדגמה» מהסרגל העליון</li>
-        <li>שנה את «רכוש גישה מלאה» ל«קבל גישה מלאה»</li>
-        <li>הוסף דף «סטטיסטיקה» שמציג נתונים מ־/api/stats</li>
-        <li>דף חדש שמציג למשתמש המחובר את שם המשתמש והארנק</li>
-        <li>הגדל את הכותרת בדשבורד ניהול</li>
+        <li>במקום «יופי» שיופיע שם משתמש בסרגל</li>
+        <li>הסר «מצב הדגמה» מהסרגל</li>
       </ul>
-      <p style="margin-top:10px">המערכת מבינה: <em>במקום X שיופיע Y</em>, <em>דף חדש + API</em>, <em>נתוני משתמש</em>, <em>סרגל / לוטו / ניהול</em>.</p>
     </div>
     <button type="submit" class="btn btn-gold">שמור והמשך</button>
   </form>
 </div>
-{% if site_index_preview %}
-<details class="card-panel" style="max-width:720px;margin-top:16px">
-  <summary style="cursor:pointer;font-weight:700;color:var(--cream)">מפת תוכן האתר (אינדוקס)</summary>
-  <pre style="margin-top:12px;font-size:.7rem;color:var(--muted);white-space:pre-wrap;max-height:280px;overflow:auto">{{ site_index_preview }}</pre>
-</details>
-{% endif %}
 <script>
-(function () {
-  const input = document.getElementById('id_images');
-  const prompt = document.getElementById('id_prompt');
-  const box = document.getElementById('img-preview');
-  const MAX = 5;
-
-  function renderPreview(files) {
-    if (!box) return;
-    box.innerHTML = '';
-    Array.from(files || []).slice(0, MAX).forEach(function (file) {
-      const img = document.createElement('img');
-      img.src = URL.createObjectURL(file);
-      img.style.cssText = 'max-height:72px;border-radius:6px;border:1px solid var(--navy-b)';
-      img.alt = file.name || 'image';
-      box.appendChild(img);
-    });
-  }
-
-  function addFiles(newFiles) {
-    if (!input) return;
-    const dt = new DataTransfer();
-    const existing = Array.from(input.files || []);
-    existing.concat(Array.from(newFiles)).slice(0, MAX).forEach(function (f) { dt.items.add(f); });
-    input.files = dt.files;
-    renderPreview(input.files);
-  }
-
-  input?.addEventListener('change', function (e) {
-    renderPreview(e.target.files);
+document.addEventListener('DOMContentLoaded', function () {
+  AiPortalUI.initPromptEditor({
+    placeholder: 'לדוגמה: החלף את המילה X ב-Y בדף הראשי…',
+    onFilesChange: function (files) {
+      var box = document.getElementById('img-preview');
+      if (!box) return;
+      box.innerHTML = '';
+      Array.from(files || []).forEach(function (file) {
+        var img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        img.style.cssText = 'max-height:56px;border-radius:6px;border:1px solid var(--navy-b)';
+        box.appendChild(img);
+      });
+    },
   });
-
-  prompt?.addEventListener('paste', function (e) {
-    const items = e.clipboardData && e.clipboardData.items;
-    if (!items) return;
-    const images = [];
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].type && items[i].type.indexOf('image') !== -1) {
-        const blob = items[i].getAsFile();
-        if (blob) {
-          const ext = (blob.type || 'image/png').split('/')[1] || 'png';
-          images.push(new File([blob], 'paste-' + Date.now() + '-' + i + '.' + ext, { type: blob.type }));
-        }
-      }
-    }
-    if (!images.length) return;
-    e.preventDefault();
-    addFiles(images);
-    const hint = document.getElementById('paste-hint');
-    if (hint) hint.textContent = 'צורפו ' + images.length + ' תמונה/ות מהלוח';
-  });
-
-  if (!document.getElementById('paste-hint') && prompt) {
-    const p = document.createElement('p');
-    p.id = 'paste-hint';
-    p.style.cssText = 'font-size:.72rem;color:var(--gold);margin-top:6px';
-    prompt.parentNode.appendChild(p);
-  }
-})();
+});
 </script>
 {% endblock %}
