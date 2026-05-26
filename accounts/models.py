@@ -53,13 +53,22 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def display_name(self) -> str:
-        """שם לתצוגה בסרגל (שלום …)."""
+        """שם ידידותי (פרופיל, הודעות)."""
         if self.first_name and self.first_name.strip():
             return self.first_name.strip()
         if self.username and self.username.strip():
             return self.username.strip()
         if self.full_name and self.full_name.strip():
             return self.full_name.strip().split()[0]
+        return self.email.split('@')[0]
+
+    @property
+    def nav_greeting_name(self) -> str:
+        """שלום … בסרגל: admin למנהל, אחרת שם משתמש."""
+        if self.is_admin:
+            return 'admin'
+        if self.username and self.username.strip():
+            return self.username.strip()
         return self.email.split('@')[0]
 
     def sync_full_name(self) -> None:

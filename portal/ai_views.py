@@ -13,6 +13,8 @@ from ai_agent.models import AIChangeRequest
 from ai_agent.services.publish_scope import scope_label, scope_warning
 from ai_agent.services.workflow import (
     approve_and_create_pr,
+    cancel_request,
+    can_cancel_request,
     generate_diff_for_request,
     merge_pr_for_request,
     reject_request,
@@ -48,7 +50,10 @@ def _status_payload(obj: AIChangeRequest) -> dict:
             AIChangeRequest.Status.DIFF_READY,
             AIChangeRequest.Status.FAILED,
             AIChangeRequest.Status.PR_CREATED,
+            AIChangeRequest.Status.CANCELLED,
         ),
+        'cancelled': obj.status == AIChangeRequest.Status.CANCELLED,
+        'can_cancel': can_cancel_request(obj),
         'ok': obj.status == AIChangeRequest.Status.DIFF_READY,
         'pr_url': obj.pr_url or '',
         'pr_number': obj.pr_number,
@@ -124,7 +129,10 @@ def ai_request_detail(request, pk):
         'can_generate': obj.status in (
             AIChangeRequest.Status.DRAFT,
             AIChangeRequest.Status.FAILED,
+            AIChangeRequest.Status.CANCELLED,
         ) and not is_generating and not is_pr_creating,
+        'can_cancel': can_cancel_request(obj),
+        'cancel_url': reverse('portal:ai_request_cancel', kwargs={'pk': pk}),
         'can_approve': obj.status == AIChangeRequest.Status.DIFF_READY and bool(obj.result),
         'can_reject': obj.status in (
             AIChangeRequest.Status.DIFF_READY,
@@ -271,6 +279,32 @@ def ai_request_image(request, pk, filename):
     if not path.is_file():
         raise Http404
     return FileResponse(path.open('rb'), content_type=_mime_for_path(path))
+
+
+@admin_required
+@require_POST
+def ai_request_cancel(request, pk):
+    _require_ai_enabled()
+    obj = get_object_or_404(AIChangeRequest, pk=pk)
+    ajax = _wants_json(request)
+    reason = (request.POST.get('reason') or '').strip()
+
+    try:
+        cancel_request(obj, reason=reason)
+        obj.refresh_from_db()
+        if ajax:
+            return JsonResponse({
+                **_status_payload(obj),
+                'message': 'הג\'וב בוטל – אפשר לנסות שוב',
+                'redirect': reverse('portal:ai_request_detail', kwargs={'pk': pk}),
+            })
+        messages.success(request, 'הג\'וב בוטל. אפשר ללחוץ «ייצר diff» מחדש.')
+    except ValueError as exc:
+        if ajax:
+            return JsonResponse({**_status_payload(obj), 'ok': False, 'error': str(exc)}, status=400)
+        messages.error(request, str(exc))
+
+    return redirect('portal:ai_request_detail', pk=pk)
 
 
 @admin_required

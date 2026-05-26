@@ -42,6 +42,7 @@ def _user_payload(user):
         'full_name': user.full_name or '',
         'phone': user.phone or '',
         'display_name': user.display_name,
+        'nav_greeting_name': user.nav_greeting_name,
         'is_admin': _is_portal_admin(user),
     }
 

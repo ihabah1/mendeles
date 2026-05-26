@@ -25,6 +25,7 @@ def generate_diff_for_request(request: AIChangeRequest) -> AIChangeRequest:
     if request.status not in (
         AIChangeRequest.Status.DRAFT,
         AIChangeRequest.Status.FAILED,
+        AIChangeRequest.Status.CANCELLED,
         AIChangeRequest.Status.DIFF_READY,
     ):
         raise ValueError('לא ניתן לייצר diff בסטטוס הנוכחי')
@@ -183,4 +184,37 @@ def merge_pr_for_request(request: AIChangeRequest, performed_by=None) -> AIChang
 def reject_request(request: AIChangeRequest) -> AIChangeRequest:
     request.status = AIChangeRequest.Status.REJECTED
     request.save(update_fields=['status', 'updated_at'])
+    return request
+
+
+# ניתן לבטל ידנית כשהתהליך תקוע (השרת נפל / PR תקוע)
+CANCELLABLE_STATUSES = frozenset({
+    AIChangeRequest.Status.GENERATING,
+    AIChangeRequest.Status.PR_CREATING,
+    AIChangeRequest.Status.APPROVED,
+    AIChangeRequest.Status.PR_CREATED,
+})
+
+
+def can_cancel_request(request: AIChangeRequest) -> bool:
+    return request.status in CANCELLABLE_STATUSES
+
+
+def cancel_request(request: AIChangeRequest, *, reason: str = '') -> AIChangeRequest:
+    """מבטל ג'וב תקוע – מאפס סטטוס כדי לאפשר ניסיון חוזר."""
+    if not can_cancel_request(request):
+        raise ValueError(
+            f'לא ניתן לבטל בסטטוס «{request.get_status_display()}». '
+            'רק בזמן יצירת diff, יצירת PR, או PR פתוח.'
+        )
+    prev = request.get_status_display()
+    request.status = AIChangeRequest.Status.CANCELLED
+    note = reason.strip() or 'בוטל ידנית – אפשר ללחוץ «ייצר diff» מחדש'
+    request.error_message = note
+    request.append_log(f'⛔ בוטל (היה: {prev}). {note}')
+    if request.pr_url:
+        request.append_log(
+            f'PR #{request.pr_number} עדיין ב-GitHub – סגור ידנית אם לא נדרש: {request.pr_url}',
+        )
+    request.save(update_fields=['status', 'error_message', 'updated_at'])
     return request

@@ -13,6 +13,7 @@ class AIChangeRequest(models.Model):
         PR_MERGED = 'pr_merged', 'מוזג ל-main'
         REJECTED = 'rejected', 'נדחה'
         FAILED = 'failed', 'נכשל'
+        CANCELLED = 'cancelled', 'בוטל'
 
     prompt = models.TextField('בקשה בשפה טבעית')
     reference_images = models.JSONField(

@@ -537,7 +537,7 @@ async function checkDjangoSession(){
     if(!r.ok) return false;
     const d = await r.json();
     if(!d.user) return false;
-    const name = d.user.display_name || d.user.first_name || d.user.username || 'משתמש';
+    const name = d.user.nav_greeting_name || d.user.username || d.user.display_name || 'משתמש';
     _mountUserNav(name);
     _hideGuestOnlyUI();
     document.body.dataset.loggedIn = '1';

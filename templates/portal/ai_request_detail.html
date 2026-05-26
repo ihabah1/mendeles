@@ -87,6 +87,14 @@
   {% if is_pr_creating %}
   <button type="button" class="btn btn-green" disabled>יוצר PR ב-Git…</button>
   {% endif %}
+  {% if can_cancel %}
+  <button type="button" class="btn btn-outline" id="btn-cancel-job"
+    data-url="{{ cancel_url }}"
+    data-status-url="{{ status_url }}"
+    style="border-color:var(--loss);color:var(--loss)">
+    ⛔ בטל ג'וב (תקוע)
+  </button>
+  {% endif %}
   {% if can_merge %}
   <button type="button" class="btn btn-green" id="btn-merge-pr"
     data-url="{{ merge_url }}"
@@ -130,6 +138,8 @@
   <div class="form-label" style="margin-bottom:10px">תצוגת diff (לפני אישור)</div>
   <pre class="diff-preview">{{ req.result }}</pre>
 </div>
+{% elif req.status == 'cancelled' %}
+<p style="color:var(--muted);font-size:.85rem" id="ai-hint">הג'וב בוטל. לחץ «ייצר diff» לניסיון חוזר{% if req.pr_url %} – אם נוצר PR, סגור אותו ב-GitHub לפני כן{% endif %}.</p>
 {% elif req.status == 'draft' or req.status == 'failed' %}
 <p style="color:var(--muted);font-size:.85rem" id="ai-hint">לחץ "ייצר diff" כדי ליצור את השינוי המוצע.</p>
 {% endif %}
@@ -319,7 +329,7 @@
       pollStatus(btnGen.dataset.statusUrl).then(function (data) {
         renderLogs(data.logs);
         if (statusLabel) statusLabel.textContent = data.status_label || '';
-        if (data.done) {
+        if (data.done || data.cancelled) {
           clearInterval(recoverPoll);
           window.location.reload();
         }
@@ -412,6 +422,36 @@
   var btnMerge = document.getElementById('btn-merge-pr');
   if (btnMerge) wireMergeButton(btnMerge);
 
+  var btnCancel = document.getElementById('btn-cancel-job');
+  if (btnCancel) {
+    btnCancel.addEventListener('click', function () {
+      if (!confirm('לבטל את הג\'וב? הסטטוס יתאפס ותוכל לנסות שוב. (אם נוצר PR – סגור אותו ידנית ב-GitHub)')) return;
+      btnCancel.disabled = true;
+      btnCancel.textContent = 'מבטל…';
+      var fd = new FormData();
+      fd.append('reason', 'בוטל מהדשבורד');
+      fetch(btnCancel.dataset.url, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken'),
+          'X-Requested-With': 'XMLHttpRequest',
+          Accept: 'application/json',
+        },
+        body: fd,
+      })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+        .then(function (res) {
+          if (res.data.redirect) {
+            window.location.href = res.data.redirect;
+            return;
+          }
+          window.location.reload();
+        })
+        .catch(function () { window.location.reload(); });
+    });
+  }
+
   {% if is_merged %}
   showGitToast('✓ Git עודכן – PR מוזג ל-main');
   {% endif %}
@@ -425,7 +465,7 @@
       clearInterval(prPoll);
       if (prBtn) prBtn.style.display = 'none';
       showPrSuccess(data.pr_url, data.pr_number, data.merge_url, '{{ status_url }}');
-    } else if (data.status === 'failed') {
+    } else if (data.status === 'failed' || data.status === 'cancelled') {
       clearInterval(prPoll);
       unlockApproveFlow();
       window.location.reload();

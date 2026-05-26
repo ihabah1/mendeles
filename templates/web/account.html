@@ -67,7 +67,7 @@ document.getElementById('account-form').addEventListener('submit', async functio
     }
     msg.style.color = 'var(--win)';
     msg.textContent = 'נשמר בהצלחה';
-    const name = data.user.display_name || data.user.first_name;
+    const name = data.user.nav_greeting_name || data.user.username || data.user.display_name;
     const nav = document.getElementById('nav-user-name');
     if (nav) nav.textContent = name;
     const greet = document.getElementById('nav-user-greeting');

@@ -66,7 +66,11 @@ class AIChangeRequestAdmin(admin.ModelAdmin):
         ro = list(self.readonly_fields)
         if obj is None:
             return [f for f in ro if f not in ('status', 'created_by', 'created_at', 'updated_at')]
-        if obj.status not in (AIChangeRequest.Status.DRAFT, AIChangeRequest.Status.FAILED):
+        if obj.status not in (
+            AIChangeRequest.Status.DRAFT,
+            AIChangeRequest.Status.FAILED,
+            AIChangeRequest.Status.CANCELLED,
+        ):
             ro = ro + ['prompt']
         return ro
 
@@ -159,6 +163,7 @@ class AIChangeRequestAdmin(admin.ModelAdmin):
                 'can_generate': obj.status in (
                     AIChangeRequest.Status.DRAFT,
                     AIChangeRequest.Status.FAILED,
+                    AIChangeRequest.Status.CANCELLED,
                 ),
                 'can_approve_pr': obj.status == AIChangeRequest.Status.DIFF_READY,
                 'can_reject': obj.status in (
