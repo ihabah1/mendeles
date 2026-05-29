@@ -1,0 +1,15 @@
+{% comment %}
+פאנל לוג/תחקור לבקשה אחת – נטען ב-AJAX ומתרענן אוטומטית בזמן ריצה.
+מצפה ל: req, diag, diag_url, is_active.
+{% endcomment %}
+<div class="ai-logpanel-render" data-req-id="{{ req.id }}" data-url="{{ diag_url }}"
+  data-active="{% if is_active %}1{% else %}0{% endif %}">
+  <div class="ai-logpanel-head">
+    <div class="ai-logpanel-head-main">
+      <span class="ai-logpanel-title">לוג בקשה #{{ req.id }}</span>
+      <span class="ai-logpanel-prompt">{{ req.prompt|truncatechars:70 }}</span>
+    </div>
+    <span class="badge badge-gold">{{ req.get_status_display }}{% if is_active %} · רץ…{% endif %}</span>
+  </div>
+  {% include "portal/partials/ai_diagnostics.html" with diag=diag req=req only %}
+</div>

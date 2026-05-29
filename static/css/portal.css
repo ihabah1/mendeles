@@ -304,3 +304,14 @@ body.sidebar-open{overflow:hidden}
 .ai-diag-log-line{color:var(--text);word-break:break-word}
 .ai-diag-ts{color:var(--muted);margin-left:6px}
 .ai-diag-repo{margin:8px 0 0;background:var(--bg);border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px;max-height:380px;overflow:auto;font-family:var(--mono);font-size:.7rem;line-height:1.5;color:var(--text);white-space:pre;direction:ltr;text-align:left}
+
+/* פאנל לוג/תחקור בתחתית דף ניהול שינויים */
+.ai-logpanel{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);margin-top:16px;overflow:hidden}
+.ai-logpanel-bar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--panel);flex-wrap:wrap}
+.ai-logpanel-bar-title{font-size:.82rem;font-weight:700;color:var(--gold)}
+.ai-logpanel-bar-hint{font-size:.7rem;color:var(--muted);flex:1;min-width:140px}
+.ai-logpanel-inner{max-height:72vh;overflow-y:auto}
+.ai-logpanel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap;position:sticky;top:0;background:var(--card);z-index:1}
+.ai-logpanel-head-main{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ai-logpanel-title{font-weight:700;font-size:.82rem;color:var(--text)}
+.ai-logpanel-prompt{color:var(--muted);font-size:.74rem;word-break:break-word}

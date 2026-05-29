@@ -30,6 +30,12 @@ _EXECUTORS = {
     AIJob.JobType.MERGE_PR: merge_pr_for_request,
 }
 
+# אוטומציה: שלב שהושלם מפעיל אוטומטית את השלב הבא (diff → PR → מיזוג ל-Git)
+_NEXT_STAGE = {
+    AIJob.JobType.GENERATE_DIFF: AIJob.JobType.CREATE_PR,
+    AIJob.JobType.CREATE_PR: AIJob.JobType.MERGE_PR,
+}
+
 
 def _aijob_table_exists() -> bool:
     """False בזמן migrate לפני יצירת הטבלה – לא לגעת ב-DB ב-ready."""
@@ -360,6 +366,48 @@ def _job_dict(job: AIJob | None) -> dict | None:
     }
 
 
+def auto_chain_enabled() -> bool:
+    from django.conf import settings
+
+    return bool(getattr(settings, 'AI_AGENT_AUTO_CHAIN', True))
+
+
+def _maybe_chain_next(job: AIJob) -> None:
+    """מפעיל אוטומטית את השלב הבא לאחר שהשלב הנוכחי הושלם בהצלחה."""
+    if not auto_chain_enabled():
+        return
+    next_type = _NEXT_STAGE.get(job.job_type)
+    if not next_type:
+        return
+    try:
+        req = AIChangeRequest.objects.get(pk=job.change_request_id)
+    except AIChangeRequest.DoesNotExist:
+        return
+
+    if req.status in (
+        AIChangeRequest.Status.CANCELLED,
+        AIChangeRequest.Status.REJECTED,
+        AIChangeRequest.Status.ARCHIVED,
+        AIChangeRequest.Status.FAILED,
+    ):
+        return
+
+    if next_type == AIJob.JobType.CREATE_PR:
+        if req.status != AIChangeRequest.Status.DIFF_READY or not (req.result or '').strip():
+            return
+    elif next_type == AIJob.JobType.MERGE_PR:
+        if req.status != AIChangeRequest.Status.PR_CREATED or not req.pr_number:
+            return
+
+    performed_by = req.created_by if next_type == AIJob.JobType.MERGE_PR else None
+    try:
+        enqueue(req.pk, next_type, performed_by=performed_by)
+        label = dict(AIJob.JobType.choices).get(next_type, next_type)
+        req.append_log(f'[אוטומציה] שלב הושלם → ממשיך אוטומטית: {label}')
+    except Exception as exc:
+        logger.warning('auto-chain enqueue failed for req %s: %s', req.pk, exc)
+
+
 def _worker_loop() -> None:
     while True:
         try:
@@ -467,6 +515,9 @@ def _process_one_job_locked() -> bool:
         job.finished_at = timezone.now()
         job.save(update_fields=['status', 'error_message', 'finished_at'])
         close_old_connections()
+
+    if job.status == AIJob.Status.COMPLETED:
+        _maybe_chain_next(job)
 
     return True
 

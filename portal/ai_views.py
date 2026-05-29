@@ -51,6 +51,23 @@ def _can_retry_request(obj: AIChangeRequest) -> bool:
     return False
 
 
+_ACTIVE_STATUSES = (
+    AIChangeRequest.Status.GENERATING,
+    AIChangeRequest.Status.PR_CREATING,
+    AIChangeRequest.Status.APPROVED,
+)
+
+
+def _request_is_active(obj: AIChangeRequest) -> bool:
+    """האם הבקשה עדיין רצה (כולל המתנה לשלב הבא בתור) – לצורך polling."""
+    if obj.status in _ACTIVE_STATUSES:
+        return True
+    return AIJob.objects.filter(
+        change_request=obj,
+        status__in=(AIJob.Status.PENDING, AIJob.Status.RUNNING),
+    ).exists()
+
+
 def _ai_available() -> bool:
     return getattr(settings, 'AI_AGENT_ENABLED', False)
 
@@ -149,6 +166,20 @@ def ai_repo_content(request):
 
 
 @admin_required
+@require_GET
+def ai_request_diag(request, pk):
+    """מקטע HTML של פאנל הלוג/תחקור לבקשה – לטעינה ול-polling חי."""
+    _require_ai_enabled()
+    obj = get_object_or_404(AIChangeRequest, pk=pk)
+    return render(request, 'portal/partials/ai_diag_panel.html', {
+        'req': obj,
+        'diag': build_request_diagnostics(obj),
+        'diag_url': reverse('portal:ai_request_diag', kwargs={'pk': pk}),
+        'is_active': _request_is_active(obj),
+    })
+
+
+@admin_required
 def ai_requests_list(request):
     _require_ai_enabled()
     reqs = (
@@ -161,13 +192,24 @@ def ai_requests_list(request):
             'req': r,
             'act': request_action_fields(r),
             'pipeline': build_pipeline(r),
-            'diag': build_request_diagnostics(r),
         }
         for r in reqs
     ]
-    return render(request, 'portal/ai_requests.html', {
-        'request_rows': request_rows,
-    })
+
+    focus = next(
+        (row for row in request_rows if row['req'].status in _ACTIVE_STATUSES),
+        request_rows[0] if request_rows else None,
+    )
+    context = {'request_rows': request_rows}
+    if focus:
+        focus_req = focus['req']
+        context.update({
+            'focus_req': focus_req,
+            'focus_diag': build_request_diagnostics(focus_req),
+            'focus_diag_url': reverse('portal:ai_request_diag', kwargs={'pk': focus_req.pk}),
+            'focus_is_active': _request_is_active(focus_req),
+        })
+    return render(request, 'portal/ai_requests.html', context)
 
 
 @admin_required
@@ -189,7 +231,14 @@ def ai_request_create(request):
                 obj.reference_images = saved
                 obj.save(update_fields=['reference_images'])
                 messages.info(request, f'צורפו {len(saved)} תמונות לבקשה')
-        messages.success(request, 'הבקשה נשמרה – לחץ "ייצר diff" ליצירת השינוי')
+        try:
+            enqueue(obj.pk, AIJob.JobType.GENERATE_DIFF)
+            messages.success(
+                request,
+                'הבקשה נשמרה – האוטומציה החלה: ייצור diff → יצירת PR → מיזוג ל-Git.',
+            )
+        except Exception:
+            messages.success(request, 'הבקשה נשמרה – לחץ «ייצר diff» ליצירת השינוי')
         return redirect('portal:ai_request_detail', pk=obj.pk)
     preview = ''
     try:

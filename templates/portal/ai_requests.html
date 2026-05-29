@@ -49,7 +49,7 @@
       <td>
         <a href="{% url 'portal:ai_request_detail' r.pk %}" class="btn btn-outline btn-sm">פתח</a>
         <button type="button" class="btn btn-outline btn-sm ai-btn-diag"
-          data-target="ai-diag-row-{{ r.pk }}" aria-expanded="false">תחקור</button>
+          data-diag-url="{% url 'portal:ai_request_diag' r.pk %}">תחקור</button>
         {% if pipeline.can_archive %}
         <button type="button" class="btn btn-outline btn-sm ai-btn-archive-request"
           data-url="{{ pipeline.archive_url }}" style="border-color:var(--loss);color:var(--loss)">הסר</button>
@@ -57,11 +57,6 @@
         {% if pipeline.can_reject %}
         <button type="button" class="btn btn-red btn-sm ai-btn-reject" data-url="{{ pipeline.reject_url }}">דחה</button>
         {% endif %}
-      </td>
-    </tr>
-    <tr class="ai-diag-row" id="ai-diag-row-{{ r.pk }}" hidden>
-      <td colspan="9">
-        {% include "portal/partials/ai_diagnostics.html" with diag=row.diag req=r only %}
       </td>
     </tr>
     {% endwith %}
@@ -75,27 +70,38 @@
 </div>
 <p style="font-size:.72rem;color:var(--muted);margin-top:8px">
   <span class="ai-stage-check ai-stage-check--done ai-stage-check--inline"><span class="ai-stage-v">✓</span></span> שלב הושלם ·
-  <strong>הרץ</strong> פעיל רק כשהשלב הקודם מסומן ·
+  כל שלב שמסתיים מפעיל אוטומטית את הבא (diff → PR → מיזוג) ·
   <strong>בטל</strong> – מסיר מהרשימה רשומות שלא הסתיימו (מתועד ב<a href="{% url 'portal:logs' %}" style="color:var(--gold)">היסטוריית פעולות</a>)
 </p>
+
+<div class="ai-logpanel" id="ai-logpanel">
+  <div class="ai-logpanel-bar">
+    <span class="ai-logpanel-bar-title">לוג / תחקור בקשה</span>
+    <span class="ai-logpanel-bar-hint">לחץ «תחקור» בשורה כדי לטעון בקשה · מתעדכן אוטומטית בזמן ריצה</span>
+    <button type="button" class="btn btn-outline btn-sm" id="ai-logpanel-refresh">רענן</button>
+  </div>
+  <div class="ai-logpanel-inner" id="ai-logpanel-inner" data-url="{{ focus_diag_url|default:'' }}">
+    {% if focus_req %}
+    {% include "portal/partials/ai_diag_panel.html" with req=focus_req diag=focus_diag diag_url=focus_diag_url is_active=focus_is_active only %}
+    {% else %}
+    <div class="ai-diag-empty" style="padding:18px">אין בקשה להצגה. צור בקשה חדשה כדי לראות את הלוג כאן.</div>
+    {% endif %}
+  </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   var wrap = document.querySelector('.ai-changes-table')?.closest('.table-wrap');
   if (window.AiPortalUI && wrap) AiPortalUI.wirePipelineRunButtons(wrap);
 
-  document.querySelectorAll('.ai-btn-diag').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var row = document.getElementById(btn.getAttribute('data-target'));
-      if (!row) return;
-      var open = row.hasAttribute('hidden');
-      if (open) { row.removeAttribute('hidden'); } else { row.setAttribute('hidden', ''); }
-      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      btn.textContent = open ? 'סגור תחקור' : 'תחקור';
-    });
-  });
-
+  var inner = document.getElementById('ai-logpanel-inner');
+  var panel = document.getElementById('ai-logpanel');
   var repoCache = null;
-  document.querySelectorAll('.ai-btn-repo').forEach(function (btn) {
+  var pollTimer = null;
+
+  function wireRepoButton() {
+    var btn = inner.querySelector('.ai-btn-repo');
+    if (!btn) return;
     btn.addEventListener('click', function () {
       var pre = btn.parentElement.querySelector('.ai-diag-repo');
       if (!pre) return;
@@ -121,7 +127,41 @@ document.addEventListener('DOMContentLoaded', function () {
         .catch(function () { pre.textContent = 'שגיאה בטעינת תוכן הריפו'; pre.removeAttribute('hidden'); })
         .finally(function () { btn.disabled = false; });
     });
+  }
+
+  function schedulePoll() {
+    if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
+    var render = inner.querySelector('.ai-logpanel-render');
+    if (render && render.getAttribute('data-active') === '1') {
+      pollTimer = setTimeout(function () { loadPanel(render.getAttribute('data-url'), false); }, 3000);
+    }
+  }
+
+  function loadPanel(url, scroll) {
+    if (!url) return;
+    fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function (r) { return r.text(); })
+      .then(function (html) {
+        inner.innerHTML = html;
+        inner.setAttribute('data-url', url);
+        wireRepoButton();
+        schedulePoll();
+        if (scroll) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      })
+      .catch(function () {});
+  }
+
+  document.querySelectorAll('.ai-btn-diag').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      loadPanel(btn.getAttribute('data-diag-url'), true);
+    });
   });
+
+  var refresh = document.getElementById('ai-logpanel-refresh');
+  if (refresh) refresh.addEventListener('click', function () { loadPanel(inner.getAttribute('data-url'), false); });
+
+  wireRepoButton();
+  schedulePoll();
 });
 </script>
 {% endblock %}
