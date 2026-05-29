@@ -1,0 +1,70 @@
+{% extends 'web/base_public.html' %}
+
+{% block title %}צור קשר{% endblock %}
+
+{% block content %}
+<main id="main-content" tabindex="-1">
+  <section class="card" aria-labelledby="contact-title">
+    <div class="card-title"><span>✉️</span><h1 id="contact-title">צור קשר</h1></div>
+    <p style="color:var(--muted);margin-bottom:20px;">נשמח לשמוע ממך! מלא את הפרטים ונחזור אליך בהקדם.</p>
+
+    {# AI: This form needs a Django view to handle submission at /contact/submit/ #}
+    {# The view should validate the form, send an email to the admin, and redirect or show a success message. #}
+    <form action="/contact/submit/" method="post" class="contact-form">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="id_name">שם:</label>
+        <input type="text" id="id_name" name="name" required aria-required="true" placeholder="שם מלא">
+      </div>
+      <div class="form-group">
+        <label for="id_email">אימייל:</label>
+        <input type="email" id="id_email" name="email" required aria-required="true" placeholder="example@domain.com">
+      </div>
+      <div class="form-group">
+        <label for="id_message">הודעה:</label>
+        <textarea id="id_message" name="message" rows="6" required aria-required="true" placeholder="מה ברצונך לומר?"></textarea>
+      </div>
+      <div style="text-align:center; margin-top:25px;">
+        <button type="submit" class="btn btn-primary">שלח הודעה</button>
+      </div>
+    </form>
+  </section>
+</main>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .contact-form {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+    background: var(--navy-c);
+    border-radius: var(--r);
+    box-shadow: var(--shadow);
+  }
+  .form-group {
+    margin-bottom: 15px;
+  }
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--cream);
+    font-size: 0.95rem;
+  }
+  .form-group input[type="text"],
+  .form-group input[type="email"],
+  .form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--navy-b);
+    border-radius: 6px;
+    background: var(--navy-m);
+    color: var(--text);
+    font-size: 1rem;
+    font-family: 'Heebo', sans-serif;
+  }
+  .form-group input[type="text"]::placeholder,
+  .form-group input[type="email"]::placeholder,
+  .form-group textarea::placeholder {
+    color: var(--muted);
