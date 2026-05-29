@@ -20,6 +20,7 @@ from ai_agent.services.job_queue import (
     request_action_fields,
     retry_request_step,
 )
+from ai_agent.services.diagnostics import build_request_diagnostics
 from ai_agent.services.pipeline import build_pipeline, pipeline_to_json
 from ai_agent.services.workflow import (
     archive_request,
@@ -117,6 +118,7 @@ def _status_payload(obj: AIChangeRequest) -> dict:
             obj,
             list(AIJob.objects.filter(change_request=obj).order_by('-created_at')[:12]),
         ),
+        'diagnostics': build_request_diagnostics(obj),
     }
 
 
@@ -151,6 +153,7 @@ def ai_requests_list(request):
             'req': r,
             'act': request_action_fields(r),
             'pipeline': build_pipeline(r),
+            'diag': build_request_diagnostics(r),
         }
         for r in reqs
     ]

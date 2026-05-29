@@ -1,0 +1,71 @@
+{% comment %}
+תחקור בקשה: מה נכתב, מה נדרש בקוד, אילו קבצים, ומה סוג השינוי.
+מצפה ל-diag (build_request_diagnostics) ול-req.
+{% endcomment %}
+<div class="ai-diag">
+  <div class="ai-diag-block">
+    <div class="ai-diag-label">הטקסט שהמשתמש כתב</div>
+    <div class="ai-diag-prompt">{{ diag.prompt|default:"—" }}</div>
+  </div>
+
+  <div class="ai-diag-block">
+    <div class="ai-diag-label">השינוי שנדרש בקוד</div>
+    {% if diag.files %}
+    <div class="ai-diag-counts">
+      {% if diag.counts.added %}<span class="ai-diag-tag ai-diag-tag--add">נוספו {{ diag.counts.added }} קבצים</span>{% endif %}
+      {% if diag.counts.deleted %}<span class="ai-diag-tag ai-diag-tag--del">נמחקו {{ diag.counts.deleted }} קבצים</span>{% endif %}
+      {% if diag.counts.modified %}<span class="ai-diag-tag ai-diag-tag--mod">שונו {{ diag.counts.modified }} קבצים</span>{% endif %}
+      <span class="ai-diag-tag">+{{ diag.counts.lines_added }} / -{{ diag.counts.lines_removed }} שורות</span>
+    </div>
+    <table class="ai-diag-files">
+      <thead>
+        <tr><th>קובץ</th><th>סוג</th><th>שורות</th></tr>
+      </thead>
+      <tbody>
+        {% for f in diag.files %}
+        <tr>
+          <td class="td-mono">{{ f.path|default:"(לא ידוע)" }}</td>
+          <td>
+            <span class="ai-diag-kind ai-diag-kind--{{ f.kind }}">{{ f.kind_label }}</span>
+          </td>
+          <td class="td-mono">+{{ f.added }} / -{{ f.removed }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="ai-diag-empty">
+      {% if diag.error %}לא נוצר diff – ראה שגיאה למטה.{% else %}עדיין לא נוצר diff. לחץ «הרץ» בשלב «ייצור diff».{% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  {% if diag.interpretation %}
+  <div class="ai-diag-block">
+    <div class="ai-diag-label">פרשנות ה-AI</div>
+    <ul class="ai-diag-interp">
+      {% for line in diag.interpretation %}<li>{{ line }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if diag.error %}
+  <div class="ai-diag-block">
+    <div class="ai-diag-label ai-diag-label--err">שגיאה</div>
+    <div class="ai-diag-error">{{ diag.error }}</div>
+  </div>
+  {% endif %}
+
+  <div class="ai-diag-block">
+    <div class="ai-diag-label">לוג עיבוד מלא</div>
+    {% if diag.logs %}
+    <div class="ai-diag-log">
+      {% for entry in diag.logs %}
+      <div class="ai-diag-log-line"><span class="ai-diag-ts">{{ entry.ts }}</span> {{ entry.msg }}</div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="ai-diag-empty">אין לוג עדיין.</div>
+    {% endif %}
+  </div>
+</div>

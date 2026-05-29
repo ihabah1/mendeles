@@ -275,3 +275,31 @@ body.sidebar-open{overflow:hidden}
   .home-header{padding:12px 16px}
   .home-main{padding:20px 16px}
 }
+
+/* תחקור בקשת שינוי AI (לוג אבחון בדף ניהול שינויים) */
+.ai-diag-row>td{background:var(--panel);padding:0!important;border-top:0}
+.ai-diag{padding:14px 16px;display:flex;flex-direction:column;gap:14px;text-align:right;direction:rtl}
+.ai-diag-block{display:flex;flex-direction:column;gap:6px}
+.ai-diag-label{font-size:.66rem;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase}
+.ai-diag-label--err{color:var(--red)}
+.ai-diag-prompt{background:var(--bg);border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px;font-size:.82rem;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.ai-diag-counts{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
+.ai-diag-tag{display:inline-block;font-size:.68rem;padding:2px 8px;border-radius:999px;background:var(--card);border:1px solid var(--border);color:var(--muted)}
+.ai-diag-tag--add{color:var(--green);border-color:var(--green)}
+.ai-diag-tag--del{color:var(--red);border-color:var(--red)}
+.ai-diag-tag--mod{color:var(--blue);border-color:var(--blue)}
+.ai-diag-files{width:100%;border-collapse:collapse;font-size:.76rem}
+.ai-diag-files th,.ai-diag-files td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:right;vertical-align:top}
+.ai-diag-files th{color:var(--muted);font-size:.66rem;text-transform:uppercase;font-weight:700}
+.ai-diag-files td.td-mono{word-break:break-all}
+.ai-diag-kind{display:inline-block;font-size:.66rem;padding:1px 7px;border-radius:4px;font-weight:700}
+.ai-diag-kind--added{color:var(--green);background:rgba(29,184,122,.12)}
+.ai-diag-kind--deleted{color:var(--red);background:rgba(224,80,80,.12)}
+.ai-diag-kind--modified{color:var(--blue);background:rgba(59,158,255,.12)}
+.ai-diag-kind--renamed{color:var(--orange);background:rgba(240,144,48,.12)}
+.ai-diag-empty{font-size:.78rem;color:var(--muted);padding:6px 0}
+.ai-diag-interp{margin:0;padding-right:18px;font-size:.78rem;color:var(--text);line-height:1.55}
+.ai-diag-error{background:rgba(224,80,80,.08);border:1px solid var(--red);border-radius:var(--r2);padding:9px 11px;font-size:.78rem;color:var(--red);white-space:pre-wrap;word-break:break-word}
+.ai-diag-log{background:var(--bg);border:1px solid var(--border);border-radius:var(--r2);padding:8px 10px;max-height:220px;overflow-y:auto;font-family:var(--mono);font-size:.72rem;line-height:1.6}
+.ai-diag-log-line{color:var(--text);word-break:break-word}
+.ai-diag-ts{color:var(--muted);margin-left:6px}
