@@ -24,6 +24,7 @@
       {% endif %}
       <a class="sb-item {% if request.resolver_match.url_name == 'logs' %}active{% endif %}" href="{% url 'portal:logs' %}"><span class="icon">📜</span> היסטוריית פעולות</a>
     </nav>
+    <!-- Requested a /contact/ page. This requires a new URL pattern and view in Django. -->
     <div class="sb-bottom">
       <div class="sb-admin-tag">שלום {{ request.user.nav_greeting_name }}</div>
       <div style="margin-top:4px;font-size:.65rem">מחובר · ללא אימות מייל</div>
