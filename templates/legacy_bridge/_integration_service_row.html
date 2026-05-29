@@ -1,19 +1,48 @@
 <tr>
-  <td>{{ label }}</td>
+  <td>
+    {{ svc.label }}
+    {% if svc.pages %}
+    <div style="font-size:.7rem;color:var(--muted);margin-top:3px">
+      תלויים:
+      {% for p in svc.pages %}<a href="{{ p.url }}" target="_blank" rel="noopener" style="color:var(--muted)">{{ p.label }}</a>{% if not forloop.last %} · {% endif %}{% endfor %}
+    </div>
+    {% endif %}
+  </td>
   <td>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      {% if health_item.ok %}
-      <span class="badge badge-green">פעיל</span>
+      {% if svc.state == 'up' %}
+        <span class="badge badge-green">פעיל</span>
+      {% elif svc.state == 'disabled' %}
+        <span class="badge badge-gray">כבוי ידנית</span>
       {% else %}
-      <span class="badge badge-red">כבוי</span>
-      <form method="post" action="{% url 'legacy_integration_fix' %}" style="display:inline;margin:0">
+        <span class="badge badge-red">לא מגיב</span>
+      {% endif %}
+
+      {% if svc.disabled_manual %}
+      <form method="post" action="{% url 'legacy_integration_toggle' %}" style="display:inline;margin:0">
         {% csrf_token %}
-        <input type="hidden" name="service" value="{{ service_key }}">
-        <button type="submit" class="btn btn-sm btn-outline" title="הפעלה מחדש + אבחון">פתור בעיה</button>
+        <input type="hidden" name="service" value="{{ svc.key }}">
+        <input type="hidden" name="action" value="enable">
+        <button type="submit" class="btn btn-sm">הפעל</button>
       </form>
+      {% else %}
+        <form method="post" action="{% url 'legacy_integration_toggle' %}" style="display:inline;margin:0"
+          onsubmit="return confirm('לכבות את {{ svc.label }}? דפים שתלויים בו לא יהיו זמינים.');">
+          {% csrf_token %}
+          <input type="hidden" name="service" value="{{ svc.key }}">
+          <input type="hidden" name="action" value="disable">
+          <button type="submit" class="btn btn-sm btn-outline" style="border-color:var(--loss);color:var(--loss)">כבה</button>
+        </form>
+        {% if not svc.ok %}
+        <form method="post" action="{% url 'legacy_integration_fix' %}" style="display:inline;margin:0">
+          {% csrf_token %}
+          <input type="hidden" name="service" value="{{ svc.key }}">
+          <button type="submit" class="btn btn-sm btn-outline" title="הפעלה מחדש + אבחון">פתור בעיה</button>
+        </form>
+        {% endif %}
       {% endif %}
     </div>
   </td>
-  <td>{{ health_item.port|default:default_port }}</td>
-  <td style="font-size:.72rem;color:var(--muted)">{{ check_path }}</td>
+  <td>{{ svc.port }}</td>
+  <td style="font-size:.72rem;color:var(--muted)">{{ svc.check_path }}</td>
 </tr>

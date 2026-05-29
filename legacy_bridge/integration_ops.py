@@ -1,6 +1,8 @@
-"""אבחון, הפעלה ולוגים לדף אינטגרציה."""
+"""אבחון, הפעלה, כיבוי ולוגים לדף אינטגרציה."""
 from __future__ import annotations
 
+import os
+import signal
 import subprocess
 import sys
 import time
@@ -141,6 +143,76 @@ def try_fix_service(service_key: str) -> dict:
             f'{label}: ניסיון הפעלה בוצע (pid {proc.pid}) אך השירות עדיין לא עונה. '
             'ב-Railway ודא LEGACY_AUTO_START=true ופרוס מחדש.'
         ),
+    }
+
+
+def _last_pid_for_script(script_name: str) -> int | None:
+    """ה-PID האחרון שתועד עבור הסקריפט ב-legacy_pids.log."""
+    log_path = _data_dir() / 'legacy_pids.log'
+    if not log_path.is_file():
+        return None
+    pid = None
+    try:
+        for line in log_path.read_text(encoding='utf-8', errors='replace').splitlines():
+            parts = line.split()
+            if len(parts) == 3 and parts[0] == script_name:
+                try:
+                    pid = int(parts[2])
+                except ValueError:
+                    continue
+    except OSError:
+        return None
+    return pid
+
+
+def _kill_service_process(service_key: str) -> int | None:
+    """מנסה לעצור את תהליך השירות לפי ה-PID שתועד. best-effort."""
+    from .service_registry import SERVICES
+
+    script_name = SERVICES[service_key]['script']
+    pid = _last_pid_for_script(script_name)
+    if not pid:
+        return None
+    try:
+        os.kill(pid, signal.SIGTERM)
+        return pid
+    except OSError:
+        return None
+
+
+def stop_service(service_key: str) -> dict:
+    """מכבה שירות: מסמן «מושבת» (נשמר ב-DB) ומנסה לעצור את התהליך."""
+    from .service_registry import SERVICES, service_label, set_service_enabled
+
+    if service_key not in SERVICES:
+        return {'ok': False, 'message': f'שירות לא מוכר: {service_key}'}
+
+    set_service_enabled(service_key, False, note='כובה מהדשבורד')
+    killed = _kill_service_process(service_key)
+    append_integration_log(
+        f'כיבוי {service_key}: disabled=true killed_pid={killed if killed else "—"}',
+    )
+    label = service_label(service_key)
+    note = f'{label} כובה.'
+    if killed:
+        note += f' התהליך (pid {killed}) נעצר.'
+    return {'ok': True, 'message': note}
+
+
+def enable_service(service_key: str) -> dict:
+    """מפעיל שירות: מסמן «מופעל» ומנסה להריץ אותו מחדש."""
+    from .service_registry import SERVICES, service_label, set_service_enabled
+
+    if service_key not in SERVICES:
+        return {'ok': False, 'message': f'שירות לא מוכר: {service_key}'}
+
+    set_service_enabled(service_key, True, note='הופעל מהדשבורד')
+    append_integration_log(f'הפעלה {service_key}: disabled=false')
+    result = try_fix_service(service_key)
+    label = service_label(service_key)
+    return {
+        'ok': True,
+        'message': f'{label} סומן כמופעל. {result.get("message", "")}'.strip(),
     }
 
 

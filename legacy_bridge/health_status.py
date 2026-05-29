@@ -60,25 +60,39 @@ def check_backends_health() -> dict:
     1) פורט פתוח על localhost
     2) HTTP ישיר ל-Flask
     3) דרך נתיבי הפרוקסי של Django (אותו תהליך ב-Railway)
+
+    שירות שכובה ידנית מסומן state='disabled' (לא דגל אדום של תקלה).
     """
+    from .service_registry import disabled_services
+
     out: dict[str, dict] = {}
     if not legacy_services_enabled():
         for name in _BACKEND_HEALTH_PATHS:
-            out[name] = {'ok': False, 'disabled': True}
+            out[name] = {'ok': False, 'disabled': True, 'state': 'disabled', 'disabled_manual': True}
         return out
 
-    client = Client()
+    disabled = disabled_services()
     for name, base in _backend_urls().items():
-        path = _BACKEND_HEALTH_PATHS.get(name, '/health')
         host, port = _parse_host_port(base)
-        port_up = _port_open(host, port)
+        if name in disabled:
+            out[name] = {
+                'ok': False,
+                'state': 'disabled',
+                'disabled_manual': True,
+                'port': port,
+            }
+            continue
 
+        path = _BACKEND_HEALTH_PATHS.get(name, '/health')
+        port_up = _port_open(host, port)
         direct = _probe_url(f'{base.rstrip("/")}{path}')
         via_django = _probe_django_path(path)
 
         ok = port_up or direct.get('ok') or via_django.get('ok')
         out[name] = {
             'ok': ok,
+            'state': 'up' if ok else 'down',
+            'disabled_manual': False,
             'port_up': port_up,
             'direct': direct,
             'django': via_django,
@@ -107,17 +121,51 @@ def check_django_platform() -> dict:
 
 def integration_dashboard_context() -> dict:
     """הקשר מלא לדף /manage/integration/."""
+    from .service_registry import SERVICE_KEYS, SERVICES
+
     legacy = check_backends_health()
     django = check_django_platform()
     legacy_on = legacy_services_enabled()
 
-    # סטטוס כללי: Django תמיד פעיל; legacy "פעיל" אם כולם ok או לפחות lotto_api+engine
-    legacy_all_ok = legacy_on and all(v.get('ok') for v in legacy.values())
+    services = []
+    unavailable_pages = []
+    for key in SERVICE_KEYS:
+        reg = SERVICES[key]
+        item = legacy.get(key, {})
+        ok = bool(item.get('ok'))
+        disabled_manual = bool(item.get('disabled_manual'))
+        state = item.get('state') or ('up' if ok else 'down')
+        services.append({
+            'key': key,
+            'label': reg['label'],
+            'port': item.get('port') or reg['port'],
+            'check_path': reg['check_path'],
+            'pages': reg['pages'],
+            'ok': ok,
+            'disabled_manual': disabled_manual,
+            'state': state,
+        })
+        if not ok:
+            reason = 'כובה ידנית' if disabled_manual else 'לא מגיב'
+            for pg in reg['pages']:
+                unavailable_pages.append({
+                    **pg,
+                    'service': key,
+                    'service_label': reg['label'],
+                    'reason': reason,
+                    'disabled_manual': disabled_manual,
+                })
+
+    # "פעיל" מתייחס רק לשירותים שלא כובו ידנית – כיבוי מכוון אינו תקלה
+    enabled_items = [v for v in legacy.values() if not v.get('disabled_manual')]
+    legacy_all_ok = legacy_on and bool(enabled_items) and all(v.get('ok') for v in enabled_items)
     legacy_partial = legacy_on and any(v.get('ok') for v in legacy.values())
 
     return {
         'enabled': legacy_on,
         'health': legacy,
+        'services': services,
+        'unavailable_pages': unavailable_pages,
         'django_health': django,
         'legacy_all_ok': legacy_all_ok,
         'legacy_partial': legacy_partial,

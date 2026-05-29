@@ -56,10 +56,9 @@
   <table>
     <thead><tr><th>שירות</th><th>סטטוס</th><th>פורט</th><th>בדיקה</th></tr></thead>
     <tbody>
-      {% include "legacy_bridge/_integration_service_row.html" with service_key="engine" label="מנוע טוטו (engine)" health_item=health.engine default_port="5001" check_path="/engine/health" %}
-      {% include "legacy_bridge/_integration_service_row.html" with service_key="auth" label="התחברות קלאסית (auth)" health_item=health.auth default_port="5002" check_path="/auth/me" %}
-      {% include "legacy_bridge/_integration_service_row.html" with service_key="wallet" label="ארנק / הזמנות (wallet)" health_item=health.wallet default_port="5003" check_path="/api/stats" %}
-      {% include "legacy_bridge/_integration_service_row.html" with service_key="lotto_api" label="API לוטו (api)" health_item=health.lotto_api default_port="5000" check_path="/api/health" %}
+      {% for svc in services %}
+      {% include "legacy_bridge/_integration_service_row.html" with svc=svc only %}
+      {% endfor %}
     </tbody>
   </table>
   {% if legacy_all_ok %}
@@ -71,8 +70,34 @@
   </p>
   {% else %}
   <p style="margin-top:12px;font-size:.8rem;color:var(--muted)">
-    חלק מהשירותים פעילים. השתמש ב«פתור בעיה» לשירותים כבויים או ב«הפעל את כל השירותים» למעלה.
+    חלק מהשירותים פעילים. «כבה» מכבה שירות יחיד · «פתור בעיה» מנסה להפעיל שירות כבוי · «הפעל את כל השירותים» למעלה.
   </p>
+  {% endif %}
+</div>
+
+<div class="card-panel" style="margin-bottom:16px">
+  <div class="form-label">מה לא זמין כרגע</div>
+  {% if unavailable_pages %}
+  <p style="font-size:.8rem;color:var(--muted);margin-bottom:10px">
+    הדפים/היכולות הבאים תלויים בשירותים שאינם פעילים כעת. שאר האתר (Django) פעיל כרגיל.
+  </p>
+  <table>
+    <thead><tr><th>דף / יכולת</th><th>נתיב</th><th>תלוי בשירות</th><th>סיבה</th></tr></thead>
+    <tbody>
+      {% for pg in unavailable_pages %}
+      <tr>
+        <td>{{ pg.label }}</td>
+        <td><a href="{{ pg.url }}" target="_blank" rel="noopener"><code>{{ pg.url }}</code></a></td>
+        <td style="font-size:.78rem;color:var(--muted)">{{ pg.service_label }}</td>
+        <td>
+          {% if pg.disabled_manual %}<span class="badge badge-gray">כבוי ידנית</span>{% else %}<span class="badge badge-red">לא מגיב</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="font-size:.85rem;color:var(--green)">✅ כל הדפים והיכולות זמינים – אין שירות כבוי.</p>
   {% endif %}
 </div>
 

@@ -34,6 +34,20 @@ def proxy_request(request, backend_key: str, path_prefix: str) -> HttpResponse:
             status=503,
         )
 
+    try:
+        from .service_registry import is_service_enabled, service_label
+
+        if not is_service_enabled(backend_key):
+            return JsonResponse(
+                {
+                    'error': f'השירות «{service_label(backend_key)}» כובה ידנית מדשבורד הניהול',
+                    'hint': 'הפעל אותו מחדש ב-/manage/integration/',
+                },
+                status=503,
+            )
+    except Exception:
+        pass
+
     base = _backend_urls().get(backend_key, '').rstrip('/')
     if not base:
         return JsonResponse({'error': f'backend לא מוגדר: {backend_key}'}, status=500)

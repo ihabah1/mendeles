@@ -24,5 +24,6 @@ urlpatterns = [
     path('legacy/status/', views.integration_status, name='legacy_status'),
     path('manage/integration/', views.integration_page, name='legacy_integration'),
     path('manage/integration/fix/', views.integration_fix, name='legacy_integration_fix'),
+    path('manage/integration/toggle/', views.integration_toggle, name='legacy_integration_toggle'),
     path('manage/integration/logs/', views.integration_logs, name='legacy_integration_logs'),
 ]

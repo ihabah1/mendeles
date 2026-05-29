@@ -116,6 +116,39 @@ def integration_fix(request):
 
 
 @admin_required
+@require_POST
+def integration_toggle(request):
+    """כיבוי/הפעלה של שירות בודד + ציון אילו דפים מושפעים."""
+    from .integration_ops import enable_service, stop_service
+    from .service_registry import service_pages
+
+    service = (request.POST.get('service') or '').strip()
+    action = (request.POST.get('action') or '').strip()
+    if not service or action not in ('disable', 'enable'):
+        messages.error(request, 'פעולה לא חוקית')
+        return redirect('legacy_integration')
+
+    if action == 'disable':
+        result = stop_service(service)
+        if result.get('ok'):
+            pages = service_pages(service)
+            if pages:
+                names = ', '.join(p['label'] for p in pages)
+                messages.warning(request, f"{result['message']} לא זמינים כעת: {names}.")
+            else:
+                messages.success(request, result['message'])
+        else:
+            messages.error(request, result.get('message', 'הכיבוי נכשל'))
+    else:
+        result = enable_service(service)
+        if result.get('ok'):
+            messages.success(request, result['message'])
+        else:
+            messages.warning(request, result.get('message', 'ההפעלה נכשלה'))
+    return redirect('legacy_integration')
+
+
+@admin_required
 @require_GET
 def integration_logs(request):
     from .integration_ops import get_integration_logs
