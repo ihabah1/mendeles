@@ -33,14 +33,19 @@ def main():
             print(f'skip missing {script}', flush=True)
             continue
         time.sleep(delay)
+        # פלט כל שירות נשמר ל-data/legacy_<script>.log כדי שכשלים (כמו חוסר תלות) יהיו גלויים
+        svc_log = log_path.parent / f'legacy_{Path(script).stem}.log'
+        log_fh = svc_log.open('a', encoding='utf-8')
+        log_fh.write(f'\n=== start {time.strftime("%Y-%m-%d %H:%M:%S")} port={port} ===\n')
+        log_fh.flush()
         proc = subprocess.Popen(
             [PY, str(path)],
             cwd=str(ROOT),
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stdout=log_fh,
+            stderr=subprocess.STDOUT,
         )
         started.append((script, port, proc.pid))
-        print(f'started {script} pid={proc.pid} port={port}', flush=True)
+        print(f'started {script} pid={proc.pid} port={port} -> {svc_log.name}', flush=True)
 
     with log_path.open('a', encoding='utf-8') as f:
         f.write(f'\n--- batch {time.strftime("%Y-%m-%d %H:%M:%S")} ---\n')

@@ -124,14 +124,30 @@ def try_fix_service(service_key: str) -> dict:
     if h.get('ok'):
         return {'ok': True, 'message': f'{label} כבר פעיל'}
 
+    svc_log = _data_dir() / f'legacy_{Path(script_name).stem}.log'
+    log_fh = svc_log.open('a', encoding='utf-8')
+    log_fh.write(f'\n=== fix {time.strftime("%Y-%m-%d %H:%M:%S")} port={port} ===\n')
+    log_fh.flush()
     proc = subprocess.Popen(
         [sys.executable, str(script_path)],
         cwd=str(root),
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        stdout=log_fh,
+        stderr=subprocess.STDOUT,
     )
     append_integration_log(f'הופעל {script_name} pid={proc.pid} port={port}')
-    time.sleep(2.0)
+    time.sleep(2.5)
+
+    if proc.poll() is not None:
+        tail = ' / '.join(read_log_tail(svc_log.name, 10))
+        append_integration_log(f'{script_name} קרס מיד (exit={proc.returncode}): {tail[:300]}')
+        return {
+            'ok': False,
+            'message': (
+                f'{label}: התהליך קרס מיד (קוד {proc.returncode}). '
+                f'סיבה אחרונה: {tail[:220] or "ראה לוגים"}'
+            ),
+        }
+
     health_after = check_backends_health()
     append_integration_log(_diagnose_service(service_key, health_after))
     ok = bool((health_after.get(service_key) or {}).get('ok'))
