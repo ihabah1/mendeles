@@ -13,14 +13,14 @@
       <a class="sb-item {% if request.resolver_match.url_name == 'customers' or request.resolver_match.url_name == 'customer_detail' or request.resolver_match.url_name == 'user_create' %}active{% endif %}" href="{% url 'portal:customers' %}"><span class="icon">👥</span> משתמשים</a>
       <a class="sb-item" href="{% url 'portal:user_create' %}"><span class="icon">➕</span> הוסף משתמש</a>
       <a class="sb-item {% if request.resolver_match.url_name == 'orders' %}active{% endif %}" href="{% url 'portal:orders' %}"><span class="icon">🖨️</span> הזמנות</a>
-      <a class="sb-item" href="/" target="_self"><span class="icon">🎱</span> לוטו</a>
-      <a class="sb-item" href="/toto/" target="_self"><span class="icon">⚽</span> טוטו</a>
+      <a class="sb-item" href="/" target="_self"><span class="icon">🎱</span> </a>
+      <a class="sb-item" href="/toto/" target="_self"><span class="icon">⚽</span> </a>
       <div class="sb-section">מערכת</div>
       {% if AI_AGENT_ENABLED %}
       <a class="sb-item {% if request.resolver_match.url_name == 'ai_request_create' %}active{% endif %}" href="{% url 'portal:ai_request_create' %}"><span class="icon">✏️</span> שליחת בקשה לשינוי</a>
       <a class="sb-item {% if request.resolver_match.url_name == 'ai_jobs' %}active{% endif %}" href="{% url 'portal:ai_jobs' %}"><span class="icon">📋</span> תור ג'ובים</a>
       <a class="sb-item {% if request.resolver_match.url_name == 'ai_requests' or request.resolver_match.url_name == 'ai_request_detail' %}active{% endif %}" href="{% url 'portal:ai_requests' %}"><span class="icon">🤖</span> ניהול שינויים</a>
-      <a class="sb-item {% if request.resolver_match.url_name == 'legacy_integration' or request.resolver_match.url_name == 'legacy_integration_logs' %}active{% endif %}" href="{% url 'legacy_integration' %}"><span class="icon">🔗</span> אינטגרציית לוטו</a>
+   <a class="sb-item {% if request.resolver_match.url_name == 'legacy_integration' or request.resolver_match.url_name == 'legacy_integration_logs' %}active{% endif %}" href="{% url 'legacy_integration' %}"><span class="icon">🔗</span> אינטגרציית </a>
       {% endif %}
       <a class="sb-item {% if request.resolver_match.url_name == 'logs' %}active{% endif %}" href="{% url 'portal:logs' %}"><span class="icon">📜</span> היסטוריית פעולות</a>
     </nav>
