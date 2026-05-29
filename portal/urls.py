@@ -30,6 +30,7 @@ urlpatterns = [
     path(f'{_prefix}/ai/jobs/status/', ai_views.ai_queue_status, name='ai_queue_status'),
     path(f'{_prefix}/ai/jobs/<int:job_id>/cancel/', ai_views.ai_job_cancel, name='ai_job_cancel'),
     path(f'{_prefix}/ai/', ai_views.ai_requests_list, name='ai_requests'),
+    path(f'{_prefix}/ai/repo-content/', ai_views.ai_repo_content, name='ai_repo_content'),
     path(f'{_prefix}/ai/new/', ai_views.ai_request_create, name='ai_request_create'),
     path(f'{_prefix}/ai/<int:pk>/', ai_views.ai_request_detail, name='ai_request_detail'),
     path(f'{_prefix}/ai/<int:pk>/status/', ai_views.ai_request_status, name='ai_request_status'),

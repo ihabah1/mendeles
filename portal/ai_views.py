@@ -20,7 +20,7 @@ from ai_agent.services.job_queue import (
     request_action_fields,
     retry_request_step,
 )
-from ai_agent.services.diagnostics import build_request_diagnostics
+from ai_agent.services.diagnostics import build_repo_content, build_request_diagnostics
 from ai_agent.services.pipeline import build_pipeline, pipeline_to_json
 from ai_agent.services.workflow import (
     archive_request,
@@ -138,6 +138,14 @@ def ai_jobs_list(request):
 def ai_queue_status(request):
     _require_ai_enabled()
     return JsonResponse(queue_status_global())
+
+
+@admin_required
+@require_GET
+def ai_repo_content(request):
+    """תוכן הקבצים בריפו (templates/, static/) – לתחקור בדף ניהול שינויים."""
+    _require_ai_enabled()
+    return JsonResponse(build_repo_content())
 
 
 @admin_required

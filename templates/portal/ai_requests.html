@@ -93,6 +93,35 @@ document.addEventListener('DOMContentLoaded', function () {
       btn.textContent = open ? 'סגור תחקור' : 'תחקור';
     });
   });
+
+  var repoCache = null;
+  document.querySelectorAll('.ai-btn-repo').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var pre = btn.parentElement.querySelector('.ai-diag-repo');
+      if (!pre) return;
+      if (!pre.hasAttribute('hidden')) {
+        pre.setAttribute('hidden', '');
+        btn.textContent = 'הצג תוכן ריפו';
+        return;
+      }
+      var show = function (text) {
+        pre.textContent = text;
+        pre.removeAttribute('hidden');
+        btn.textContent = 'הסתר תוכן ריפו';
+      };
+      if (repoCache) { show(repoCache); return; }
+      btn.disabled = true;
+      btn.textContent = 'טוען…';
+      fetch(btn.getAttribute('data-url'), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          repoCache = data.text + '\n\n(' + data.count + ' קבצים · ' + data.total_chars + ' תווים)';
+          show(repoCache);
+        })
+        .catch(function () { pre.textContent = 'שגיאה בטעינת תוכן הריפו'; pre.removeAttribute('hidden'); })
+        .finally(function () { btn.disabled = false; });
+    });
+  });
 });
 </script>
 {% endblock %}

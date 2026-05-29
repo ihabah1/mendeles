@@ -108,6 +108,50 @@ def classify_diff_files(diff_text: str) -> list[dict]:
     return list(merged.values())
 
 
+REPO_CONTENT_HEADER = '---- repo content - -'
+REPO_CONTENT_FOOTER = '-- end repo --'
+
+
+def build_repo_content(base_dir=None) -> dict:
+    """קורא את הקבצים שה-AI רשאי לערוך (templates/, static/) ואת תוכנם.
+
+    זהו הקונטקסט שה-AI מקבל מהריפו. מוצג בתחקור עטוף בכותרות
+    «---- repo content - -» ו«-- end repo --».
+    """
+    from django.conf import settings
+
+    from ai_agent.services.path_guard import list_allowed_files
+
+    root = base_dir or settings.BASE_DIR
+    raw = list_allowed_files(root)
+
+    files = [
+        {
+            'path': rel,
+            'content': content,
+            'lines': content.count('\n') + 1,
+            'chars': len(content),
+        }
+        for rel, content in raw
+    ]
+
+    blocks = [REPO_CONTENT_HEADER, '']
+    for f in files:
+        blocks.append(f"=== {f['path']} ({f['lines']} שורות) ===")
+        blocks.append(f['content'])
+        blocks.append('')
+    blocks.append(REPO_CONTENT_FOOTER)
+
+    return {
+        'count': len(files),
+        'total_chars': sum(f['chars'] for f in files),
+        'files': files,
+        'header': REPO_CONTENT_HEADER,
+        'footer': REPO_CONTENT_FOOTER,
+        'text': '\n'.join(blocks),
+    }
+
+
 def build_request_diagnostics(req: AIChangeRequest) -> dict:
     """מקבץ נתוני תחקור לבקשה אחת: טקסט המשתמש, פרשנות, קבצים ושינויים."""
     diff_text = req.result or ''

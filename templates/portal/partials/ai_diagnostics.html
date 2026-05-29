@@ -68,4 +68,11 @@
     <div class="ai-diag-empty">אין לוג עדיין.</div>
     {% endif %}
   </div>
+
+  <div class="ai-diag-block">
+    <div class="ai-diag-label">תוכן הריפו (repo content)</div>
+    <button type="button" class="btn btn-outline btn-sm ai-btn-repo"
+      data-url="{% url 'portal:ai_repo_content' %}">הצג תוכן ריפו</button>
+    <pre class="ai-diag-repo" hidden></pre>
+  </div>
 </div>
