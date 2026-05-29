@@ -2,7 +2,12 @@
 from django.test import SimpleTestCase
 
 from ai_agent.models import AIChangeRequest
-from ai_agent.services.diagnostics import build_request_diagnostics, classify_diff_files
+from ai_agent.services.diagnostics import (
+    build_request_diagnostics,
+    classify_diff_files,
+    diff_segments,
+    site_links_for_files,
+)
 
 MODIFY_DIFF = """diff --git a/static/css/portal.css b/static/css/portal.css
 --- a/static/css/portal.css
@@ -68,3 +73,22 @@ class ClassifyDiffTests(SimpleTestCase):
         )
         self.assertFalse(diag['has_diff'])
         self.assertEqual(diag['files'][0]['path'], 'templates/web/x.html')
+
+    def test_diff_segments_before_after(self):
+        segs = diff_segments(MODIFY_DIFF)
+        self.assertEqual(len(segs), 1)
+        self.assertEqual(segs[0]['path'], 'static/css/portal.css')
+        classes = [ln['cls'] for ln in segs[0]['lines']]
+        self.assertIn('del', classes)   # קוד לפני
+        self.assertIn('add', classes)   # קוד אחרי
+        self.assertIn('ctx', classes)   # ללא שינוי
+        self.assertIn('hunk', classes)
+
+    def test_site_link_for_live_template(self):
+        links = site_links_for_files([{'path': 'templates/web/partials/lotto_panel.html'}])
+        self.assertEqual(links[0]['url'], '/')
+
+    def test_site_link_for_portal_template(self):
+        links = site_links_for_files([{'path': 'templates/portal/ai_requests.html'}])
+        self.assertTrue(links[0]['url'].startswith('/'))
+        self.assertIn('דשבורד', links[0]['label'])

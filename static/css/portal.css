@@ -315,3 +315,16 @@ body.sidebar-open{overflow:hidden}
 .ai-logpanel-head-main{display:flex;flex-direction:column;gap:2px;min-width:0}
 .ai-logpanel-title{font-weight:700;font-size:.82rem;color:var(--text)}
 .ai-logpanel-prompt{color:var(--muted);font-size:.74rem;word-break:break-word}
+
+/* קוד לפני/אחרי + קישורים */
+.ai-diag-links{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.ai-diff-file{margin-top:8px;border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.ai-diff-file-name{background:var(--panel);padding:6px 10px;font-size:.72rem;color:var(--gold);border-bottom:1px solid var(--border);word-break:break-all}
+.ai-diff-code{margin:0;padding:8px 0;background:var(--bg);overflow-x:auto;font-family:var(--mono);font-size:.72rem;line-height:1.5;direction:ltr;text-align:left;white-space:pre}
+.ai-diff-ln{display:block;padding:0 10px;white-space:pre}
+.ai-diff-ln--add{background:rgba(29,184,122,.13);color:#7ee0b4}
+.ai-diff-ln--del{background:rgba(224,80,80,.13);color:#f0a0a0}
+.ai-diff-ln--ctx{color:var(--muted)}
+.ai-diff-ln--hunk{color:var(--blue);background:rgba(59,158,255,.08)}
+.ai-diff-legend{display:flex;gap:12px;margin-top:8px;font-size:.7rem}
+.ai-diff-legend-item{padding:1px 8px;border-radius:4px}

@@ -99,6 +99,33 @@ document.addEventListener('DOMContentLoaded', function () {
   var repoCache = null;
   var pollTimer = null;
 
+  function fetchWithProgress(url, onProgress) {
+    return fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } }).then(function (resp) {
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      var total = parseInt(resp.headers.get('Content-Length') || '0', 10);
+      if (!resp.body || !resp.body.getReader) { return resp.text(); }
+      var reader = resp.body.getReader();
+      var received = 0;
+      var chunks = [];
+      return new Promise(function (resolve, reject) {
+        (function read() {
+          reader.read().then(function (r) {
+            if (r.done) {
+              var all = new Uint8Array(received), pos = 0;
+              chunks.forEach(function (c) { all.set(c, pos); pos += c.length; });
+              resolve(new TextDecoder('utf-8').decode(all));
+              return;
+            }
+            chunks.push(r.value);
+            received += r.value.length;
+            onProgress(received, total);
+            read();
+          }).catch(reject);
+        })();
+      });
+    });
+  }
+
   function wireRepoButton() {
     var btn = inner.querySelector('.ai-btn-repo');
     if (!btn) return;
@@ -117,14 +144,29 @@ document.addEventListener('DOMContentLoaded', function () {
       };
       if (repoCache) { show(repoCache); return; }
       btn.disabled = true;
-      btn.textContent = 'טוען…';
-      fetch(btn.getAttribute('data-url'), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
+      btn.textContent = 'טוען… 0%';
+      pre.removeAttribute('hidden');
+      pre.textContent = 'מוריד תוכן ריפו…';
+      fetchWithProgress(btn.getAttribute('data-url'), function (received, total) {
+        var label;
+        if (total > 0) {
+          label = Math.min(99, Math.round(received / total * 100)) + '%';
+        } else {
+          label = Math.round(received / 1024) + 'KB';
+        }
+        btn.textContent = 'טוען… ' + label;
+        pre.textContent = 'מוריד תוכן ריפו… ' + label;
+      })
+        .then(function (text) {
+          var data = JSON.parse(text);
           repoCache = data.text + '\n\n(' + data.count + ' קבצים · ' + data.total_chars + ' תווים)';
           show(repoCache);
         })
-        .catch(function () { pre.textContent = 'שגיאה בטעינת תוכן הריפו'; pre.removeAttribute('hidden'); })
+        .catch(function (e) {
+          pre.textContent = 'שגיאה בטעינת תוכן הריפו: ' + (e && e.message ? e.message : e);
+          pre.removeAttribute('hidden');
+          btn.textContent = 'נסה שוב';
+        })
         .finally(function () { btn.disabled = false; });
     });
   }

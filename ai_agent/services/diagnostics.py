@@ -152,6 +152,85 @@ def build_repo_content(base_dir=None) -> dict:
     }
 
 
+def diff_segments(diff_text: str) -> list[dict]:
+    """מפרק diff לתצוגת «לפני/אחרי»: לכל קובץ רשימת שורות מסומנות.
+
+    cls של כל שורה: hunk | add (אחרי) | del (לפני) | ctx (ללא שינוי)
+    """
+    segments: list[dict] = []
+    current: dict | None = None
+
+    def _start(path: str = '') -> dict:
+        seg = {'path': path, 'lines': []}
+        segments.append(seg)
+        return seg
+
+    for line in (diff_text or '').splitlines():
+        if line.startswith('diff --git'):
+            m = re.match(r'diff --git a/(.+?) b/(.+)$', line)
+            current = _start(normalize_repo_path(m.group(2)) if m else '')
+            continue
+        if current is None:
+            if line.startswith('--- ') or line.startswith('@@'):
+                current = _start()
+            else:
+                continue
+        if line.startswith('+++ '):
+            raw = line[4:].strip().split('\t', 1)[0]
+            if raw not in ('/dev/null', '') and not current['path']:
+                current['path'] = normalize_repo_path(raw)
+            continue
+        if (
+            line.startswith('index ')
+            or line.startswith('--- ')
+            or line.startswith('new file')
+            or line.startswith('deleted file')
+            or line.startswith('similarity ')
+            or line.startswith('rename ')
+            or line.startswith('\\ No newline')
+        ):
+            continue
+        if line.startswith('@@'):
+            current['lines'].append({'cls': 'hunk', 'text': line})
+        elif line.startswith('+'):
+            current['lines'].append({'cls': 'add', 'text': line[1:]})
+        elif line.startswith('-'):
+            current['lines'].append({'cls': 'del', 'text': line[1:]})
+        else:
+            current['lines'].append({'cls': 'ctx', 'text': line[1:] if line.startswith(' ') else line})
+
+    return [s for s in segments if s['lines']]
+
+
+def site_links_for_files(files: list) -> list[dict]:
+    """קישור(ים) לדף באתר שבו השינוי אמור להיראות (best-effort)."""
+    from django.conf import settings
+
+    paths = []
+    for f in files or []:
+        p = f.get('path') if isinstance(f, dict) else f
+        if p:
+            paths.append(str(p).replace('\\', '/'))
+
+    links: list[dict] = []
+    is_live = any(
+        p.startswith('templates/web/')
+        or p.startswith('static/css/public_site')
+        or p.startswith('static/js/public_site')
+        for p in paths
+    )
+    is_manage = any(
+        p.startswith('templates/portal/') or p.startswith('static/css/portal')
+        for p in paths
+    )
+    if is_live:
+        links.append({'url': '/', 'label': 'אתר ראשי (דף הבית)'})
+    if is_manage:
+        prefix = str(getattr(settings, 'ADMIN_DASHBOARD_PREFIX', 'manage')).strip('/')
+        links.append({'url': f'/{prefix}/', 'label': 'דשבורד ניהול'})
+    return links
+
+
 def build_request_diagnostics(req: AIChangeRequest) -> dict:
     """מקבץ נתוני תחקור לבקשה אחת: טקסט המשתמש, פרשנות, קבצים ושינויים."""
     diff_text = req.result or ''
@@ -185,6 +264,9 @@ def build_request_diagnostics(req: AIChangeRequest) -> dict:
         'counts': counts,
         'has_diff': bool(diff_text.strip()),
         'diff_line_count': len(diff_text.splitlines()),
+        'segments': diff_segments(diff_text),
+        'site_links': site_links_for_files(files),
+        'pr_url': req.pr_url or '',
         'error': req.error_message or '',
         'logs': logs,
         'images': list(req.reference_images or []),

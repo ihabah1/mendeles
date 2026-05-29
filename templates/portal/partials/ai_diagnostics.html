@@ -38,7 +38,34 @@
       {% if diag.error %}לא נוצר diff – ראה שגיאה למטה.{% else %}עדיין לא נוצר diff. לחץ «הרץ» בשלב «ייצור diff».{% endif %}
     </div>
     {% endif %}
+    {% if diag.site_links or diag.pr_url %}
+    <div class="ai-diag-links">
+      {% for link in diag.site_links %}
+      <a href="{{ link.url }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">צפה בדף: {{ link.label }} ↗</a>
+      {% endfor %}
+      {% if diag.pr_url %}
+      <a href="{{ diag.pr_url }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">PR ב-GitHub ↗</a>
+      {% endif %}
+    </div>
+    {% endif %}
   </div>
+
+  {% if diag.segments %}
+  <div class="ai-diag-block">
+    <div class="ai-diag-label">קוד לפני / אחרי השינוי</div>
+    {% for seg in diag.segments %}
+    <div class="ai-diff-file">
+      <div class="ai-diff-file-name td-mono">{{ seg.path|default:"(קובץ)" }}</div>
+      <pre class="ai-diff-code">{% for ln in seg.lines %}<span class="ai-diff-ln ai-diff-ln--{{ ln.cls }}">{% if ln.cls == 'add' %}+{% elif ln.cls == 'del' %}-{% elif ln.cls == 'ctx' %} {% endif %}{{ ln.text }}</span>
+{% endfor %}</pre>
+    </div>
+    {% endfor %}
+    <div class="ai-diff-legend">
+      <span class="ai-diff-legend-item ai-diff-ln--del">לפני (הוסר)</span>
+      <span class="ai-diff-legend-item ai-diff-ln--add">אחרי (נוסף)</span>
+    </div>
+  </div>
+  {% endif %}
 
   {% if diag.interpretation %}
   <div class="ai-diag-block">
