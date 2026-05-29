@@ -71,13 +71,12 @@ def can_archive_request(
     req: AIChangeRequest,
     jobs: list[AIJob] | None = None,
 ) -> bool:
-    """הסרה מהרשימה – רק כשלא כל השלבים הושלמו."""
-    if req.status in (
-        AIChangeRequest.Status.ARCHIVED,
-        AIChangeRequest.Status.PR_MERGED,
-    ):
-        return False
-    return not is_pipeline_complete(req, jobs)
+    """הסרה מהרשימה – זמין לכל בקשה שעדיין מופיעה (גם שהושלמה/מוזגה).
+
+    זו הסרה מהתצוגה בלבד (הרשומה נשמרת ב-DB ומתועדת בהיסטוריית פעולות);
+    היא אינה מבטלת שינוי שכבר מוזג ל-Git.
+    """
+    return req.status != AIChangeRequest.Status.ARCHIVED
 
 
 def build_pipeline(

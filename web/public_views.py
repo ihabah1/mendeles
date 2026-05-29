@@ -1,7 +1,9 @@
 """דף ראשי ציבורי – תבניות Django (לא React SPA)."""
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.http import Http404
 from django.shortcuts import redirect, render
+from django.template import TemplateDoesNotExist
 
 
 def _fetch_site_stats():
@@ -102,3 +104,21 @@ def public_account(request):
         'web/account.html',
         _ctx(request, page_title='החשבון שלי – Mandeles.co.il'),
     )
+
+
+def public_page(request, slug):
+    """דף ציבורי גנרי – מרנדר templates/web/pages/<slug>.html אם קיים.
+
+    מאפשר ל-AI ליצור דפים חדשים (קובץ template בלבד) בלי לגעת ב-urls.py.
+    ה-slug מוגבל לאותיות/ספרות/מקף ע"י ה-URL converter, אז אין מעבר תיקיות.
+    """
+    template = f'web/pages/{slug}.html'
+    title = slug.replace('-', ' ').replace('_', ' ').strip().title()
+    try:
+        return render(
+            request,
+            template,
+            _ctx(request, page_title=f'{title} – Mandeles.co.il'),
+        )
+    except TemplateDoesNotExist as exc:
+        raise Http404('הדף לא נמצא') from exc

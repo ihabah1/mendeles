@@ -227,10 +227,7 @@ def archive_request(
     from .pipeline import build_pipeline, can_archive_request
 
     if not can_archive_request(request):
-        raise ValueError(
-            'לא ניתן להסיר רשומה שהושלמו כל שלביה (מיזוג ל-Git). '
-            'רק בקשות שלא הסתיימו.',
-        )
+        raise ValueError('הרשומה כבר הוסרה מהרשימה.')
 
     pipeline = build_pipeline(request)
     stages_done = [s['label'] for s in pipeline['stages'] if s.get('done')]
