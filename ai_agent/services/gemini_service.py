@@ -162,13 +162,10 @@ def generate_diff(
     from .new_page import build_new_page_diff, is_new_page_request
 
     if is_new_page_request(prompt):
-        log('זוהתה בקשה ליצירת דף חדש – בונה קובץ template חדש…')
-        try:
-            return build_new_page_diff(
-                prompt, root, log_callback=log, image_paths=image_paths,
-            )
-        except DiffValidationError as exc:
-            log(f'יצירת דף חדש נכשלה ({exc}) – ממשיך לזרימת עריכה רגילה')
+        log('זוהתה בקשה ליצירת דף חדש – בונה קובץ template חדש (לא עורך קבצים קיימים)…')
+        return build_new_page_diff(
+            prompt, root, log_callback=log, image_paths=image_paths,
+        )
 
     resolved = resolve_request(prompt, root)
     if image_paths:

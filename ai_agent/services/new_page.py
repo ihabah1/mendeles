@@ -166,32 +166,40 @@ def build_new_page_diff(
     log_callback=None,
     image_paths: list[Path] | None = None,
 ) -> str:
-    """בונה diff ליצירת דף חדש. זורק DiffValidationError אם נכשל."""
+    """בונה diff ליצירת דף חדש. תמיד מחזיר דף (לא נופל לעריכת קובץ קיים)."""
 
     def log(msg: str) -> None:
         if log_callback:
             log_callback(msg)
 
+    title = ''
+    content_html = ''
+    spec_slug = ''
+
     api_key = getattr(settings, 'GEMINI_API_KEY', '') or ''
-    if not api_key:
-        raise DiffValidationError('GEMINI_API_KEY לא מוגדר – לא ניתן ליצור דף')
-
-    log('מבקש מ-Gemini מבנה דף חדש (כותרת + תוכן)…')
-    raw = _generate_page_spec(prompt, image_paths=image_paths)
-    if not raw:
-        raise DiffValidationError('Gemini לא החזיר תוכן לדף')
-    data = _extract_json(raw)
-
-    title = str(data.get('title') or '').strip() or 'דף חדש'
-    content_html = str(data.get('content_html') or data.get('html') or '').strip()
+    if api_key:
+        try:
+            log('מבקש מ-Gemini מבנה דף חדש (כותרת + תוכן)…')
+            raw = _generate_page_spec(prompt, image_paths=image_paths)
+            data = _extract_json(raw) if raw else {}
+            title = str(data.get('title') or '').strip()
+            content_html = str(data.get('content_html') or data.get('html') or '').strip()
+            spec_slug = _slugify(str(data.get('slug') or ''))
+        except Exception as exc:  # noqa: BLE001 – נכשל? יוצרים דף בסיסי במקום לערוך קובץ קיים
+            log(f'Gemini לא הצליח לייצר תוכן ({exc}) – יוצר דף בסיסי')
+    else:
+        log('GEMINI_API_KEY לא מוגדר – יוצר דף בסיסי')
 
     # אם המשתמש ציין כתובת (למשל 404 על /about-brochnik/) – ניצור את הדף באותו slug
-    slug_base = slug_from_prompt(prompt) or _slugify(str(data.get('slug') or '')) or _slugify(title)
+    slug_base = slug_from_prompt(prompt) or spec_slug or _slugify(title)
     if not slug_base:
         from django.utils import timezone
 
         slug_base = 'page-' + timezone.now().strftime('%m%d%H%M')
     slug = _unique_slug(base_dir, slug_base)
+
+    if not title:
+        title = slug.replace('-', ' ').replace('_', ' ').strip().title() or 'דף חדש'
 
     if not content_html:
         content_html = (
