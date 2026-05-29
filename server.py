@@ -549,7 +549,8 @@ def server_error(e):
 
 if __name__ == "__main__":
     os.makedirs("data", exist_ok=True)
-    port = int(os.getenv("PORT", 5000))
+    # פורט קבוע 5000 – לא PORT הגנרי, כדי לא להתנגש עם gunicorn (PORT=8080 ב-Railway)
+    port = int(os.getenv("LEGACY_MAIN_PORT", 5000))
     debug = os.getenv("FLASK_ENV", "production") == "development"
     log.info(f"שרת מנדל לוטו מופעל על פורט {port} | הגרלה הבאה: {NEXT_DRAW_DATE}")
     app.run(host="0.0.0.0", port=port, debug=debug)
