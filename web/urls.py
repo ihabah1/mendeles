@@ -29,4 +29,7 @@ urlpatterns = [
     # הפניות ישנות מ-React SPA
     path('app/', RedirectView.as_view(url='/', permanent=True)),
     path('app/<path:subpath>/', RedirectView.as_view(url='/', permanent=True)),
+    # ברירת מחדל אחרונה: דף שנוצר בניהול שינויים בכתובת נקייה /<slug>/
+    # (נבדק רק אם אף נתיב אחר לא תפס; 404 אם אין template תואם)
+    path('<slug:slug>/', public_views.public_page, name='public-page-root'),
 ]

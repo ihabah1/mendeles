@@ -39,9 +39,40 @@ _TRIGGERS = (
 )
 
 
+# רמזים לכך שכתובת מסוימת מחזירה 404 והמשתמש רוצה שהדף הזה ייווצר
+_NOT_FOUND_HINTS = (
+    '404',
+    'page not found',
+    'not found',
+    'לא נמצא',
+    'לא קיים',
+    'does not exist',
+    "doesn't exist",
+)
+
+# כתובת מלאה: …/segment/  →  segment
+_URL_PATH_RE = re.compile(r'https?://[^\s]+?/([a-z0-9][a-z0-9\-_]*)/?(?:\s|$)', re.IGNORECASE)
+# נתיב חשוף: /segment/
+_BARE_PATH_RE = re.compile(r'(?:^|\s)/([a-z0-9][a-z0-9\-_]*)/?(?:\s|$)', re.IGNORECASE)
+
+
+def slug_from_prompt(prompt: str) -> str:
+    """מחלץ slug מכתובת/נתיב שמופיע בבקשה (למשל מתוך הדבקת שגיאת 404)."""
+    p = prompt or ''
+    m = _URL_PATH_RE.search(p) or _BARE_PATH_RE.search(p)
+    if m:
+        return _slugify(m.group(1))
+    return ''
+
+
 def is_new_page_request(prompt: str) -> bool:
     p = (prompt or '').lower()
-    return any(t in p for t in _TRIGGERS)
+    if any(t in p for t in _TRIGGERS):
+        return True
+    # הדבקת 404 / כתובת שלא קיימת ⇐ ככל הנראה רוצים שדף כזה ייווצר
+    if any(h in p for h in _NOT_FOUND_HINTS) and slug_from_prompt(prompt):
+        return True
+    return False
 
 
 def _slugify(text: str) -> str:
@@ -154,7 +185,8 @@ def build_new_page_diff(
     title = str(data.get('title') or '').strip() or 'דף חדש'
     content_html = str(data.get('content_html') or data.get('html') or '').strip()
 
-    slug_base = _slugify(str(data.get('slug') or '')) or _slugify(title)
+    # אם המשתמש ציין כתובת (למשל 404 על /about-brochnik/) – ניצור את הדף באותו slug
+    slug_base = slug_from_prompt(prompt) or _slugify(str(data.get('slug') or '')) or _slugify(title)
     if not slug_base:
         from django.utils import timezone
 
@@ -171,6 +203,6 @@ def build_new_page_diff(
     file_content = _render_template_file(title, content_html)
 
     log(f'יוצר דף חדש: {rel} · כותרת: "{title}"')
-    log(f'אחרי מיזוג, הדף יהיה זמין בכתובת: /p/{slug}/')
+    log(f'אחרי מיזוג, הדף יהיה זמין בכתובת: /{slug}/ (וגם /p/{slug}/)')
     diff = _new_file_diff(rel, file_content)
     return validate_diff_syntax(diff)
