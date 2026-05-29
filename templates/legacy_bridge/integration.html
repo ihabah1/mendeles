@@ -57,7 +57,7 @@
     <thead><tr><th>שירות</th><th>סטטוס</th><th>פורט</th><th>בדיקה</th></tr></thead>
     <tbody>
       {% for svc in services %}
-      {% include "legacy_bridge/_integration_service_row.html" with svc=svc only %}
+      {% include "legacy_bridge/_integration_service_row.html" with svc=svc csrf_token=csrf_token only %}
       {% endfor %}
     </tbody>
   </table>
