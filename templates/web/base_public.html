@@ -26,8 +26,6 @@
     {% if is_admin %}
       <a href="/manage/" class="nav-login-btn" style="background:var(--navy-c);color:var(--gold);border:1px solid var(--gold-d)">ניהול</a>
     {% endif %}
-    {# AI: New URL /contact/ needs to be added to urls.py to serve templates/web/contact.html #}
-    <a href="/contact/" class="nav-login-btn">צור קשר</a>
     {% if user %}
       {% include 'web/partials/nav_user_menu.html' %}
       <span class="wallet-badge" id="nav-wallet" style="display:none"></span>
