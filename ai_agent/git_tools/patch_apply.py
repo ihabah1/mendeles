@@ -110,15 +110,38 @@ def apply_unified_diff_to_repo(repo: Path, diff_text: str) -> list[str]:
         if not part.startswith('diff --git'):
             part = 'diff --git ' + part
         lines = part.splitlines()
+        # זיהוי קובץ חדש: "--- /dev/null" או "new file mode"
+        is_new = ('--- /dev/null' in part) or bool(re.search(r'^new file mode', part, re.MULTILINE))
         rel = None
-        for line in lines[:6]:
-            if line.startswith('---'):
-                rel = _path_from_diff_header(line)
-                break
+        plus_target = None
+        for line in lines[:8]:
+            if line.startswith('--- '):
+                r = _path_from_diff_header(line)
+                if r:
+                    rel = r
+            elif line.startswith('+++ '):
+                t = line[4:].strip()
+                if t and t != '/dev/null':
+                    if '\t' in t:
+                        t = t.split('\t', 1)[0]
+                    plus_target = normalize_repo_path(t)
+        if rel is None and plus_target is not None:
+            rel = plus_target
+            is_new = True
         if not rel:
             continue
 
         full = repo / rel
+        if is_new:
+            # יצירת קובץ חדש מתוך שורות ה-+ (דף חדש בניהול שינויים)
+            added = [ln[1:] for ln in lines if ln.startswith('+') and not ln.startswith('+++')]
+            new_content = '\n'.join(added)
+            if not new_content.endswith('\n'):
+                new_content += '\n'
+            full.parent.mkdir(parents=True, exist_ok=True)
+            full.write_text(new_content, encoding='utf-8', newline='\n')
+            touched.append(rel)
+            continue
         if not full.is_file():
             raise ValueError(f'קובץ לא קיים ב-clone: {rel}')
 

@@ -24,6 +24,7 @@ urlpatterns = [
     path('legal/', public_views.public_legal, name='public-legal'),
     path('accessibility/', public_views.public_accessibility, name='public-a11y'),
     # דפים שנוצרו ע"י ה-AI – templates/web/pages/<slug>.html
+    path('p/', public_views.public_pages_index, name='public-pages'),
     path('p/<slug:slug>/', public_views.public_page, name='public-page'),
     # הפניות ישנות מ-React SPA
     path('app/', RedirectView.as_view(url='/', permanent=True)),

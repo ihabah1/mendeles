@@ -1,0 +1,22 @@
+{% extends 'web/base_public.html' %}
+{% block content %}
+<div class="page-hero">
+  <h1>דפים נוספים</h1>
+  <p>דפים שנוצרו דרך מערכת ניהול השינויים של האתר.</p>
+</div>
+<div class="page-wrap" style="padding-top:0">
+  {% if pages %}
+  <div class="about-grid">
+    {% for pg in pages %}
+    <a class="about-card" href="{{ pg.url }}" style="text-decoration:none">
+      <span class="about-icon">📄</span>
+      <h3>{{ pg.label }}</h3>
+      <p>{{ pg.url }}</p>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card"><p>אין עדיין דפים. ניתן ליצור דף חדש דרך «ניהול שינויים» בדשבורד.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

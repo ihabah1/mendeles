@@ -106,6 +106,24 @@ def public_account(request):
     )
 
 
+def public_pages_index(request):
+    """מציג את כל הדפים שנוצרו תחת templates/web/pages/ (חוץ מ-index)."""
+    pages_dir = settings.BASE_DIR / 'templates' / 'web' / 'pages'
+    items = []
+    if pages_dir.is_dir():
+        for path_obj in sorted(pages_dir.glob('*.html')):
+            if path_obj.stem == 'index':
+                continue
+            slug = path_obj.stem
+            label = slug.replace('-', ' ').replace('_', ' ').strip().title()
+            items.append({'slug': slug, 'label': label, 'url': f'/p/{slug}/'})
+    return render(
+        request,
+        'web/pages/index.html',
+        _ctx(request, page_title='דפים – Mandeles.co.il', pages=items),
+    )
+
+
 def public_page(request, slug):
     """דף ציבורי גנרי – מרנדר templates/web/pages/<slug>.html אם קיים.
 
