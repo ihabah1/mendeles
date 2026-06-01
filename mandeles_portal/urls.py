@@ -6,10 +6,10 @@ from django.urls import include, path
 # סדר קריטי: portal (ניהול) לפני web (אתר ציבורי Django)
 urlpatterns = [
     path('django-admin/', admin.site.urls),
-    path('', include('portal.urls')),
-    path('', include('legacy_bridge.urls')),
-    path('', include('web.urls')),
-    path('accounts/', include('accounts.urls')),
+    path('', include('admin_panel.portal.urls')),
+    path('', include('public_site.legacy_bridge.urls')),
+    path('', include('public_site.web.urls')),
+    path('accounts/', include('admin_panel.accounts.urls')),
 ]
 
 if settings.DEBUG:

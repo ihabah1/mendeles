@@ -65,11 +65,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'accounts',
-    'portal',
-    'web',
-    'ai_agent',
-    'legacy_bridge',
+    'admin_panel.accounts',
+    'admin_panel.portal',
+    'public_site.web',
+    'admin_panel.ai_agent',
+    'public_site.legacy_bridge',
 ]
 
 # שירותי Flask מקומיים (לוטו / ארנק / טוטו) – פרוקסי דרך Django
@@ -90,7 +90,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'portal.middleware.AdminDashboardGuardMiddleware',
+    'admin_panel.portal.middleware.AdminDashboardGuardMiddleware',
 ]
 
 ROOT_URLCONF = 'mandeles_portal.urls'
@@ -105,7 +105,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'portal.context_processors.dashboard_context',
+                'admin_panel.portal.context_processors.dashboard_context',
             ],
         },
     },
